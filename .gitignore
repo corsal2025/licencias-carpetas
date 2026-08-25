@@ -25,3 +25,7 @@ publish/
 # Local Claude Code skill-registry cache and agent worktrees
 .atl/
 .claude/
+
+# Logs
+*.log
+

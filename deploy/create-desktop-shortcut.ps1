@@ -48,9 +48,12 @@ $shortcut.TargetPath = "powershell.exe"
 $shortcut.Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$launcherPath`""
 $shortcut.WorkingDirectory = $PublishPath
 $shortcut.Description = "Abrir el dashboard de Carpetas Licencias"
-# The target is powershell.exe, so without this the shortcut would show PowerShell's icon —
-# the exe carries the escudo municipal icon (see ApplicationIcon in the csproj), point at it.
-$shortcut.IconLocation = "$exePath,0"
+$iconPath = Join-Path $PublishPath "wwwroot\img\app-icon.ico"
+if (Test-Path $iconPath) {
+    $shortcut.IconLocation = "$iconPath,0"
+} else {
+    $shortcut.IconLocation = "$exePath,0"
+}
 $shortcut.Save()
 
 Write-Host "Acceso directo creado en: $shortcutPath"
