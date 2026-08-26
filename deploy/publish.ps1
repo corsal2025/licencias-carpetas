@@ -63,6 +63,8 @@ if ($DevCert) {
 }
 
 Write-Host "[2/6] Compilando y publicando (self-contained, single-file)..." -ForegroundColor Yellow
+Get-Process LicenciasCarpetas -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Start-Sleep -Milliseconds 500
 Push-Location $RepoRoot
 try {
     dotnet restore
@@ -70,14 +72,26 @@ try {
     if (-not $SkipTests) {
         dotnet test $TestProject -c Release --verbosity normal
     }
-    dotnet publish $Project -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o $PublishPath
+    Get-Process LicenciasCarpetas -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 800
+    if (Test-Path $Exe) {
+        Remove-Item $Exe -Force -ErrorAction SilentlyContinue
+    }
+    dotnet publish $Project -c Release -r win-x64 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true -o $PublishPath
+    
+    # Copiar e_sqlite3.dll nativa si no quedó al lado del exe
+    $sqliteDllSource = Get-ChildItem -Path "$env:USERPROFILE\.nuget\packages\sqlitepclraw.lib.e_sqlite3" -Filter "e_sqlite3.dll" -Recurse | 
+                       Where-Object { $_.FullName -like "*win-x64\native*" } | Select-Object -First 1
+    if ($sqliteDllSource -and (Test-Path $sqliteDllSource.FullName)) {
+        Copy-Item $sqliteDllSource.FullName (Join-Path $PublishPath "e_sqlite3.dll") -Force
+    }
 } finally {
     Pop-Location
 }
 Write-Host "  OK - publicado en: $PublishPath" -ForegroundColor Green
 Write-Host ""
 
-Write-Host "[3/6] Revisando appsettings.json..." -ForegroundColor Yellow
+Write-Host "[3/6] Revisando appsettings.json y datos..." -ForegroundColor Yellow
 # `dotnet publish` sobrescribe appsettings.json con el del proyecto en cada publicación, así que
 # este paso solo avisa: cualquier ajuste permanente va en src\LicenciasCarpetas\appsettings.json.
 $TargetConfig = Join-Path $PublishPath "appsettings.json"
@@ -88,6 +102,17 @@ if ([string]::IsNullOrWhiteSpace($workbookPath)) {
     Write-Host "  Para dejarla fija, edita src\LicenciasCarpetas\appsettings.json y vuelve a publicar." -ForegroundColor Yellow
 } else {
     Write-Host "  OK - Excel por defecto: $workbookPath" -ForegroundColor Green
+}
+
+$PublishDataDir = Join-Path $PublishPath "data"
+if (-not (Test-Path $PublishDataDir)) {
+    New-Item -ItemType Directory -Path $PublishDataDir -Force | Out-Null
+}
+$ComunasCsvPublish = Join-Path $PublishDataDir "comunas.csv"
+$ComunasCsvSource = Join-Path $RepoRoot "data\comunas.csv"
+if ((Test-Path $ComunasCsvSource) -and (-not (Test-Path $ComunasCsvPublish))) {
+    Copy-Item $ComunasCsvSource $ComunasCsvPublish -Force
+    Write-Host "  OK - comunas.csv copiado a publish/data" -ForegroundColor Green
 }
 Write-Host ""
 

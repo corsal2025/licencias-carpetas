@@ -4,14 +4,27 @@
 @using LicenciasCarpetas.Domain
 @{
     ViewData["Title"] = "Solicitar Cambios de Domicilio";
+    var total = Model.Requests.Count;
+    var borradores = Model.Requests.Count(r => r.Status == OutboundRequestStatus.Borrador);
+    var enviadas = Model.Requests.Count(r => r.Status == OutboundRequestStatus.Enviada);
 }
 
-<div class="card cd-filter-bar" style="padding:8px 14px; margin-bottom:10px; display:flex; gap:8px; align-items:center;">
-    @* Ya no hay carga manual — las solicitudes entran por el botón Solicitar en Casos o, acá,
-       sincronizando el correo de Cambio de Domicilio (ver OnPostSincronizar). *@
-    <form method="post" asp-page-handler="Sincronizar">
-        <button type="submit" class="btn-primary" style="padding:8px 16px;">↻ Sincronizar Ahora</button>
-    </form>
+<div class="card cd-filter-bar" style="padding:10px 16px; margin-bottom:12px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <span style="font-weight:700; font-size:var(--font-lg); color:var(--color-primary); display:flex; align-items:center; gap:6px;">
+            📤 Solicitudes de Cambio de Domicilio a otras Comunas
+        </span>
+        <span class="badge" style="background:var(--color-sidebar-active-bg); color:var(--color-primary); font-weight:600; padding:4px 8px; border-radius:6px; font-size:var(--font-sm);">
+            @total total (@borradores pendientes / @enviadas enviadas)
+        </span>
+    </div>
+    <div>
+        <form method="post" asp-page-handler="Sincronizar" style="display:inline;">
+            <button type="submit" class="btn-primary" style="padding:6px 14px; font-size:var(--font-sm); display:inline-flex; align-items:center; gap:6px;">
+                ↻ Sincronizar Ahora
+            </button>
+        </form>
+    </div>
 </div>
 
 @if (Model.Message is not null)
@@ -20,38 +33,42 @@
 }
 
 <div class="card table-card">
-    <table class="cases solicitar-compact">
+    <table class="cases cases-index table-wide">
         <thead>
-            <tr style="font-weight:700;">
-                <th>Marcar</th>
-                <th>Nombre</th>
-                <th>RUT</th>
-                <th>Comuna</th>
-                <th>Recibido</th>
-                <th>Estado</th>
-                <th>Acción</th>
+            <tr>
+                <th style="width:40px; text-align:center;">#</th>
+                <th class="name-cell">Nombre Completo</th>
+                <th class="rut-cell">RUT</th>
+                <th>Comuna Destino</th>
+                <th>Fecha Ingreso</th>
+                <th>Estado Carpeta</th>
+                <th style="text-align:center; min-width:110px;">Acción</th>
             </tr>
         </thead>
         <tbody>
+        @if (Model.Requests.Count == 0)
+        {
+            <tr>
+                <td colspan="7" style="text-align:center; padding:32px; color:var(--color-text-muted);">
+                    No hay solicitudes registradas. Al marcar un caso como <strong>"CAMBIO DE DOMICILIO SOLICITADO"</strong> en la Agenda o sincronizar, aparecerán aquí automáticamente.
+                </td>
+            </tr>
+        }
+        @{ var index = 1; }
         @foreach (var item in Model.Requests)
         {
-            @* Mismo color de fila por estado que usa Casos (ver FolderStateCatalog.CssClass) —
-               la fila se recarga entera al elegir el desplegable de más abajo (no es autoguardado
-               por fetch), así que el color ya sale bien server-rendered sin JS aparte. *@
-            <tr class="@FolderStateCatalog.CssClass(item.WorkflowState)">
-                @* Marcar/Recibido no tienen dato real en una solicitud saliente (no hay carpeta
-                   física propia acá) — se muestran inertes. *@
-                <td><input type="checkbox" disabled /></td>
-                <td>@item.FullName</td>
-                <td>@item.Rut</td>
-                <td>@item.DestinationComuna</td>
-                <td>—</td>
+            var rowClass = FolderStateCatalog.CssClass(item.WorkflowState);
+            <tr class="@rowClass">
+                <td style="text-align:center; color:var(--color-text-muted); font-size:var(--font-xs);">@(index++)</td>
+                <td class="name-cell" style="font-weight:600;">@item.FullName</td>
+                <td class="rut-cell">
+                    <input type="text" class="input-inline rut-input" value="@item.Rut" readonly size="14" style="background:transparent; border:none; font-weight:600;" />
+                </td>
+                <td style="font-weight:700; text-transform:uppercase; color:var(--color-primary);">@item.DestinationComuna</td>
+                <td>@item.CreatedAt.LocalDateTime.ToString("dd-MM-yyyy")</td>
                 <td>
-                    @* Estado de la carpeta física (subconjunto de Estado de carpeta de Casos) — si
-                       la solicitud nació del botón Solicitar en Casos, cambiarlo acá también
-                       actualiza el FolderState del caso de origen (ver OnPostGuardarEstado). *@
-                    <form method="post" asp-page-handler="GuardarEstado" asp-route-id="@item.Id" style="margin-top:4px;">
-                        <select name="workflowState" class="input-inline" style="font-size:inherit;" onchange="this.form.submit()">
+                    <form method="post" asp-page-handler="GuardarEstado" asp-route-id="@item.Id" style="margin:0;">
+                        <select name="workflowState" class="input-inline" style="font-size:var(--font-sm); padding:3px 6px;" onchange="this.form.submit()">
                             <option value="">—</option>
                             @foreach (var state in WorkflowStateCatalog.Options)
                             {
@@ -60,18 +77,26 @@
                         </select>
                     </form>
                 </td>
-                <td style="display:flex; gap:6px; align-items:center; justify-content:center;">
+                <td style="text-align:center; white-space:nowrap; display:flex; gap:6px; align-items:center; justify-content:center;">
                     @if (item.Status == OutboundRequestStatus.Borrador)
                     {
                         <form method="post" asp-page-handler="Solicitar" asp-route-id="@item.Id" style="display:inline;"
-                              onsubmit="return confirm('Esto manda el correo de solicitud a la comuna de inmediato. ¿Confirmar?');">
-                            <button type="submit" class="btn-primary" style="padding:4px 10px; font-size:inherit;">Solicitar</button>
+                              onsubmit="return confirm('Esto mandará el correo formal de solicitud a la Municipalidad de ' + '@(item.DestinationComuna?.Replace("'", "\\'"))' + '. ¿Confirmar envío?');">
+                            <button type="submit" class="btn-primary" style="padding:3px 10px; font-size:var(--font-xs);">
+                                ✉️ Solicitar
+                            </button>
                         </form>
                     }
                     else
                     {
-                        <span class="badge badge-confirmed">Enviada</span>
+                        <span class="badge badge-confirmed" style="font-size:var(--font-xs);" title="Enviada el @(item.SentAt?.LocalDateTime.ToString("dd-MM-yyyy HH:mm") ?? "—")">
+                            ✓ Enviada
+                        </span>
                     }
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" style="display:inline;"
+                          onsubmit="return confirm('¿Eliminar esta solicitud de cambio de domicilio?');">
+                        <button type="submit" class="btn-danger" style="padding:3px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" title="Eliminar solicitud">🗑️</button>
+                    </form>
                 </td>
             </tr>
         }

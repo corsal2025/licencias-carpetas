@@ -1,38 +1,46 @@
 :root {
-    --color-primary: #0b3d68;
-    --color-primary-dark: #082a49;
-    --color-accent: #1a73b0;
-    --color-bg: #f4f6f8;
+    --color-primary: #0b2545;
+    --color-primary-dark: #07172c;
+    --color-primary-light: #133e63;
+    --color-accent: #1d4ed8;
+    --color-accent-hover: #1e40af;
+    --color-gold: #c59b27;
+    --color-gold-hover: #b45309;
+    --color-bg: #f1f5f9;
     --color-surface: #ffffff;
-    --color-border: #d7dde3;
-    --color-text: #1f2933;
-    --color-text-muted: #5c6b7a;
-    --color-sidebar-bg: #ffffff;
-    --color-sidebar-border: var(--color-border);
-    --color-sidebar-text: var(--color-text);
-    --color-sidebar-text-muted: var(--color-text-muted);
-    --color-sidebar-active-bg: #eaf2fa;
-    --color-sidebar-active-text: var(--color-primary);
-    --color-sidebar-hover-bg: #f4f6f8;
+    --color-border: #cbd5e1;
+    --color-border-subtle: #e2e8f0;
+    --color-text: #0f172a;
+    --color-text-muted: #64748b;
+    --color-sidebar-bg: #0b2545;
+    --color-sidebar-border: rgba(255, 255, 255, 0.12);
+    --color-sidebar-text: #e2e8f0;
+    --color-sidebar-text-muted: #94a3b8;
+    --color-sidebar-active-bg: #1d4ed8;
+    --color-sidebar-active-text: #ffffff;
+    --color-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
     --sidebar-width: 248px;
-    --color-pending: #6b7280;
-    --color-pending-bg: #eceff1;
-    --color-uploaded: #926100;
-    --color-uploaded-bg: #fff3d6;
-    --color-confirmed: #1e7a3d;
-    --color-confirmed-bg: #e3f6e9;
-    --color-review: #a11d33;
-    --color-review-bg: #fbe4e8;
-    --color-selected-bg: #d6e8fb;
-    /* Card/button/input corner radius shared across the whole dashboard — bumped from 6px to
-       align with the light-theme mockups (10-12px on cards). Every rule that already reads
-       var(--radius) picks this up automatically instead of needing a second radius scale. */
-    --radius: 10px;
-    --shadow-sm: 0 1px 2px rgba(15, 30, 45, 0.08);
+    --color-pending: #d97706;
+    --color-pending-bg: #fffbeb;
+    --color-pending-border: #fde68a;
+    --color-uploaded: #059669;
+    --color-uploaded-bg: #ecfdf5;
+    --color-uploaded-border: #a7f3d0;
+    --color-confirmed: #0d9488;
+    --color-confirmed-bg: #f0fdfa;
+    --color-review: #e11d48;
+    --color-review-bg: #fff1f2;
+    --color-review-border: #fecdd3;
+    --color-selected-bg: #e0f2fe;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
 
-    /* Type scale: every font-size in this file (and every inline font-size removed from the
-       .cshtml pages) maps onto one of these steps instead of a raw rem value, so the dashboard
-       reads as one consistent hierarchy instead of dozens of near-duplicate sizes. */
+    /* Type scale */
     --font-xs: 0.65rem;
     --font-sm: 0.7rem;
     --font-base: 0.75rem;
@@ -149,9 +157,7 @@ body {
     margin-bottom: 2px;
 }
 
-/* "Módulos" es un <details> propio (no reusa .sidebar-section-collapsible) — clic en el texto del
-   summary abre/cierra. Los links de adentro (Gestión de Licencias, Enviar/Solicitar, F8) son links
-   planos, no desplegables propios — sin flecha, tenerla ahí no abría/cerraba nada y solo confundía. */
+/* "Módulos" es un <details> propio — clic en el summary abre/cierra los módulos */
 .sidebar-modules-collapsible > summary {
     cursor: pointer;
     list-style: none;
@@ -160,27 +166,130 @@ body {
     display: none;
 }
 
+.sidebar-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--color-sidebar-text-muted) !important;
+    border-radius: var(--radius);
+    transition: color 0.15s ease, background 0.15s ease;
+}
+.sidebar-summary:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-modules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-left: 6px;
+    margin-top: 2px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
 .sidebar-link {
-    display: block;
-    color: var(--color-sidebar-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e2e8f0 !important;
     text-decoration: none;
-    padding: 7px 10px;
+    padding: 8px 10px;
     border-radius: var(--radius);
     font-size: var(--font-md);
-    font-weight: 600;
-    /* Sin nowrap: un título largo ("Solicitar Cambios de Domicilio") desbordaba el ancho fijo
-       del sidebar (248px) y quedaba tapado por .app-content en vez de cortarse visiblemente —
-       mejor que se parta en dos líneas a que se pierda texto. */
+    font-weight: 500;
     white-space: normal;
     word-break: break-word;
     transition: background 0.15s ease, color 0.15s ease;
 }
 
-.sidebar-link:hover { background: var(--color-sidebar-hover-bg); }
+.sidebar-link:link,
+.sidebar-link:visited {
+    color: #e2e8f0 !important;
+}
 
-/* Cada grupo del módulo Cambio de Domicilio (Enviar / Solicitar) es ahora un <details> nativo en
-   vez de un bloque siempre abierto — sin JS, misma tipografía que .sidebar-section-label para que
-   el "summary" no se note como un elemento distinto. */
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff !important;
+}
+
+.sidebar-link.active,
+.sidebar-link.active:link,
+.sidebar-link.active:visited {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+}
+
+.sidebar-search-btn {
+    width: 100%;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    font: inherit;
+    color: #ffffff !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    margin: 2px 0 4px 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.sidebar-search-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.sidebar-search-btn .search-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    letter-spacing: 0.3px;
+    color: #f8fafc;
+}
+.sidebar-search-btn kbd {
+    font-size: var(--font-xs);
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    font-weight: 600;
+    font-family: inherit;
+}
+
+.sidebar-link-logout {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    font: inherit;
+    color: #fca5a5 !important;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--font-md);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.sidebar-link-logout:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* Cada grupo del módulo Cambio de Domicilio (Enviar / Solicitar) */
 .sidebar-section-collapsible {
     margin: 6px 0;
 }
@@ -214,9 +323,6 @@ body {
     margin-right: 6px;
     color: var(--color-sidebar-text-muted);
 }
-/* "Solicitudes recibidas" (y equivalentes): el <summary> envuelve un <a> real — el link sigue
-   navegando al hacer clic en el texto, la flechita antes del link solo abre/cierra lo que cuelga
-   debajo (Certificado/Comunas/Descartados). Separado un poco más que un desplegable de módulo. */
 .sidebar-subsection-collapsible {
     margin: 8px 0 8px 4px;
 }
@@ -251,65 +357,9 @@ body {
     color: var(--color-sidebar-text-muted);
 }
 
-/* "Módulos" es un desplegable que contiene un desplegable por módulo — este indent es lo único
-   que distingue "un módulo adentro de Módulos" de "una sección suelta", sin duplicar CSS. */
 .sidebar-modules-collapsible .sidebar-section-collapsible {
     margin-left: 8px;
 }
-
-.sidebar-link.active {
-    background: var(--color-sidebar-active-bg);
-    color: var(--color-sidebar-active-text);
-    font-weight: 700;
-}
-
-.sidebar-link-home {
-    font-size: var(--font-md);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    color: var(--color-primary);
-}
-
-/* Mismos colores por función que antes tenían las píldoras del header — documentos, referencia,
-   sync, módulos externos, cuenta y salir — reutilizados acá como texto/borde en vez de fondo de
-   píldora, que se lee mejor en una columna angosta y clara. */
-/* Las 4 variantes de acento por color comparten un borde izquierdo recto — sin esto, el
-   border-radius de 10px (var(--radius)) redondea también esa esquina y la barra de color
-   termina viéndose como un paréntesis curvo suelto en vez de una línea vertical pegada al borde. */
-.sidebar-link-doc {
-    color: #926100;
-}
-.sidebar-link-doc:hover { background: var(--color-uploaded-bg); }
-
-.sidebar-link-reference {
-    color: var(--color-text-muted);
-}
-
-.sidebar-link-sync {
-    color: #1e7a3d;
-}
-.sidebar-link-sync:hover { background: var(--color-confirmed-bg); }
-
-.sidebar-link-module {
-    color: #7c3aed;
-}
-.sidebar-link-module:hover { background: rgba(147, 51, 234, 0.1); }
-
-.sidebar-link-account {
-    color: var(--color-text-muted);
-}
-
-.sidebar-link-logout {
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    font: inherit;
-    color: var(--color-review);
-    cursor: pointer;
-}
-.sidebar-link-logout:hover { background: var(--color-review-bg); }
 
 .sidebar-footer {
     margin-top: auto;
@@ -332,30 +382,80 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 12px;
-    border-radius: 999px;
+    padding: 5px 12px;
+    border-radius: 6px;
     border: 1px solid var(--color-border);
     background: var(--color-surface);
     color: var(--color-text);
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
+    transition: all 0.15s ease;
 }
-.nav-pill:hover { background: var(--color-bg); }
+.nav-pill:hover {
+    background: var(--color-border-subtle);
+    border-color: var(--color-accent);
+}
 
 .nav-doc {
-    background: var(--color-uploaded-bg);
-    border-color: #ffc400;
-    color: #926100;
+    background: #eff6ff !important;
+    border: 1px solid #93c5fd !important;
+    color: #1d4ed8 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.08) !important;
 }
-.nav-doc:hover { background: #ffe9a8; }
+.nav-doc:hover {
+    background: #dbeafe !important;
+    border-color: #3b82f6 !important;
+    color: #1e40af !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.15) !important;
+}
 
-.nav-sync {
-    background: var(--color-confirmed-bg);
-    border-color: var(--color-confirmed);
-    color: var(--color-confirmed);
+.btn-primary,
+button.btn-primary,
+a.btn-primary,
+.nav-sync,
+.btn-sync,
+.cd-filter-bar button.nav-sync {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #1d4ed8 !important;
+    background-color: #1d4ed8 !important;
+    color: #ffffff !important;
+    border: 1px solid #1e40af !important;
+    border-radius: 8px !important;
+    padding: 6px 14px !important;
+    font-size: var(--font-sm) !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2);
+    transition: background-color 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
 }
-.nav-sync:hover { background: #c9ecd3; }
+
+.btn-primary:hover,
+button.btn-primary:hover,
+a.btn-primary:hover,
+.nav-sync:hover,
+.btn-sync:hover,
+.cd-filter-bar button.nav-sync:hover {
+    background: #1e40af !important;
+    background-color: #1e40af !important;
+    color: #ffffff !important;
+    border-color: #1e3a8a !important;
+    box-shadow: 0 4px 6px -1px rgba(29, 78, 216, 0.3);
+}
+
+.btn-primary:active,
+.btn-sync:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.2);
+}
 
 .app-content {
     flex: 1 1 auto;
@@ -368,7 +468,7 @@ body {
    no en el sidebar oscuro, así que no puede reusar las reglas .sidebar-link — mismo dibujo,
    paleta clara propia. */
 .cd-filter-bar a,
-.cd-filter-bar button {
+.cd-filter-bar button:not(.btn-sync):not(.btn-primary) {
     border-radius: 999px;
     font-weight: 600;
     border: 1px solid var(--color-border);
@@ -381,7 +481,7 @@ body {
     white-space: nowrap;
 }
 .cd-filter-bar a:hover,
-.cd-filter-bar button:hover { background: var(--color-pending-bg); }
+.cd-filter-bar button:not(.btn-sync):not(.btn-primary):hover { background: var(--color-pending-bg); }
 .cd-filter-bar a.active {
     background: var(--color-primary);
     border-color: var(--color-primary);
@@ -393,12 +493,6 @@ body {
     color: #926100;
 }
 .cd-filter-bar a.nav-doc:hover { background: #ffe9a8; }
-.cd-filter-bar button.nav-sync {
-    background: var(--color-confirmed-bg);
-    border-color: var(--color-confirmed);
-    color: var(--color-confirmed);
-}
-.cd-filter-bar button.nav-sync:hover { background: #c9ecd3; }
 .cd-filter-bar input[type="text"] {
     border: 1px solid var(--color-border);
     border-radius: 4px;
@@ -806,20 +900,24 @@ table.cases {
 }
 
 table.cases th {
-    background: #eef2f6;
-    color: var(--color-text-muted);
+    background: #e2e8f0;
+    color: #0f172a;
     text-transform: uppercase;
-    font-size: var(--font-sm);
-    letter-spacing: 0.4px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.5px;
     text-align: center;
-    padding: 11px 14px;
+    padding: 8px 10px;
     border-bottom: 1px solid var(--color-border);
 }
 
 table.cases td {
-    padding: 10px 14px;
+    padding: 6px 10px;
     border-bottom: 1px solid var(--color-border);
     vertical-align: middle;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: #0f172a;
 }
 
 table.cases tbody tr:nth-child(even) { background: #fafbfc; }
@@ -835,9 +933,7 @@ table.cases-index {
     min-width: 100%;
 }
 
-/* Zebra striping is computed server-side into an explicit class instead of relying on
-   :nth-child, since row visibility/order has changed before under a fixed layout — keeping
-   this explicit avoids depending on layout details that are unrelated to the striping itself. */
+/* Zebra striping */
 table.cases-index tbody tr:nth-child(even) {
     background: transparent;
 }
@@ -847,19 +943,28 @@ table.cases-index tbody tr.row-alt {
 }
 
 table.cases-index th {
-    padding: 4px 5px;
+    padding: 6px 8px;
     font-size: var(--font-xs);
-    line-height: 1.15;
+    font-weight: 700;
+    color: #0f172a;
+    background: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    line-height: 1.2;
 }
 
 table.cases-index td {
-    padding: 3px 5px;
-    font-weight: 700;
+    padding: 4px 6px;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: #0f172a;
 }
 
 table.cases-index td input,
 table.cases-index td select {
-    font-weight: 700;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: #0f172a;
 }
 
 table.cases-index th,
@@ -1057,12 +1162,16 @@ table.cases-index .marked-checkbox {
    fetch() (see submitCheckboxToggle) instead of a full-page reload: the old row-*-pending classes
    are computed server-side and only update on the next render, so relying on them alone left the
    row showing no color change at all until a manual refresh. */
-table.cases-index tbody tr:has(input[name="markedValue"]:checked) {
-    background: #bfe3b4 !important;
+table.cases-index tbody tr.row-selected,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked),
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) {
+    background: #dbeafe !important;
 }
 
-table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover {
-    background: #aed89f !important;
+table.cases-index tbody tr.row-selected:hover,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover {
+    background: #bfdbfe !important;
 }
 
 /* Same live-update reasoning as the markedValue rule above, for the Pendiente Carpeta checkbox. */
@@ -1093,12 +1202,6 @@ table.cases-index tbody tr.row-needs-review {
 
 table.cases-index tbody tr.row-needs-review:hover {
     background: #f6d0d8 !important;
-}
-
-/* Marcado con el checkbox de "Marcar" — pinta la fila entera para que se note de un vistazo
-   qué está tildado, encima de cualquier otro color de fila. */
-table.cases-index tbody tr.row-selected {
-    background: var(--color-selected-bg) !important;
 }
 
 /* Pendiente Carpeta and F8 pending backgrounds are driven ONLY by the live :has() rules above/below
@@ -1244,8 +1347,11 @@ table.cases-index td.text-cell {
    normal control size — this one just needs to give the table below more vertical room. */
 .filters-bar .form-label {
     font-size: var(--font-xs);
-    margin-bottom: 1px;
-    line-height: 1.1;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2px;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
 }
 
 .filters-bar select,
@@ -1546,15 +1652,27 @@ table.cases-index tbody tr.row-selected td.col-sticky-rut,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-marcar,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-citacion,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-nombre,
-table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-rut {
-    background: #bfe3b4 !important;
+table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-rut,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-marcar,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-citacion,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-nombre,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-rut {
+    background: #dbeafe !important;
 }
 
+table.cases-index tbody tr.row-selected:hover td.col-sticky-marcar,
+table.cases-index tbody tr.row-selected:hover td.col-sticky-citacion,
+table.cases-index tbody tr.row-selected:hover td.col-sticky-nombre,
+table.cases-index tbody tr.row-selected:hover td.col-sticky-rut,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-marcar,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-citacion,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-nombre,
-table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-rut {
-    background: #aed89f !important;
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-rut,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-marcar,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-citacion,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-nombre,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-rut {
+    background: #bfdbfe !important;
 }
 
 table.cases-index tbody tr.row-needs-review td.col-sticky-marcar,
@@ -1724,37 +1842,41 @@ table.cases-index tbody tr.estado-seencuentraenarchivos td { background: #6AA84F
 table.cases-index tbody tr.estado-seencuentraenoficina43 td { background: #8E7CC3; }
 table.cases-index tbody tr.estado-noexistecarpeta td { background: #FF0000; }
 table.cases-index tbody tr.estado-crearoficio td { background: #C27BA0; }
-table.cases-index tbody tr.estado-crearcertificado td { background: #C27BA0; }
+/* Todas las letras de todas las tablas en color negro (#000000) y negrita (700) */
+table.cases th,
+table.cases-index th,
+table.cases-list th {
+    color: #000000 !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+}
 
-/* Sobre los fondos oscuros (azul, rojo, morado, verde, dorado) el texto negro no se lee. */
+table.cases td,
+table.cases-index td,
+table.cases-list td,
+table.cases-index tbody tr td,
+table.cases tbody tr td,
+table.cases-list tbody tr td,
+table.cases-index tbody tr[class*="estado-"] td,
+table.cases tbody tr[class*="estado-"] td,
 table.cases-index tbody tr.estado-subidaaconaset td,
 table.cases-index tbody tr.estado-cambiodomicilio td,
 table.cases-index tbody tr.estado-noexistecarpeta td,
 table.cases-index tbody tr.estado-seencuentraenoficina43 td,
 table.cases-index tbody tr.estado-seencuentraenarchivos td,
 table.cases-index tbody tr.estado-subidaconf8 td {
-    color: #ffffff;
+    color: #000000 !important;
+    font-weight: 700 !important;
 }
 
-/* Los campos editables se mantienen blancos: escribir sobre un fondo de color cansa la vista y
-   el operador pasa el día tipeando en ellos. */
+/* Los campos editables se mantienen blancos por dentro con letra negra y en negrita */
 table.cases-index tbody td input,
-table.cases-index tbody td select {
-    background: #ffffff;
-    color: var(--color-text);
-}
-
-/* Mismo color de fila por estado, pero en la tabla de Solicitar Cambio de Domicilio (class="cases"
-   simple, no cases-index) — solo los estados de WorkflowStateCatalog.Options pueden aparecer ahí,
-   así que no hace falta duplicar el resto del catálogo. */
-table.cases tbody tr.estado-subidaconf8 td { background: #BF9000; color: #ffffff; }
-table.cases tbody tr.estado-subidaconoficio td { background: #FFE599; }
-table.cases tbody tr.estado-cambiodomiciliosubidoaconaset td { background: #00FFFF; }
-
-table.cases tbody tr[class*="estado-"] td input,
-table.cases tbody tr[class*="estado-"] td select {
-    background: #ffffff;
-    color: var(--color-text);
+table.cases-index tbody td select,
+table.cases tbody td input,
+table.cases tbody td select {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
 }
 
 /* Densidad de Solicitar Cambio de Domicilio: letra y celdas más chicas, igual que Enviar Cambio
@@ -1842,10 +1964,17 @@ table.cases-index tbody tr:hover td {
     filter: brightness(0.94);
 }
 
-/* Marcada y "requiere revisión" siguen mandando sobre el color del estado — van después a
-   propósito, para ganar con la misma prioridad. */
-table.cases-index tbody tr:has(input[name="markedValue"]:checked) td {
-    background: #bfe3b4 !important;
+/* Marcada / seleccionada manda sobre el color del estado en TODAS las celdas de la fila */
+table.cases-index tbody tr.row-selected td,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked) td,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td {
+    background: #dbeafe !important;
+}
+
+table.cases-index tbody tr.row-selected:hover td,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td {
+    background: #bfdbfe !important;
 }
 
 table.cases-index tbody tr.row-needs-review td {
@@ -2034,8 +2163,8 @@ table.cases-index tbody tr:has(.popover-celda[open]) td {
 .popover-celda summary::-webkit-details-marker { display: none; }
 
 .popover-celda[open] .popover-panel {
-    position: absolute;
-    z-index: 500;
+    position: fixed;
+    z-index: 9999;
     background: #ffffff;
     border: 1px solid var(--color-border);
     border-radius: 8px;
@@ -2043,8 +2172,6 @@ table.cases-index tbody tr:has(.popover-celda[open]) td {
 }
 
 .popover-celda[open] .licencias-opciones {
-    top: calc(100% + 4px);
-    left: 0;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 6px 14px;
@@ -2067,10 +2194,37 @@ table.cases-index tbody tr:has(.popover-celda[open]) td {
     color: var(--color-primary);
 }
 
-.popover-celda[open] .observaciones-panel {
-    top: -10px;
-    left: calc(100% + 8px);
-    width: 290px;
+.btn-obs-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+.btn-obs-trigger:hover {
+    background: var(--color-border-subtle);
+    border-color: var(--color-accent);
+}
+.btn-obs-trigger.has-obs {
+    background: var(--color-uploaded-bg);
+    border-color: var(--color-uploaded);
+}
+
+.obs-floating-popover {
+    position: fixed;
+    z-index: 10000;
+    width: 320px;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -2112,9 +2266,9 @@ table.cases-index tbody tr:has(.popover-celda[open]) td {
     color: var(--color-text);
 }
 
-.observaciones-panel textarea {
+.obs-floating-popover textarea {
     width: 100%;
-    height: 80px;
+    height: 90px;
     font-size: var(--font-sm);
     font-family: inherit;
     resize: vertical;
@@ -2123,10 +2277,10 @@ table.cases-index tbody tr:has(.popover-celda[open]) td {
     padding: 8px;
     box-sizing: border-box;
 }
-.observaciones-panel textarea:focus {
+.obs-floating-popover textarea:focus {
     outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgba(11, 61, 104, 0.15);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.15);
 }
 
 .observaciones-panel-acciones {
@@ -2135,16 +2289,9 @@ table.cases-index tbody tr:has(.popover-celda[open]) td {
     gap: 6px;
 }
 
-.observaciones-panel .observaciones-guardar {
-    padding: 4px 12px;
+.obs-floating-popover .observaciones-guardar {
+    padding: 4px 14px;
     font-size: var(--font-xs);
-}
-
-/* El ícono cambia de 📝 a 🗒️ al tipear (ver Index.cshtml), pero eso no sobrevive un refresh de
-   página — esta regla marca la celda igual apenas se recarga con una nota ya guardada. */
-.observaciones-celda:has(textarea:not(:placeholder-shown)) summary {
-    background: var(--color-uploaded-bg);
-    border-color: var(--color-uploaded);
 }
 
 /* ── Gráficos de barras ──────────────────────────────────────────────────────────────────────

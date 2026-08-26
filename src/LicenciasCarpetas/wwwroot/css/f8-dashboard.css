@@ -1,24 +1,44 @@
 :root {
-    --color-primary: #0b3d68;
-    --color-primary-dark: #082a49;
-    --color-accent: #1a73b0;
-    --color-bg: #f4f6f8;
+    --color-primary: #0b2545;
+    --color-primary-dark: #07172c;
+    --color-primary-light: #133e63;
+    --color-accent: #1d4ed8;
+    --color-accent-hover: #1e40af;
+    --color-gold: #c59b27;
+    --color-gold-hover: #b45309;
+    --color-bg: #f1f5f9;
     --color-surface: #ffffff;
-    --color-border: #d7dde3;
-    --color-text: #1f2933;
-    --color-text-muted: #5c6b7a;
-    --color-pending: #6b7280;
-    --color-pending-bg: #eceff1;
-    --color-uploaded: #926100;
-    --color-uploaded-bg: #fff3d6;
-    --color-confirmed: #1e7a3d;
-    --color-confirmed-bg: #e3f6e9;
-    --color-review: #a11d33;
-    --color-review-bg: #fbe4e8;
-    /* Kept in sync with dashboard.css's --radius (10px) so cards/buttons/inputs read the same
-       corner radius whichever stylesheet a page loads. */
-    --radius: 10px;
-    --shadow-sm: 0 1px 2px rgba(15, 30, 45, 0.08);
+    --color-border: #cbd5e1;
+    --color-border-subtle: #e2e8f0;
+    --color-text: #0f172a;
+    --color-text-muted: #64748b;
+    --color-sidebar-bg: #0b2545;
+    --color-sidebar-border: rgba(255, 255, 255, 0.12);
+    --color-sidebar-text: #e2e8f0;
+    --color-sidebar-text-muted: #94a3b8;
+    --color-sidebar-active-bg: #1d4ed8;
+    --color-sidebar-active-text: #ffffff;
+    --color-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+    --sidebar-width: 248px;
+    --color-pending: #d97706;
+    --color-pending-bg: #fffbeb;
+    --color-pending-border: #fde68a;
+    --color-uploaded: #059669;
+    --color-uploaded-bg: #ecfdf5;
+    --color-uploaded-border: #a7f3d0;
+    --color-confirmed: #0d9488;
+    --color-confirmed-bg: #f0fdfa;
+    --color-review: #e11d48;
+    --color-review-bg: #fff1f2;
+    --color-review-border: #fecdd3;
+    --color-selected-bg: #e0f2fe;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
 }
 
 * { box-sizing: border-box; }
@@ -91,6 +111,49 @@ main > .nav-group {
     border-radius: var(--radius);
     margin-bottom: 16px;
     font-size: 0.9rem;
+}
+
+.btn-primary,
+button.btn-primary,
+a.btn-primary,
+.nav-sync,
+.btn-sync {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #1d4ed8 !important;
+    background-color: #1d4ed8 !important;
+    color: #ffffff !important;
+    border: 1px solid #1e40af !important;
+    border-radius: 8px !important;
+    padding: 6px 14px !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2);
+    transition: background-color 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-primary:hover,
+button.btn-primary:hover,
+a.btn-primary:hover,
+.nav-sync:hover,
+.btn-sync:hover {
+    background: #1e40af !important;
+    background-color: #1e40af !important;
+    color: #ffffff !important;
+    border-color: #1e3a8a !important;
+    box-shadow: 0 4px 6px -1px rgba(29, 78, 216, 0.3);
+}
+
+.btn-primary:active,
+.btn-sync:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.2);
 }
 
 .card {
@@ -320,22 +383,23 @@ table.cases-list .pendiente-checkbox {
     accent-color: #c9782f;
 }
 
-/* Row color on the cases-list table comes only from the Estado dropdown (below) — Marcar and
-   Pendiente Carpeta are plain checkboxes here with no row tint of their own. */
-table.cases-list tbody tr.estado-row-f8 { background: #d9ecd1; }
-table.cases-list tbody tr.estado-row-f8:hover { background: #c7e3ba; }
-table.cases-list tbody tr.estado-row-licencia { background: #fff3c4; }
-table.cases-list tbody tr.estado-row-licencia:hover { background: #fce9a8; }
-table.cases-list tbody tr.estado-row-domicilio { background: #d7e8f7; }
-table.cases-list tbody tr.estado-row-domicilio:hover { background: #c2ddf2; }
-table.cases-list tbody tr.estado-row-certificado { background: #f7e0c2; }
-table.cases-list tbody tr.estado-row-certificado:hover { background: #f2d2a6; }
-table.cases-list tbody tr.estado-row-subida { background: #e3d9f2; }
-table.cases-list tbody tr.estado-row-subida:hover { background: #d5c6ea; }
-table.cases-list tbody tr.estado-row-pendiente { background: #eceff1; }
-table.cases-list tbody tr.estado-row-pendiente:hover { background: #dee3e7; }
-table.cases-list tbody tr.estado-row-denegada { background: #f3a8b3 !important; }
-table.cases-list tbody tr.estado-row-denegada:hover { background: #ee8fa0 !important; }
+table.cases-list th,
+table.cases-index th {
+    color: #000000 !important;
+    font-weight: 800 !important;
+}
+
+table.cases-list td,
+table.cases-index td,
+table.cases-list tbody tr td,
+table.cases-index tbody tr td,
+table.cases-list td input,
+table.cases-list td select,
+table.cases-index td input,
+table.cases-index td select {
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
 
 table.cases-list td:has(select.estado-actual-select) {
     display: flex;
@@ -366,12 +430,14 @@ table.cases-list td:has(select.estado-actual-select) .pendiente-alert {
     animation: review-alert-blink 1.2s ease-in-out infinite;
 }
 
-table.cases-index tbody tr:has(.marked-checkbox:checked) {
-    background: #bfe3b4;
+table.cases-index tbody tr:has(.marked-checkbox:checked),
+table.cases-list tbody tr:has(.marked-checkbox:checked) {
+    background: #dbeafe !important;
 }
 
-table.cases-index tbody tr:has(.marked-checkbox:checked):hover {
-    background: #aed89f;
+table.cases-index tbody tr:has(.marked-checkbox:checked):hover,
+table.cases-list tbody tr:has(.marked-checkbox:checked):hover {
+    background: #bfdbfe !important;
 }
 
 /* Confirmed (folder already uploaded + comuna already notified) is the most important

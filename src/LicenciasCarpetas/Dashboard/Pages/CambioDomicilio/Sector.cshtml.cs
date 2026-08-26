@@ -18,12 +18,13 @@ public class SectorModel(ICambioDomicilioRequestRepository repository) : PageMod
     public void OnGet(FolderSector sector)
     {
         SelectedSector = sector;
-        // Ordered by MarkedAt (the order the operator ticked "Marcar" in on Casos), so the PDF
-        // prints in the same order the cases appear at the top of that list.
-        Cases = repository.GetAll()
-            .Where(c => c.Sector == sector && c.Marked && c.SectorPdfGeneratedAt is null && c.TransferredAt is null)
-            .OrderBy(c => c.MarkedAt)
+        var sectorCases = repository.GetAll()
+            .Where(c => c.Sector == sector && c.SectorPdfGeneratedAt is null && c.TransferredAt is null)
             .ToList();
+
+        Cases = sectorCases.Any(c => c.Marked)
+            ? sectorCases.Where(c => c.Marked).OrderBy(c => c.MarkedAt).ToList()
+            : sectorCases.OrderBy(c => c.CreatedAt).ToList();
     }
 
     /// <summary>Marks every case currently shown for this sector as already printed, so the next

@@ -1,63 +1,183 @@
 @page
 @model LicenciasCarpetas.Dashboard.Pages.ComunasModel
 @{
-    ViewData["Title"] = "Comunas";
+    ViewData["Title"] = "Directorio de Comunas";
 }
+
+<div class="card" style="padding:14px 20px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:22px;">🏛️</span>
+        <div>
+            <h2 style="margin:0; font-size:var(--font-lg); font-weight:700; color:#0f172a;">Directorio Oficial de Comunas</h2>
+            <span style="font-size:var(--font-xs); color:#64748b; font-weight:600;">Direcciones de Tránsito y departamentos de licencias de todo Chile</span>
+        </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:var(--font-sm); padding:6px 12px; border-radius:999px;">
+            @Model.Contacts.Count comunas registradas
+        </span>
+    </div>
+</div>
 
 @if (Model.Message is not null)
 {
-    <p class="message-banner">@Model.Message</p>
+    <p class="message-banner" style="margin-bottom:14px;">@Model.Message</p>
 }
 
-<div class="card" style="padding:16px 20px; margin-bottom:16px;">
-    <form method="get" style="display:flex; gap:10px; align-items:flex-end;">
-        <div>
-            <label class="form-label" for="search">Buscar comuna o correo</label>
-            <input type="text" name="search" id="search" value="@Model.Search" placeholder="ej: Quilpué" />
+<div class="card" style="padding:14px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; background:#ffffff;">
+    <form method="get" style="display:flex; gap:8px; align-items:flex-end; flex:1; min-width:280px;">
+        <div style="flex:1;">
+            <label class="form-label" for="search" style="font-weight:700; color:#1e293b; font-size:var(--font-xs); margin-bottom:4px;">Buscar comuna o correo</label>
+            <input type="text" name="search" id="search" value="@Model.Search" placeholder="ej: Valparaíso, Las Condes, Quilpué..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-weight:600;" />
         </div>
-        <button type="submit" class="btn-primary" style="padding:8px 16px;">Buscar</button>
-        <a asp-page="/Comunas" class="nav-pill">Limpiar</a>
+        <button type="submit" class="btn-primary" style="padding:6px 14px; font-weight:700; border-radius:6px;">Buscar</button>
+        @if (!string.IsNullOrEmpty(Model.Search))
+        {
+            <a asp-page="/Comunas" class="nav-pill" style="padding:6px 12px; font-weight:600; border-radius:6px;">Limpiar</a>
+        }
+    </form>
+
+    <div style="width:1px; height:36px; background:#e2e8f0;"></div>
+
+    <form method="post" asp-page-handler="Add" style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
+        <div>
+            <label class="form-label" style="font-weight:700; color:#1e293b; font-size:var(--font-xs); margin-bottom:4px;">Nueva Comuna</label>
+            <input type="text" name="comuna" required placeholder="ej: PAPUDO" style="border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-weight:600; text-transform:uppercase;" />
+        </div>
+        <div>
+            <label class="form-label" style="font-weight:700; color:#1e293b; font-size:var(--font-xs); margin-bottom:4px;">Correo Municipal</label>
+            <input type="text" name="correo" required placeholder="ej: licencias@munipapudo.cl" style="border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px;" />
+        </div>
+        <button type="submit" class="btn-primary" style="padding:6px 14px; font-weight:700; border-radius:6px; background:#16a34a;">+ Agregar</button>
     </form>
 </div>
 
-<div class="card" style="padding:16px 20px; margin-bottom:16px;">
-    <form method="post" asp-page-handler="Add" style="display:flex; gap:10px; align-items:flex-end;">
-        <div>
-            <label class="form-label">Comuna</label>
-            <input type="text" name="comuna" required placeholder="ej: VIÑA DEL MAR" />
-        </div>
-        <div>
-            <label class="form-label">Correo</label>
-            <input type="text" name="correo" required placeholder="ej: licencias@munivina.cl" />
-        </div>
-        <button type="submit" class="btn-primary" style="padding:8px 16px;">Agregar contacto</button>
-    </form>
-</div>
-
-<div class="card table-card">
-    <table class="cases">
+<div class="card table-card" style="border:1px solid #e2e8f0; border-radius:8px; box-shadow:var(--shadow-sm); overflow:hidden;">
+    <form id="edit-anti-forgery-form" method="post" style="display:none;"></form>
+    <table class="cases" style="width:100%; border-collapse:collapse;">
         <thead>
-            <tr>
-                <th>Comuna</th>
-                <th>Correo</th>
-                <th>Acción</th>
+            <tr style="background:#e2e8f0; color:#0f172a;">
+                <th style="text-align:left; padding:10px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:35%;">Comuna</th>
+                <th style="text-align:left; padding:10px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:45%;">Correo Electrónico de Contacto</th>
+                <th style="text-align:center; padding:10px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:20%;">Acciones</th>
             </tr>
         </thead>
         <tbody>
-        @foreach (var contact in Model.Contacts)
+        @if (Model.Contacts.Count == 0)
         {
             <tr>
-                <td class="text-cell">@contact.Comuna</td>
-                <td class="text-cell">@contact.Email</td>
-                <td>
-                    <form method="post" asp-page-handler="Delete" asp-route-search="@Model.Search"
-                          onsubmit="return confirm('¿Eliminar este contacto?');">
-                        <input type="hidden" name="id" value="@contact.Id" />
-                        <button type="submit" class="btn-danger" title="Eliminar contacto">✕</button>
-                    </form>
+                <td colspan="3" style="text-align:center; padding:32px; color:#64748b; font-weight:600;">
+                    No se encontraron comunas que coincidan con la búsqueda "@Model.Search".
                 </td>
             </tr>
+        }
+        else
+        {
+            var idx = 0;
+            @foreach (var contact in Model.Contacts)
+            {
+                var bg = idx % 2 == 1 ? "background:#f8fafc;" : "background:#ffffff;";
+                idx++;
+                <tr id="row-@contact.Id" style="@bg border-bottom:1px solid #e2e8f0;">
+                    <td class="text-cell" style="padding:8px 16px;">
+                        <span id="view-comuna-@contact.Id" style="text-transform:uppercase; font-weight:700; color:#0f172a;">📍 @contact.Comuna</span>
+                        <input type="text" id="edit-comuna-@contact.Id" value="@contact.Comuna" style="display:none; width:100%; border:1px solid #3b82f6; border-radius:4px; padding:4px 8px; font-weight:700; text-transform:uppercase; background:#ffffff;" />
+                    </td>
+                    <td class="text-cell" style="padding:8px 16px;">
+                        <span id="view-email-@contact.Id">
+                            <a href="mailto:@contact.Email" style="color:#2563eb; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                ✉️ @contact.Email
+                            </a>
+                        </span>
+                        <input type="email" id="edit-email-@contact.Id" value="@contact.Email" style="display:none; width:100%; border:1px solid #3b82f6; border-radius:4px; padding:4px 8px; font-weight:600; background:#ffffff;" />
+                    </td>
+                    <td style="text-align:center; padding:8px 16px; white-space:nowrap;">
+                        <div id="view-actions-@contact.Id" style="display:inline-flex; gap:6px; align-items:center; justify-content:center;">
+                            <button type="button" class="btn-outline" style="padding:4px 10px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" onclick="startEditComuna(@contact.Id)">✏️ Editar</button>
+                            <form method="post" asp-page-handler="Delete" asp-route-search="@Model.Search"
+                                  onsubmit="return confirm('¿Eliminar el contacto de @contact.Comuna?');" style="display:inline;">
+                                <input type="hidden" name="id" value="@contact.Id" />
+                                <button type="submit" class="btn-danger" style="padding:4px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" title="Eliminar contacto">✕ Quitar</button>
+                            </form>
+                        </div>
+                        <div id="edit-actions-@contact.Id" style="display:none; gap:6px; align-items:center; justify-content:center;">
+                            <button type="button" class="btn-primary" style="padding:4px 10px; border-radius:4px; font-size:var(--font-xs); font-weight:700; background:#16a34a; cursor:pointer;" onclick="saveEditComuna(@contact.Id)">💾 Guardar</button>
+                            <button type="button" class="nav-pill" style="padding:4px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:600; cursor:pointer;" onclick="cancelEditComuna(@contact.Id)">✕ Cancelar</button>
+                        </div>
+                    </td>
+                </tr>
+            }
         }
         </tbody>
     </table>
 </div>
+
+<script>
+    function startEditComuna(id) {
+        document.getElementById('view-comuna-' + id).style.display = 'none';
+        document.getElementById('edit-comuna-' + id).style.display = 'block';
+        document.getElementById('view-email-' + id).style.display = 'none';
+        document.getElementById('edit-email-' + id).style.display = 'block';
+        document.getElementById('view-actions-' + id).style.display = 'none';
+        document.getElementById('edit-actions-' + id).style.display = 'inline-flex';
+        document.getElementById('edit-comuna-' + id).focus();
+    }
+
+    function cancelEditComuna(id) {
+        document.getElementById('view-comuna-' + id).style.display = 'inline';
+        document.getElementById('edit-comuna-' + id).style.display = 'none';
+        document.getElementById('view-email-' + id).style.display = 'inline';
+        document.getElementById('edit-email-' + id).style.display = 'none';
+        document.getElementById('view-actions-' + id).style.display = 'inline-flex';
+        document.getElementById('edit-actions-' + id).style.display = 'none';
+    }
+
+    function saveEditComuna(id) {
+        var comuna = document.getElementById('edit-comuna-' + id).value.trim();
+        var correo = document.getElementById('edit-email-' + id).value.trim();
+
+        if (!comuna || !correo || !correo.includes('@@')) {
+            alert('Por favor ingrese un nombre de comuna y un correo electrónico válido.');
+            return;
+        }
+
+        var tokenInput = document.querySelector('#edit-anti-forgery-form input[name="__RequestVerificationToken"]');
+        var token = tokenInput ? tokenInput.value : '';
+
+        var body = '__RequestVerificationToken=' + encodeURIComponent(token) +
+                   '&id=' + encodeURIComponent(id) +
+                   '&comuna=' + encodeURIComponent(comuna) +
+                   '&correo=' + encodeURIComponent(correo);
+
+        fetch('?handler=Edit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data && data.ok) {
+                document.getElementById('view-comuna-' + id).textContent = '📍 ' + comuna.toUpperCase();
+                var emailLink = document.querySelector('#view-email-' + id + ' a');
+                if (emailLink) {
+                    emailLink.href = 'mailto:' + correo;
+                    emailLink.textContent = '✉️ ' + correo;
+                }
+                cancelEditComuna(id);
+                var row = document.getElementById('row-' + id);
+                if (row) {
+                    row.style.background = '#dcfce7';
+                    setTimeout(function() { row.style.background = ''; }, 1200);
+                }
+            } else {
+                alert(data.message || 'Error al guardar la comuna.');
+            }
+        })
+        .catch(function() {
+            alert('Error de conexión al guardar.');
+        });
+    }
+</script>

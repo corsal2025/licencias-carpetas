@@ -28,13 +28,78 @@ public interface IComunaDirectory
     /// domain or email don't have a valid shape.
     /// </summary>
     bool AddContact(string csvPath, string comuna, string contactEmail, string domain);
+    void EnsureSeed(string csvPath);
 }
 
-public sealed class ComunaDirectory : IComunaDirectory
+public sealed class ComunaDirectory(LicenciasCarpetas.Persistence.IComunaContactRepository? contactRepository = null) : IComunaDirectory
 {
+    private static readonly string DefaultSeedCsv = """
+        Comuna,ContactEmail,Domain
+        VIÑA DEL MAR,licencias@vinadelmar.cl,vinadelmar.cl
+        QUILPUÉ,licencias@quilpue.cl,quilpue.cl
+        VILLA ALEMANA,licencias@villalemana.cl,villalemana.cl
+        CONCÓN,licencias@concon.cl,concon.cl
+        CASABLANCA,licencias@municipalidadcasablanca.cl,municipalidadcasablanca.cl
+        QUILLOTA,licencias@quillota.cl,quillota.cl
+        LA CALERA,licencias@lacalera.cl,lacalera.cl
+        LIMACHE,licencias@munilimache.cl,munilimache.cl
+        SAN ANTONIO,licencias@sanantonio.cl,sanantonio.cl
+        SANTIAGO,licencias@munistgo.cl,munistgo.cl
+        PROVIDENCIA,licencias@providencia.cl,providencia.cl
+        LAS CONDES,licencias@lascondes.cl,lascondes.cl
+        ÑUÑOA,licencias@nunoa.cl,nunoa.cl
+        MAIPÚ,licencias@maipu.cl,maipu.cl
+        LA FLORIDA,licencias@laflorida.cl,laflorida.cl
+        RANCAGUA,licencias@rancagua.cl,rancagua.cl
+        CONCEPCIÓN,licencias@concepcion.cl,concepcion.cl
+        LA SERENA,licencias@laserena.cl,laserena.cl
+        ANTOFAGASTA,licencias@municipalidadantofagasta.cl,municipalidadantofagasta.cl
+        TEMUCO,licencias@temuco.cl,temuco.cl
+        PUERTO MONTT,licencias@puertomontt.cl,puertomontt.cl
+        """;
+
+    public void EnsureSeed(string csvPath)
+    {
+        if (string.IsNullOrWhiteSpace(csvPath)) return;
+        if (!File.Exists(csvPath) || new FileInfo(csvPath).Length == 0)
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(csvPath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                if (contactRepository is not null)
+                {
+                    var existingContacts = contactRepository.All();
+                    if (existingContacts.Count > 0)
+                    {
+                        var linesList = new List<string> { "Comuna,ContactEmail,Domain" };
+                        foreach (var c in existingContacts)
+                        {
+                            var domain = ExtractDomain(c.Email);
+                            linesList.Add($"{c.Comuna},{c.Email},{domain}");
+                        }
+                        File.WriteAllLines(csvPath, linesList);
+                        return;
+                    }
+                }
+
+                File.WriteAllText(csvPath, DefaultSeedCsv);
+                SeedRepositoryFromDefault();
+            }
+            catch
+            {
+                // Silencioso si falla escritura
+            }
+        }
+    }
+
     public IReadOnlyList<ComunaRoutingEntry> LoadFromCsv(string csvPath)
     {
-        if (!File.Exists(csvPath))
+        if (string.IsNullOrWhiteSpace(csvPath) || !File.Exists(csvPath))
         {
             return [];
         }
@@ -164,6 +229,27 @@ public sealed class ComunaDirectory : IComunaDirectory
         File.WriteAllLines(tempPath, lines);
         File.Move(tempPath, csvPath, overwrite: true);
         return true;
+    }
+
+    private void SeedRepositoryFromDefault()
+    {
+        if (contactRepository is null) return;
+        var lines = DefaultSeedCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines.Skip(1))
+        {
+            var parts = line.Split(',');
+            if (parts.Length >= 2)
+            {
+                var comuna = parts[0].Trim();
+                var email = parts[1].Trim();
+                contactRepository.Upsert(new LicenciasCarpetas.Domain.ComunaContact
+                {
+                    Comuna = comuna,
+                    Email = email,
+                    Notes = "Directorio inicial"
+                });
+            }
+        }
     }
 
     private static bool IsValidDomainShape(string domain) =>

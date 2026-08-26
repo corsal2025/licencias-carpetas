@@ -1,27 +1,24 @@
-// Saving a row (or adding a case, or importing) posts and reloads the whole page. Without this,
-// every one of those actions snaps the operator back to the top-left of a table they were working
-// through halfway down — reads as the app "jumping" or restarting on every edit. Scroll position is
-// kept in sessionStorage instead of the URL so a normal filter change (which does change the URL and
-// really does show a different list) still starts fresh at the top, as it should.
+// Preserva la posición exacta de scroll (ventana y tabla horizontal/vertical) entre acciones,
+// recargas, envíos de formularios y redirecciones, evitando saltos de pantalla molestos.
 (function () {
-    var key = 'scroll:' + location.pathname + location.search;
+    var key = 'scroll_state:' + location.pathname;
 
     function tableCard() {
-        return document.querySelector('.card.table-card');
+        return document.querySelector('.card.table-card') || document.querySelector('.table-card');
     }
 
     function save() {
         var card = tableCard();
         var state = {
-            windowY: window.scrollY,
+            windowY: window.scrollY || window.pageYOffset || 0,
+            windowX: window.scrollX || window.pageXOffset || 0,
             cardX: card ? card.scrollLeft : 0,
-            cardY: card ? card.scrollTop : 0
+            cardY: card ? card.scrollTop : 0,
+            time: Date.now()
         };
         try {
             sessionStorage.setItem(key, JSON.stringify(state));
-        } catch (e) {
-            // Private browsing or a full quota — losing the scroll memory is not worth breaking the page.
-        }
+        } catch (e) {}
     }
 
     function restore() {
@@ -40,25 +37,67 @@
             return;
         }
 
-        window.scrollTo(0, state.windowY || 0);
+        if (!state) return;
+
+        // Restaurar ventana
+        if (typeof state.windowY === 'number' || typeof state.windowX === 'number') {
+            window.scrollTo(state.windowX || 0, state.windowY || 0);
+        }
+
+        // Restaurar contenedor de tabla interna
         var card = tableCard();
         if (card) {
-            card.scrollLeft = state.cardX || 0;
-            card.scrollTop = state.cardY || 0;
+            if (typeof state.cardX === 'number') card.scrollLeft = state.cardX;
+            if (typeof state.cardY === 'number') card.scrollTop = state.cardY;
         }
     }
 
-    // A GET filter (office, año, "Ver N por página"...) genuinely shows a different list and should
-    // start at the top, so only POSTs (save a row, add a case, toggle, import, delete) are remembered.
+    if ('scrollRestoration' in history) {
+        try {
+            history.scrollRestoration = 'manual';
+        } catch (e) {}
+    }
+
+    // Guardar posición al enviar cualquier formulario o salir de la página
     document.addEventListener('submit', function (event) {
-        if (event.target instanceof HTMLFormElement && event.target.method.toUpperCase() === 'POST') {
-            save();
-        }
+        save();
     }, true);
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', restore);
-    } else {
-        restore();
+    window.addEventListener('beforeunload', save);
+
+    // Guardar también continuamente con debounce en scroll
+    var scrollSaveTimeout = null;
+    function debounceSave() {
+        if (scrollSaveTimeout) clearTimeout(scrollSaveTimeout);
+        scrollSaveTimeout = setTimeout(save, 100);
     }
+
+    window.addEventListener('scroll', debounceSave, { passive: true });
+
+    function attachCardListener() {
+        var card = tableCard();
+        if (card) {
+            card.addEventListener('scroll', debounceSave, { passive: true });
+        }
+    }
+
+    function runRestoreSequence() {
+        restore();
+        requestAnimationFrame(restore);
+        setTimeout(restore, 50);
+        setTimeout(restore, 150);
+        setTimeout(restore, 350);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            attachCardListener();
+            runRestoreSequence();
+        });
+    } else {
+        attachCardListener();
+        runRestoreSequence();
+    }
+
+    window.addEventListener('load', runRestoreSequence);
 })();

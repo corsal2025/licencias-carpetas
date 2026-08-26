@@ -45,30 +45,32 @@
                 var puedeF8 = User.HasClaim("mod:f8-urgentes", "true");
             }
             <nav class="sidebar-nav">
-                <a asp-page="/Inicio" class="sidebar-link sidebar-link-home">🏠 Panel de Control</a>
-                <button type="button" class="sidebar-link sidebar-link-home" onclick="openGlobalSearch()" style="width:100%; text-align:left; background:none; border:none; cursor:pointer; font:inherit; color:inherit; display:flex; align-items:center;">
-                    <span>🔍 Buscar</span>
-                    <kbd style="margin-left:auto; font-size:var(--font-xs); background:var(--color-bg); padding:1px 5px; border-radius:4px; border:1px solid var(--color-border);">Ctrl+K</kbd>
+                <a asp-page="/Inicio" class="sidebar-link @(Context.Request.Path == "/Inicio" ? "active" : "")">🏠 Panel de Control</a>
+                <button type="button" class="sidebar-search-btn" onclick="openGlobalSearch()">
+                    <span class="search-label">🔍 Buscar</span>
+                    <kbd>Ctrl+K</kbd>
                 </button>
 
                 <details open="@(enGestionLicencias || enCambioDomicilio || enF8 ? "open" : null)" class="sidebar-section sidebar-modules-collapsible">
-                    <summary class="sidebar-link sidebar-link-home">📦 Módulos</summary>
-                    <a asp-page="/Index" class="sidebar-link @(enGestionLicencias ? "active" : "")">🪪 Gestión de Licencias</a>
-                    @* Cambio de Domicilio no es un link plano — tiene dos flujos (recibir pedidos
-                       de otras comunas / pedirle a otras comunas), así que el switcher de módulos
-                       muestra directamente sus dos entradas en vez de un solo link genérico. *@
-                    @if (puedeCambioDomicilio)
-                    {
-                        @* Certificado y Descartados viven ahora en la barra "Informes" de la propia
-                           pantalla de Enviar Cambio de Domicilio, junto a Informe Archivo/Oficina 43
-                           — ya no en el sidebar. *@
-                        <a asp-page="/CambioDomicilio/Index" class="sidebar-link @(enCambioDomicilio && !enCambioDomicilioSolicitar ? "active" : "")">📥 Enviar Cambio de Domicilio</a>
-                        <a asp-page="/CambioDomicilio/Solicitar/Index" class="sidebar-link @(enCambioDomicilioSolicitar ? "active" : "")">📤 Solicitar Cambios de Domicilio</a>
-                    }
-                    @if (puedeF8)
-                    {
-                        <a asp-page="/F8/Index" class="sidebar-link @(enF8 ? "active" : "")">🚨 F8 Urgentes</a>
-                    }
+                    <summary class="sidebar-summary">📦 Módulos</summary>
+                    <div class="sidebar-modules-list">
+                        <a asp-page="/Index" class="sidebar-link @(enGestionLicencias ? "active" : "")">🪪 Gestión de Licencias</a>
+                        @* Cambio de Domicilio no es un link plano — tiene dos flujos (recibir pedidos
+                           de otras comunas / pedirle a otras comunas), así que el switcher de módulos
+                           muestra directamente sus dos entradas en vez de un solo link genérico. *@
+                        @if (puedeCambioDomicilio)
+                        {
+                            @* Certificado y Descartados viven ahora en la barra "Informes" de la propia
+                               pantalla de Enviar Cambio de Domicilio, junto a Informe Archivo/Oficina 43
+                               — ya no en el sidebar. *@
+                            <a asp-page="/CambioDomicilio/Index" class="sidebar-link @(enCambioDomicilio && !enCambioDomicilioSolicitar ? "active" : "")">📥 Enviar Cambio de Domicilio</a>
+                            <a asp-page="/CambioDomicilio/Solicitar/Index" class="sidebar-link @(enCambioDomicilioSolicitar ? "active" : "")">📤 Solicitar Cambios de Domicilio</a>
+                        }
+                        @if (puedeF8)
+                        {
+                            <a asp-page="/F8/Index" class="sidebar-link @(enF8 ? "active" : "")">🚨 F8 Urgentes</a>
+                        }
+                    </div>
                 </details>
 
                 @* Estadísticas y la libreta de Comunas (Gestión de Licencias) quedan afuera de
@@ -79,28 +81,28 @@
                 }
                 @if (puedeVerEstadisticasDelModuloActivo)
                 {
-                    <a asp-page="@estadisticasPage" class="sidebar-link sidebar-link-home sidebar-link-module">📈 Estadísticas</a>
+                    <a asp-page="@estadisticasPage" class="sidebar-link @(Context.Request.Path.Value?.Contains("Estadisticas", StringComparison.OrdinalIgnoreCase) == true ? "active" : "")">📈 Estadísticas</a>
                 }
                 @if (puedeVerReportesYReferencia)
                 {
-                    <a asp-page="/Comunas" class="sidebar-link sidebar-link-home sidebar-link-reference">🏘️ Comunas</a>
+                    <a asp-page="/Comunas" class="sidebar-link @(Context.Request.Path == "/Comunas" ? "active" : "")">🏘️ Comunas</a>
                 }
                 @if (puedeImportar)
                 {
-                    <a asp-page="/Importar" class="sidebar-link sidebar-link-home sidebar-link-sync">📥 Importar Excel</a>
+                    <a asp-page="/Importar" class="sidebar-link @(Context.Request.Path == "/Importar" ? "active" : "")">📥 Importar Excel</a>
                 }
             </nav>
             <div class="sidebar-footer">
                 @if (User.IsInRole("Administrador"))
                 {
-                    <a asp-page="/Usuarios" class="sidebar-link">👥 Usuarios</a>
+                    <a asp-page="/Usuarios" class="sidebar-link @(Context.Request.Path == "/Usuarios" ? "active" : "")">👥 Usuarios</a>
                 }
                 @if (enGestionLicencias && puedeVerReportesYReferencia)
                 {
-                    <a asp-page="/Papelera" class="sidebar-link sidebar-link-reference">🗑️ Papelera</a>
+                    <a asp-page="/Papelera" class="sidebar-link @(Context.Request.Path == "/Papelera" ? "active" : "")">🗑️ Papelera</a>
                 }
-                <a asp-page="/ChangePassword" class="sidebar-link sidebar-link-account">🔑 Cambiar contraseña</a>
-                <form asp-page="/Logout" method="post"><button type="submit" class="sidebar-link sidebar-link-logout">🚪 Salir</button></form>
+                <a asp-page="/ChangePassword" class="sidebar-link @(Context.Request.Path == "/ChangePassword" ? "active" : "")">🔑 Cambiar contraseña</a>
+                <form asp-page="/Logout" method="post"><button type="submit" class="sidebar-link-logout">🚪 Salir</button></form>
             </div>
         </aside>
         <div class="app-content">
@@ -224,6 +226,51 @@
             if (!str) return '';
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
+
+        // Formato al copiar RUT: sin puntos, con guión, y con cero a la izquierda si es menor a 10 millones
+        function formatRutForClipboard(text) {
+            if (!text) return '';
+            var clean = text.replace(/[\.\s]/g, '').trim();
+            if (!clean) return text;
+
+            var match = clean.match(/^(\d{1,8})-?([\dkK])$/i);
+            if (match) {
+                var cuerpo = match[1];
+                var dv = match[2].toUpperCase();
+                cuerpo = cuerpo.padStart(8, '0');
+                return cuerpo + '-' + dv;
+            }
+            return clean;
+        }
+
+        document.addEventListener('copy', function (event) {
+            var active = document.activeElement;
+            var isRutTarget = active && (
+                active.classList.contains('rut-input') ||
+                active.name === 'rut' ||
+                active.id === 'drawer-rut' ||
+                (active.closest && (active.closest('.rut-cell') || active.closest('.col-sticky-rut') || active.closest('.rut-con-obs')))
+            );
+
+            var textToFormat = null;
+            if (isRutTarget && active.value) {
+                textToFormat = active.value.substring(active.selectionStart, active.selectionEnd) || active.value;
+            } else {
+                var selection = window.getSelection ? window.getSelection().toString().trim() : '';
+                var cleanSel = selection.replace(/[\.\s]/g, '');
+                if (/^\d{6,8}-?[\dkK]$/i.test(cleanSel)) {
+                    textToFormat = selection;
+                }
+            }
+
+            if (textToFormat) {
+                var formatted = formatRutForClipboard(textToFormat);
+                if (formatted) {
+                    event.clipboardData.setData('text/plain', formatted);
+                    event.preventDefault();
+                }
+            }
+        });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

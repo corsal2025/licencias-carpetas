@@ -13,12 +13,6 @@
 @if (Model.Message is not null)
 {
     <p id="page-message-banner" class="message-banner @(Model.MessageIsError ? "message-error" : "")">@Model.Message</p>
-    @* La tabla se desplaza mucho en horizontal (13+ columnas) — sin esto, un error como "Ingrese
-       la comuna antes de solicitar" queda arriba de la página mientras el operador sigue mirando
-       la columna Acción a la derecha, y parece que apretar el botón no hizo nada. *@
-    <script>
-        document.getElementById('page-message-banner').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    </script>
 }
 
 <div class="card" style="padding:4px 10px; margin-bottom:6px;">
@@ -93,15 +87,14 @@
         </div>
         @if (User.IsInRole("Administrador") || User.IsInRole("Jefatura") || User.IsInRole("Coordinador"))
         {
-            @* Reportes imprimibles, alineados a la derecha de la fila de selects — mismo lugar
-               relativo que en F8 y Cambio de Domicilio, no mezclado con los checkboxes de abajo. *@
-            <span style="margin-left:auto; display:flex; flex-direction:column; gap:3px; align-items:center;">
-                <span style="font-weight:700; font-size:var(--font-lg); color:#926100;">Informes</span>
-                <span style="display:flex; gap:8px; align-items:center;">
+            @* Reportes imprimibles, alineados a la derecha de la fila de selects — estilo institucional *@
+            <div style="margin-left:auto; display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center;">
+                <span style="font-weight:700; font-size:var(--font-xs); color:var(--color-primary); text-transform:uppercase; letter-spacing:0.6px; text-align:center; display:block; width:100%;">Informes de Sector</span>
+                <div style="display:flex; gap:8px; align-items:center; justify-content:center;">
                     <a asp-page="/Sector" asp-route-sector="Archivo" class="nav-pill nav-doc text-sm">📄 Informe Archivo</a>
                     <a asp-page="/Sector" asp-route-sector="Oficina43" class="nav-pill nav-doc text-sm">📄 Informe Oficina 43</a>
-                </span>
-            </span>
+                </div>
+            </div>
         }
         @* Checkboxes + Filtrar + Limpiar en su propia fila, separados de los selects — así no se
            cortan entre sí al envolver cuando la ventana es angosta (6 selects + buscador ya llenan
@@ -381,20 +374,12 @@
                 <td class="text-cell rut-cell col-sticky-rut">
                     <span class="rut-con-obs">
                         <input type="text" name="rut" form="case-form-@item.Id" class="input-inline rut-input" size="14" value="@item.Rut" />
-                        <details class="popover-celda observaciones-celda">
-                            <summary title="Observaciones">@(string.IsNullOrWhiteSpace(item.Observations) ? "📝" : "🗒️")</summary>
-                            <div class="popover-panel observaciones-panel">
-                                <div class="observaciones-panel-header">
-                                    <span>Observación — @item.FullName</span>
-                                    <button type="button" class="observaciones-cerrar" aria-label="Cerrar" title="Cerrar">✕</button>
-                                </div>
-                                <textarea name="observaciones" form="case-form-@item.Id"
-                                          placeholder="Observación sobre esta persona…">@item.Observations</textarea>
-                                <div class="observaciones-panel-acciones">
-                                    <button type="button" class="btn-primary btn-sm observaciones-guardar" onclick="closeAndSaveObs(this)">Listo</button>
-                                </div>
-                            </div>
-                        </details>
+                        <button type="button" class="btn-obs-trigger @(string.IsNullOrWhiteSpace(item.Observations) ? "" : "has-obs")"
+                                title="Observaciones"
+                                onclick="toggleObsPopover(this, @item.Id)">
+                            @(string.IsNullOrWhiteSpace(item.Observations) ? "📝" : "🗒️")
+                        </button>
+                        <textarea name="observaciones" form="case-form-@item.Id" style="display:none;">@item.Observations</textarea>
                     </span>
                 </td>
                 <td class="text-cell">@OfficeCatalog.Display(item.Office)</td>
@@ -485,18 +470,20 @@
                         }
                     </select>
                 </td>
-                <td style="display:flex; gap:6px; align-items:center;">
+                <td style="display:flex; gap:6px; align-items:center; justify-content:center;">
                     <button type="button" class="btn-drawer-open" onclick="openCaseDrawer(@item.Id)" title="Abrir panel lateral de detalle">👁️</button>
                     <button type="button" class="btn-audit-log" onclick="openAuditModal(@item.Id, '@(item.FullName?.Replace("'", "\\'"))')" title="Ver historial de cambios de este caso">📜</button>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id"
+                          asp-route-office="@Model.Office" asp-route-year="@Model.Year" asp-route-month="@Model.Month"
+                          asp-route-estado="@Model.Estado" asp-route-decision="@Model.Decision" asp-route-sector="@Model.Sector"
+                          asp-route-needsReview="@Model.NeedsReview" asp-route-otherComuna="@Model.OtherComuna"
+                          asp-route-search="@Model.Search" asp-route-p="@Model.PageNumber"
+                          asp-route-size="@Model.PageSize" asp-route-sort="@Model.Sort" asp-route-desc="@Model.Descending"
+                          onsubmit="return confirm('¿Enviar este caso a la papelera?');" style="display:inline;">
+                        <button type="submit" class="btn-danger" style="padding:4px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" title="Eliminar caso">🗑️</button>
+                    </form>
                     @if (puedeCambioDomicilio)
                     {
-                        @* Crea-y-manda en un clic: arma una solicitud en "Solicitar Cambios de
-                           Domicilio" con lo que ya está en la fila (nombre, RUT, comuna) y manda el
-                           correo a la comuna de inmediato — sin pasar por esa pantalla, y sin exigir
-                           que el operador guarde antes de solicitar (ver prepararSolicitar más abajo).
-                           Visible según el valor ACTUAL del desplegable Estado carpeta, no según lo
-                           guardado en la base — si no fuera así, elegir la opción no mostraba nada
-                           hasta recargar la página después de un Guardar. *@
                         <form method="post" asp-page-handler="SolicitarCambioDomicilio" class="solicitar-form"
                               style="display:@(item.FolderState == FolderState.CambioDomicilioSolicitado ? "inline" : "none");"
                               data-solicitar-comuna-id="comuna-@item.Id" data-solicitar-estado-id="estado-@item.Id"
@@ -636,6 +623,17 @@
         <p style="color:var(--color-text-muted);">Cargando historial...</p>
     </div>
 </dialog>
+
+<div id="obs-floating-popover" class="obs-floating-popover" style="display:none;">
+    <div class="observaciones-panel-header">
+        <span id="obs-popover-title">Observación</span>
+        <button type="button" class="observaciones-cerrar" onclick="closeObsPopover()" aria-label="Cerrar" title="Cerrar">✕</button>
+    </div>
+    <textarea id="obs-popover-textarea" placeholder="Observación sobre esta persona…"></textarea>
+    <div class="observaciones-panel-acciones">
+        <button type="button" class="btn-primary btn-sm observaciones-guardar" onclick="saveAndCloseObsPopover()">Listo</button>
+    </div>
+</div>
 
 @section Scripts {
 <script>
@@ -792,38 +790,168 @@
         });
     });
 
-    // Observaciones: cambiar ícono según contenido y marcar como pendiente de guardado
-    document.querySelectorAll('.observaciones-celda textarea').forEach(function (textarea) {
-        textarea.addEventListener('input', function () {
-            var cell = textarea.closest('.observaciones-celda');
-            if (!cell) return;
-            var summary = cell.querySelector('summary');
-            if (summary) {
-                summary.textContent = textarea.value.trim().length > 0 ? '🗒️' : '📝';
-            }
-            markUnsaved(textarea);
-        });
-    });
+    // ── Popover Flotante de Observaciones (Portal Independiente) ────────────────
+    var activeObsCaseId = null;
+    var activeObsTriggerBtn = null;
 
-    document.querySelectorAll('.observaciones-cerrar').forEach(function (boton) {
-        boton.addEventListener('click', function () {
-            var cell = boton.closest('.observaciones-celda');
-            if (cell) cell.removeAttribute('open');
-        });
-    });
+    function toggleObsPopover(btn, caseId) {
+        var popover = document.getElementById('obs-floating-popover');
+        if (!popover) return;
 
-    function closeAndSaveObs(btn) {
-        var cell = btn.closest('.observaciones-celda');
-        if (cell) {
-            cell.removeAttribute('open');
-            var tr = cell.closest('tr');
-            var form = tr ? tr.querySelector('form[id^="case-form-"]') : null;
-            if (form) autoSaveCaseForm(form);
+        if (activeObsCaseId === caseId && popover.style.display !== 'none') {
+            saveAndCloseObsPopover();
+            return;
+        }
+
+        if (activeObsCaseId && popover.style.display !== 'none') {
+            saveAndCloseObsPopover();
+        }
+
+        activeObsCaseId = caseId;
+        activeObsTriggerBtn = btn;
+
+        var row = btn.closest('tr');
+        var rowTextarea = row ? row.querySelector('textarea[name="observaciones"]') : null;
+        var nameInput = row ? row.querySelector('input[name="nombre"]') : null;
+        var fullName = nameInput ? nameInput.value.trim() : ('Caso #' + caseId);
+        var currentVal = rowTextarea ? rowTextarea.value : '';
+
+        var titleSpan = document.getElementById('obs-popover-title');
+        if (titleSpan) titleSpan.textContent = 'Observación — ' + (fullName || 'Caso #' + caseId);
+
+        var ta = document.getElementById('obs-popover-textarea');
+        if (ta) {
+            ta.value = currentVal;
+        }
+
+        popover.style.display = 'flex';
+        positionObsFloatingPopover();
+
+        if (ta) {
+            ta.focus({ preventScroll: true });
         }
     }
 
-    // Cerrar popovers al hacer clic afuera
-    document.addEventListener('click', function (event) {
+    function positionObsFloatingPopover() {
+        var popover = document.getElementById('obs-floating-popover');
+        if (!popover || popover.style.display === 'none' || !activeObsTriggerBtn) return;
+
+        var rect = activeObsTriggerBtn.getBoundingClientRect();
+        var ancho = 320;
+        var alto = 190;
+
+        var cabeADerecha = (rect.right + 8 + ancho) <= window.innerWidth;
+        var left = cabeADerecha ? (rect.right + 8) : Math.max(10, rect.left - ancho - 8);
+        if (!cabeADerecha && left < 10) {
+            left = Math.max(10, window.innerWidth - ancho - 10);
+        }
+
+        var top = rect.top - 10;
+        if (top + alto > window.innerHeight - 10) {
+            top = Math.max(10, window.innerHeight - alto - 10);
+        }
+        if (top < 10) top = 10;
+
+        popover.style.top = Math.round(top) + 'px';
+        popover.style.left = Math.round(left) + 'px';
+    }
+
+    function closeObsPopover() {
+        var popover = document.getElementById('obs-floating-popover');
+        if (popover) popover.style.display = 'none';
+        activeObsCaseId = null;
+        activeObsTriggerBtn = null;
+    }
+
+    function saveAndCloseObsPopover() {
+        if (!activeObsCaseId || !activeObsTriggerBtn) {
+            closeObsPopover();
+            return;
+        }
+        var popover = document.getElementById('obs-floating-popover');
+        var ta = document.getElementById('obs-popover-textarea');
+        var newVal = ta ? ta.value : '';
+
+        var row = activeObsTriggerBtn.closest('tr');
+        if (row) {
+            var rowTextarea = row.querySelector('textarea[name="observaciones"]');
+            if (rowTextarea) {
+                rowTextarea.value = newVal;
+                markUnsaved(rowTextarea);
+            }
+            activeObsTriggerBtn.textContent = newVal.trim().length > 0 ? '🗒️' : '📝';
+            if (newVal.trim().length > 0) {
+                activeObsTriggerBtn.classList.add('has-obs');
+            } else {
+                activeObsTriggerBtn.classList.remove('has-obs');
+            }
+            var form = row.querySelector('form[id^="case-form-"]');
+            if (form) autoSaveCaseForm(form);
+        }
+        closeObsPopover();
+    }
+
+    // Escucha de escritura en el popover de observaciones
+    (function () {
+        var popoverTa = document.getElementById('obs-popover-textarea');
+        if (popoverTa) {
+            popoverTa.addEventListener('input', function () {
+                if (!activeObsTriggerBtn) return;
+                var row = activeObsTriggerBtn.closest('tr');
+                if (row) {
+                    var rowTextarea = row.querySelector('textarea[name="observaciones"]');
+                    if (rowTextarea) {
+                        rowTextarea.value = popoverTa.value;
+                        markUnsaved(rowTextarea);
+                    }
+                    activeObsTriggerBtn.textContent = popoverTa.value.trim().length > 0 ? '🗒️' : '📝';
+                }
+            });
+        }
+    })();
+
+    // ── Popovers de Selección de Licencias ───────────────────────────────────────
+    function posicionarPopover(cell) {
+        var panel = cell.querySelector('.popover-panel');
+        var summary = cell.querySelector('summary');
+        if (!panel || !summary) return;
+
+        var rect = summary.getBoundingClientRect();
+        panel.style.position = 'fixed';
+        panel.style.zIndex = '9999';
+
+        var ancho = 160;
+        var alto = 200;
+        var top = rect.bottom + 4;
+        if (top + alto > window.innerHeight - 10) {
+            top = Math.max(10, rect.top - alto - 4);
+        }
+        var left = rect.left;
+        if (left + ancho > window.innerWidth - 10) {
+            left = Math.max(10, window.innerWidth - ancho - 10);
+        }
+        panel.style.top = Math.round(top) + 'px';
+        panel.style.left = Math.round(left) + 'px';
+    }
+
+    document.querySelectorAll('.popover-celda').forEach(function (cell) {
+        cell.addEventListener('toggle', function () {
+            if (!cell.open) return;
+            document.querySelectorAll('.popover-celda[open]').forEach(function (other) {
+                if (other !== cell) other.removeAttribute('open');
+            });
+            posicionarPopover(cell);
+        });
+    });
+
+    // Cerrar y reposicionar eventos globales
+    document.addEventListener('mousedown', function (event) {
+        var popover = document.getElementById('obs-floating-popover');
+        if (popover && popover.style.display !== 'none') {
+            if (!popover.contains(event.target) && (!activeObsTriggerBtn || !activeObsTriggerBtn.contains(event.target))) {
+                saveAndCloseObsPopover();
+            }
+        }
         document.querySelectorAll('.popover-celda[open]').forEach(function (cell) {
             if (!cell.contains(event.target)) {
                 cell.removeAttribute('open');
@@ -831,18 +959,28 @@
         });
     });
 
-    // Control de apertura de popovers
-    document.querySelectorAll('.popover-celda').forEach(function (cell) {
-        cell.addEventListener('toggle', function () {
-            if (!cell.open) return;
-            // Cerrar otros popovers abiertos
-            document.querySelectorAll('.popover-celda[open]').forEach(function (other) {
-                if (other !== cell) other.removeAttribute('open');
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeObsPopover();
+            document.querySelectorAll('.popover-celda[open]').forEach(function (cell) {
+                cell.removeAttribute('open');
             });
-            var ta = cell.querySelector('textarea');
-            if (ta) ta.focus();
-        });
+        }
     });
+
+    function reposicionarTodo() {
+        positionObsFloatingPopover();
+        document.querySelectorAll('.popover-celda[open]').forEach(function (cell) {
+            posicionarPopover(cell);
+        });
+    }
+
+    var tableCard = document.querySelector('.table-card');
+    if (tableCard) {
+        tableCard.addEventListener('scroll', reposicionarTodo, { passive: true });
+    }
+    window.addEventListener('scroll', reposicionarTodo, { passive: true });
+    window.addEventListener('resize', reposicionarTodo, { passive: true });
 
     // ── Columnas Fijas (Sticky) hasta el RUT ─────────────────────────────────────
     (function () {
@@ -1134,6 +1272,15 @@
         if (input) {
             input.value = value;
             input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        if (fieldName === 'observaciones') {
+            var btn = row.querySelector('.btn-obs-trigger');
+            if (btn) {
+                btn.textContent = (value && value.trim().length > 0) ? '🗒️' : '📝';
+                if (value && value.trim().length > 0) btn.classList.add('has-obs');
+                else btn.classList.remove('has-obs');
+            }
         }
     }
 

@@ -142,4 +142,11 @@ public sealed class IndexModel(
         };
         return RedirectToPage();
     }
+
+    public IActionResult OnPostDelete(long id)
+    {
+        repository.Delete(id);
+        Message = "Solicitud eliminada.";
+        return RedirectToPage();
+    }
 }

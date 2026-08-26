@@ -14,9 +14,16 @@
 }
 
 <div class="card" style="padding:16px 20px; margin-bottom:16px;" data-print-hide>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; border-bottom:1px solid var(--color-border); padding-bottom:12px;">
+        <a asp-page="/Index" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-weight:600; text-decoration:none; border-radius:var(--radius); font-size:var(--font-sm);">
+            ← Volver a Gestión de Licencias
+        </a>
+        <span style="font-size:var(--font-sm); color:var(--color-text-muted);">
+            @Model.Cases.Count carpeta(s) en esta lista
+        </span>
+    </div>
     <p class="text-md" style="margin:0 0 10px;">
         Documento para solicitar carpetas físicas a <strong>@destino</strong>.
-        @Model.Cases.Count carpeta(s) en esta lista.
         @if (Model.ReachedLimit)
         {
             <strong>Hay más carpetas de las que caben en un documento</strong>

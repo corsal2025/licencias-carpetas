@@ -4,6 +4,9 @@
 
         <form id="mark-printed-form" method="post" asp-page-handler="MarkPrinted" asp-route-sector="@Model.SelectedSector" style="display:none;"></form>
         <div class="no-print" style="margin-bottom: 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <a asp-page="/CambioDomicilio/Index" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-weight:600; text-decoration:none; border-radius:var(--radius); font-size:var(--font-sm);">
+                ← Volver a Enviar Cambio de Domicilio
+            </a>
             <button type="button" class="btn-primary" onclick="markPrintedAndPrint()">Imprimir / Guardar como PDF</button>
             <form method="post" asp-page-handler="ClearAll" asp-route-sector="@Model.SelectedSector"
                   onsubmit="return confirm('Esto vacía el listado de este sector — quedará en blanco para volver a llenarse con nuevos casos. NO elimina los datos de los contribuyentes, solo los saca de esta lista. ¿Confirmar?');">
@@ -19,36 +22,35 @@
                 </select>
             </span>
             <span style="font-size:0.8rem; color:var(--color-text-muted);">
-                Este listado muestra solo los nombres marcados (checkbox "Marcar") en la pantalla de Casos.
+                Este listado muestra las carpetas asignadas a este sector en Enviar Cambio de Domicilio.
             </span>
         </div>
 
         <div class="doc-sheet">
-            <div class="doc-header">
-                <div class="doc-title-block">
-                    <img src="~/images/logo-municipalidad.png" alt="Municipalidad de Valparaíso" class="doc-seal" />
+            <div class="doc-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:16px;">
+                <div class="doc-title-block" style="display:flex; align-items:center; gap:16px;">
+                    <img src="~/images/logo-municipalidad.png" alt="Municipalidad de Valparaíso" class="doc-seal" style="height:54px; width:auto; max-width:140px; object-fit:contain;" />
                     <div>
-                        <p class="doc-org">Municipalidad de Valparaíso — Dirección de Tránsito</p>
-                        <h2>Cambio de Domicilio — Listado de carpetas — Sector @(Model.SelectedSector == LicenciasCarpetas.CambioDomicilio.Domain.FolderSector.Oficina43 ? "Oficina 43" : "Archivo")</h2>
+                        <p class="doc-org" style="margin:0; font-size:var(--font-sm); font-weight:700; color:#475569;">Municipalidad de Valparaíso — Dirección de Tránsito</p>
+                        <h2 style="margin:4px 0 0; font-size:1.25rem; font-weight:800; color:#0f172a;">Cambio de Domicilio — Listado de carpetas — Sector @(Model.SelectedSector == LicenciasCarpetas.CambioDomicilio.Domain.FolderSector.Oficina43 ? "Oficina 43" : "Archivo")</h2>
                     </div>
                 </div>
-                <div class="doc-meta">
+                <div class="doc-meta" style="text-align:right; font-size:var(--font-xs); color:#334155;">
                     <div>Folio: <strong>@Model.SelectedSector-@DateTimeOffset.Now.ToString("yyyyMMdd-HHmm")</strong></div>
                     <div>Generado: <strong>@DateTimeOffset.Now.ToString("dd-MM-yyyy HH:mm")</strong></div>
                 </div>
             </div>
-            <div class="doc-subheader">
+            <div class="doc-subheader" style="display:flex; justify-content:space-between; font-weight:700; font-size:var(--font-sm); margin-bottom:12px; color:#1e293b;">
                 <span>Solicitudes de cambio de domicilio — carpetas físicas a retirar</span>
-                <span>@Model.Cases.Count registro(s)</span>
+                <span class="badge" style="background:#e2e8f0; color:#0f172a; font-weight:700; padding:4px 10px; border-radius:12px;">@Model.Cases.Count registro(s)</span>
             </div>
 
             <div class="card">
                 @if (Model.Cases.Count == 0)
                 {
-                    <p class="doc-empty">
-                        No hay carpetas en este sector todavía. Marca el checkbox "Marcar" de los
-                        casos correspondientes en la pantalla de Casos (con su "Fecha última carpeta"
-                        ya ingresada) para que aparezcan aquí.
+                    <p class="doc-empty" style="text-align:center; padding:32px; color:#64748b; font-weight:600;">
+                        No hay carpetas en este sector todavía. Ingrese la "Fecha última carpeta" de los
+                        casos correspondientes en Enviar Cambio de Domicilio para que aparezcan aquí.
                     </p>
                 }
                 else

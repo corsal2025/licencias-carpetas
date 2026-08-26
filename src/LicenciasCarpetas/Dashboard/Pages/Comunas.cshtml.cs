@@ -34,6 +34,23 @@ public class ComunasModel(IComunaContactRepository contacts) : PageModel
         return RedirectToPage(new { search = Search });
     }
 
+    public IActionResult OnPostEdit(long id, string comuna, string correo)
+    {
+        var isAjax = string.Equals(HttpContext?.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.Ordinal);
+        if (string.IsNullOrWhiteSpace(comuna) || string.IsNullOrWhiteSpace(correo) || !correo.Contains('@'))
+        {
+            if (isAjax) return new JsonResult(new { ok = false, message = "Comuna y correo válido son obligatorios." });
+            TempData["Message"] = "Comuna y correo válido son obligatorios.";
+            return RedirectToPage(new { search = Search });
+        }
+
+        contacts.Update(id, comuna.Trim().ToUpperInvariant(), correo.Trim());
+        if (isAjax) return new JsonResult(new { ok = true, message = $"Comuna {comuna.Trim().ToUpperInvariant()} actualizada." });
+
+        TempData["Message"] = $"Comuna {comuna.Trim().ToUpperInvariant()} actualizada.";
+        return RedirectToPage(new { search = Search });
+    }
+
     public IActionResult OnPostDelete(long id)
     {
         contacts.Delete(id);

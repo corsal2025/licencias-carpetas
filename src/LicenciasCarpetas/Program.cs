@@ -22,11 +22,18 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 // ContentRootPath pinned to the exe's own folder (not the process's current directory) so every
 // relative path in config (SqliteDbPath, ExportDirectory, workbook path) resolves the same way no
 // matter how the app is launched — double-click, shortcut, or Task Scheduler.
+var baseDir = AppContext.BaseDirectory;
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
-    ContentRootPath = AppContext.BaseDirectory
+    ContentRootPath = baseDir
 });
+
+builder.Configuration
+    .SetBasePath(baseDir)
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
 
 var options = builder.Configuration.GetSection(CarpetasOptions.SectionName).Get<CarpetasOptions>()
     ?? throw new InvalidOperationException($"Missing '{CarpetasOptions.SectionName}' configuration section.");
@@ -89,7 +96,7 @@ builder.Services.AddSingleton<IOutboundAddressChangeRequestRepository>(_ => new 
 builder.Services.AddSingleton<LicenciasCarpetas.CambioDomicilio.Solicitar.OutboundRequestSender>();
 builder.Services.AddSingleton<LicenciasCarpetas.CambioDomicilio.Data.IDiscardedEmailRepository>(
     _ => new LicenciasCarpetas.CambioDomicilio.Data.DiscardedEmailRepository(connectionString));
-builder.Services.AddSingleton<IComunaDirectory, ComunaDirectory>();
+builder.Services.AddSingleton<IComunaDirectory>(sp => new ComunaDirectory(sp.GetRequiredService<IComunaContactRepository>()));
 builder.Services.AddSingleton<IEwsClient, EwsClient>();
 builder.Services.AddSingleton<EwsEmailReader>();
 builder.Services.AddSingleton<LicenciasCarpetas.CambioDomicilio.Ews.IEmailReader>(sp => sp.GetRequiredService<EwsEmailReader>());
@@ -308,12 +315,19 @@ static void EnsureSchemas(IServiceProvider services)
 {
     services.GetRequiredService<IFolderCaseRepository>().EnsureSchema();
     services.GetRequiredService<IDailyCounterRepository>().EnsureSchema();
-    services.GetRequiredService<IComunaContactRepository>().EnsureSchema();
+    var comunaContacts = services.GetRequiredService<IComunaContactRepository>();
+    comunaContacts.EnsureSchema();
+    comunaContacts.EnsureSeed();
     services.GetRequiredService<IUserRepository>().EnsureSchema();
     services.GetRequiredService<IUrgentRequestRepository>().EnsureSchema();
     services.GetRequiredService<ICambioDomicilioRequestRepository>().EnsureSchema();
     services.GetRequiredService<IOutboundAddressChangeRequestRepository>().EnsureSchema();
     services.GetRequiredService<LicenciasCarpetas.CambioDomicilio.Data.IDiscardedEmailRepository>().EnsureSchema();
+    var cdOptions = services.GetRequiredService<CambioDomicilioOptions>();
+    if (!string.IsNullOrWhiteSpace(cdOptions.ComunaDirectoryCsvPath))
+    {
+        services.GetRequiredService<IComunaDirectory>().EnsureSeed(cdOptions.ComunaDirectoryCsvPath);
+    }
 }
 
 static string ReadPasswordMasked()

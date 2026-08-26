@@ -6,12 +6,15 @@
 }
 
 
-@if (Model.Cases.Count > 0)
-{
-    <div class="card no-print" style="padding:8px 14px; margin-bottom:10px; display:flex; justify-content:flex-end;">
+<div class="card no-print" style="padding:10px 16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+    <a asp-page="/F8/Index" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-weight:600; text-decoration:none; border-radius:var(--radius); font-size:var(--font-sm);">
+        ← Volver a F8 Urgentes
+    </a>
+    @if (Model.Cases.Count > 0)
+    {
         <button type="button" class="btn-outline" onclick="window.print()">Imprimir informe (PDF)</button>
-    </div>
-}
+    }
+</div>
 
 <div class="print-report">
     <h2 class="print-title">INFORME @sectorTitle</h2>

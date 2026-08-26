@@ -78,8 +78,7 @@
                         </td>
                         <td class="text-cell rut-cell">
                             <input type="text" name="rut" value="@item.Rut" placeholder="RUT" required size="13"
-                                   class="input-inline rut-input" form="person-form-@item.Id" onchange="savePersonFieldIfDoneEditing(this)"
-                                   oncopy="var s=this.value.substring(this.selectionStart,this.selectionEnd)||this.value; event.clipboardData.setData('text/plain', s.replace(/\./g,'')); event.preventDefault();" />
+                                   class="input-inline rut-input" form="person-form-@item.Id" onchange="savePersonFieldIfDoneEditing(this)" />
                         </td>
                         <td class="text-cell">@item.Comuna</td>
                         <td class="text-cell">@item.ReceivedAt.LocalDateTime.ToString("dd-MM-yyyy")</td>

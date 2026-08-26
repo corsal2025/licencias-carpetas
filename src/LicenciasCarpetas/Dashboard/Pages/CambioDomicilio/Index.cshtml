@@ -26,17 +26,21 @@
             }
         </a>
     </div>
-    <span style="margin-left:auto; display:flex; gap:16px; align-items:flex-end;">
-        <span style="display:flex; flex-direction:column; gap:3px; align-items:center;">
-            <span style="font-weight:700; font-size:var(--font-lg); color:#926100;">Informes</span>
-            <span style="display:flex; gap:8px; align-items:center;">
+    <div style="margin-left:auto; display:flex; gap:16px; align-items:center;">
+        <div style="display:flex; flex-direction:column; gap:4px; align-items:center; text-align:center;">
+            <span style="font-weight:700; font-size:var(--font-xs); color:var(--color-primary); text-transform:uppercase; letter-spacing:0.6px; text-align:center; width:100%; display:block;">Informes</span>
+            <div style="display:flex; gap:8px; align-items:center; justify-content:center;">
                 <a asp-page="/CambioDomicilio/Sector" asp-route-sector="Archivo" class="nav-pill nav-doc text-sm">📄 Informe Archivo</a>
                 <a asp-page="/CambioDomicilio/Sector" asp-route-sector="Oficina43" class="nav-pill nav-doc text-sm">📄 Informe Oficina 43</a>
                 <a asp-page="/CambioDomicilio/Certificado" class="nav-pill nav-doc text-sm">📜 Certificado</a>
-            </span>
-        </span>
-        <form method="post" asp-page-handler="SyncNow"><button type="submit" class="nav-sync">Sincronizar ahora</button></form>
-    </span>
+            </div>
+        </div>
+        <form method="post" asp-page-handler="SyncNow" style="display:inline;">
+            <button type="submit" class="btn-primary btn-sync" title="Sincronizar correos de Cambio de Domicilio">
+                ↻ Sincronizar Ahora
+            </button>
+        </form>
+    </div>
     @* En su propia fila, debajo de Informes — no compartiendo línea con los filtros de estado. *@
     <form method="get" class="nav-search" style="flex-basis:100%; display:flex; gap:6px; align-items:center;">
         <input type="hidden" name="status" value="@Model.StatusFilter" />
@@ -206,8 +210,7 @@
                         </td>
                         <td class="text-cell rut-cell">
                             <input type="text" name="rut" value="@item.Rut" placeholder="RUT" required size="13"
-                                   class="input-inline rut-input" form="person-form-@item.Id" onchange="savePersonFieldIfDoneEditing(this)"
-                                   oncopy="var s=this.value.substring(this.selectionStart,this.selectionEnd)||this.value; event.clipboardData.setData('text/plain', s.replace(/\./g,'')); event.preventDefault();" />
+                                   class="input-inline rut-input" form="person-form-@item.Id" onchange="savePersonFieldIfDoneEditing(this)" />
                         </td>
                         <td class="text-cell">@item.Comuna</td>
                         <td class="text-cell">@item.ReceivedAt.LocalDateTime.ToString("dd-MM-yyyy")</td>

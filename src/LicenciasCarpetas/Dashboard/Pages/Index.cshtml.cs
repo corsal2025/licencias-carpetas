@@ -231,6 +231,54 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
             }
         }
 
+        // Elegir "CAMBIO DE DOMICILIO SOLICITADO" en Casos crea/sincroniza automáticamente la fila
+        // en el módulo "Solicitar Cambios de Domicilio" (OutboundAddressChangeRequest), de modo que
+        // los datos de la persona (Nombre, RUT, Comuna) aparezcan inmediatamente en esa lista de trabajo.
+        if (estado == FolderState.CambioDomicilioSolicitado && normalizedRut is not null)
+        {
+            var existingOutboundList = outboundRequests.FindBySourceFolderCaseId(id);
+            var existingOutbound = existingOutboundList.FirstOrDefault();
+            var destComuna = string.IsNullOrWhiteSpace(comuna) ? (existing.CambioDomicilioComuna ?? existing.LastFolderComuna ?? string.Empty) : comuna.Trim();
+            var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier) is { } uid && long.TryParse(uid, out var u) ? u : 1L;
+
+            if (existingOutbound is null)
+            {
+                outboundRequests.Insert(new OutboundAddressChangeRequest
+                {
+                    FullName = fullName ?? existing.FullName ?? string.Empty,
+                    Rut = normalizedRut,
+                    DestinationComuna = destComuna,
+                    CreatedByUserId = userId,
+                    SourceFolderCaseId = id,
+                    Status = OutboundRequestStatus.Borrador,
+                    CreatedAt = DateTimeOffset.UtcNow
+                });
+            }
+            else
+            {
+                var changed = false;
+                if (!string.IsNullOrWhiteSpace(destComuna) && existingOutbound.DestinationComuna != destComuna)
+                {
+                    existingOutbound.DestinationComuna = destComuna;
+                    changed = true;
+                }
+                if (!string.IsNullOrWhiteSpace(fullName) && existingOutbound.FullName != fullName)
+                {
+                    existingOutbound.FullName = fullName;
+                    changed = true;
+                }
+                if (existingOutbound.Rut != normalizedRut)
+                {
+                    existingOutbound.Rut = normalizedRut;
+                    changed = true;
+                }
+                if (changed)
+                {
+                    outboundRequests.Update(existingOutbound);
+                }
+            }
+        }
+
         var invalidRut = normalizedRut is null && !string.IsNullOrWhiteSpace(rut);
         var message = invalidRut
             ? $"Guardado, pero el RUT '{rut}' no tiene dígito verificador válido — el caso queda en revisión."
@@ -238,6 +286,8 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
 
         return SaveResult(message, isError: invalidRut);
     }
+
+    public IActionResult OnPostBulkDelete(long[] selectedIds) => OnPostDeleteSeleccionados(selectedIds);
 
     /// <summary>Adds a citation row by hand, the way a new line is typed into the agenda sheet.</summary>
     public IActionResult OnPostAdd(string? nombre, string? rut, string? citacion, Office office,
@@ -363,25 +413,35 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
             return RedirectWithMessage("Complete nombre y RUT del caso antes de solicitar.", isError: true);
         }
 
-        // Un clic accidental (o de otra pestaña) no debe crear ni mandar una segunda solicitud
-        // para el mismo caso — solo importan las que ya se enviaron, no un borrador huérfano.
-        var alreadyRequested = outboundRequests.FindBySourceFolderCaseId(folderCase.Id)
-            .Any(r => r.Status != OutboundRequestStatus.Borrador);
+        var existingOutboundList = outboundRequests.FindBySourceFolderCaseId(folderCase.Id).ToList();
+        var alreadyRequested = existingOutboundList.Any(r => r.Status != OutboundRequestStatus.Borrador);
         if (alreadyRequested)
         {
             return RedirectWithMessage("Ya se solicitó un cambio de domicilio para este caso.", isError: true);
         }
 
         var userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var requestId = outboundRequests.Insert(new OutboundAddressChangeRequest
+        var request = existingOutboundList.FirstOrDefault(r => r.Status == OutboundRequestStatus.Borrador);
+        if (request is null)
         {
-            FullName = folderCase.FullName,
-            Rut = folderCase.Rut,
-            DestinationComuna = folderCase.CambioDomicilioComuna,
-            CreatedByUserId = userId,
-            SourceFolderCaseId = folderCase.Id
-        });
-        var request = outboundRequests.FindById(requestId)!;
+            var requestId = outboundRequests.Insert(new OutboundAddressChangeRequest
+            {
+                FullName = folderCase.FullName,
+                Rut = folderCase.Rut,
+                DestinationComuna = folderCase.CambioDomicilioComuna,
+                CreatedByUserId = userId,
+                SourceFolderCaseId = folderCase.Id
+            });
+            request = outboundRequests.FindById(requestId)!;
+        }
+        else
+        {
+            request.FullName = folderCase.FullName;
+            request.Rut = folderCase.Rut;
+            request.DestinationComuna = folderCase.CambioDomicilioComuna;
+            request.CreatedByUserId = userId;
+            outboundRequests.Update(request);
+        }
 
         var result = await sender.SendAsync(request, attachments: [], userId);
 
