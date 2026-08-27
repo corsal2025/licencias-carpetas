@@ -396,7 +396,7 @@
                 </td>
                 <td>
                     <input type="text" name="ultimaCarpeta" form="case-form-@item.Id" class="input-inline"
-                           size="@lastFolderSize" value="@lastFolderText"
+                           size="@lastFolderSize" value="@lastFolderText" placeholder="dd/mes/aaaa"
                            title="Fecha de la última carpeta, o la comuna donde está la carpeta" />
                 </td>
                 <td class="text-cell sector-cell">@FolderSectorCatalog.Display(item.Sector)</td>
@@ -576,7 +576,7 @@
             <div class="drawer-grid-2" style="margin-top:12px;">
                 <div class="drawer-field">
                     <label>Fecha Última Carpeta</label>
-                    <input type="text" id="drawer-ultima" placeholder="dd/mes/aaaa o Comuna" onchange="syncDrawerToRow('ultimaCarpeta', this.value)" />
+                    <input type="text" id="drawer-ultima" placeholder="dd/mes/aaaa" onchange="syncDrawerToRow('ultimaCarpeta', this.value)" />
                 </div>
                 <div class="drawer-field">
                     <label>Fecha Penúltima Carpeta</label>
@@ -791,6 +791,46 @@
         document.body.classList.toggle('idoneidad-flash');
     }, 500);
 
+    var SPANISH_MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    var SPANISH_MONTHS_DICT = {
+        'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+        'julio': 7, 'agosto': 8, 'septiembre': 9, 'setiembre': 9, 'octubre': 10,
+        'noviembre': 11, 'diciembre': 12
+    };
+
+    function formatSpanishDate(str) {
+        if (!str || !str.trim()) return '';
+        var text = str.trim();
+        var parts = text.split(/[\s\/\-\.]+/).filter(function(p) {
+            return p && p.toLowerCase() !== 'de' && p.toLowerCase() !== 'del';
+        });
+        if (parts.length === 3) {
+            var day = parseInt(parts[0], 10);
+            var month = -1;
+            var mStr = parts[1].toLowerCase();
+            if (SPANISH_MONTHS_DICT[mStr]) {
+                month = SPANISH_MONTHS_DICT[mStr] - 1;
+            } else {
+                for (var i = 0; i < SPANISH_MONTHS.length; i++) {
+                    if (SPANISH_MONTHS[i].startsWith(mStr)) {
+                        month = i;
+                        break;
+                    }
+                }
+                if (month === -1) {
+                    var mNum = parseInt(parts[1], 10);
+                    if (mNum >= 1 && mNum <= 12) month = mNum - 1;
+                }
+            }
+            var year = parseInt(parts[2], 10);
+            if (year < 100) year += (year >= 50 ? 1900 : 2000);
+            if (!isNaN(day) && month >= 0 && !isNaN(year) && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
+                return day + '/' + SPANISH_MONTHS[month] + '/' + year;
+            }
+        }
+        return text;
+    }
+
     // ── Autoguardado Instantáneo por AJAX (ENTER y cambio de celda) ───────────────
     async function autoSaveCaseRow(field) {
         var row = field.closest('tr');
@@ -798,6 +838,15 @@
 
         var form = row.querySelector('form[id^="case-form-"]');
         if (!form) return;
+
+        var dateFields = ['citacion', 'subida', 'ultimaCarpeta', 'penultima'];
+        if (dateFields.indexOf(field.name) !== -1) {
+            var formatted = formatSpanishDate(field.value);
+            if (formatted && formatted !== field.value) {
+                field.value = formatted;
+                if (field.name === 'ultimaCarpeta') updateSectorCellInRealtime(field);
+            }
+        }
 
         var formData = new FormData(form);
 
@@ -822,6 +871,28 @@
             });
 
             if (response.ok) {
+                try {
+                    var resJson = await response.json();
+                    if (resJson && resJson.ok) {
+                        if (resJson.citacion !== undefined) {
+                            var inp = row.querySelector('input[name="citacion"]');
+                            if (inp && document.activeElement !== inp) inp.value = resJson.citacion;
+                        }
+                        if (resJson.subida !== undefined) {
+                            var inp = row.querySelector('input[name="subida"]');
+                            if (inp && document.activeElement !== inp) inp.value = resJson.subida;
+                        }
+                        if (resJson.ultimaCarpeta !== undefined) {
+                            var inp = row.querySelector('input[name="ultimaCarpeta"]');
+                            if (inp && document.activeElement !== inp) inp.value = resJson.ultimaCarpeta;
+                        }
+                        if (resJson.penultima !== undefined) {
+                            var inp = row.querySelector('input[name="penultima"]');
+                            if (inp && document.activeElement !== inp) inp.value = resJson.penultima;
+                        }
+                    }
+                } catch (_) {}
+
                 row.classList.remove('fila-guardando', 'fila-sin-guardar');
                 row.classList.add('fila-guardada-ok');
                 setTimeout(function () {
@@ -890,10 +961,23 @@
         .forEach(function (field) {
             if (field.type === 'checkbox') return;
 
+            var dateFields = ['citacion', 'subida', 'ultimaCarpeta', 'penultima'];
+
             field.addEventListener('input', function () {
                 if (field.name === 'subida') delete field.dataset.autofilled;
                 if (field.name === 'ultimaCarpeta') updateSectorCellInRealtime(field);
                 markUnsaved(field);
+            });
+
+            field.addEventListener('blur', function () {
+                if (dateFields.indexOf(field.name) !== -1) {
+                    var fmt = formatSpanishDate(field.value);
+                    if (fmt && fmt !== field.value) {
+                        field.value = fmt;
+                        if (field.name === 'ultimaCarpeta') updateSectorCellInRealtime(field);
+                        autoSaveCaseRow(field);
+                    }
+                }
             });
 
             field.addEventListener('change', function () {
@@ -904,6 +988,13 @@
             field.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    if (dateFields.indexOf(field.name) !== -1) {
+                        var fmt = formatSpanishDate(field.value);
+                        if (fmt && fmt !== field.value) {
+                            field.value = fmt;
+                            if (field.name === 'ultimaCarpeta') updateSectorCellInRealtime(field);
+                        }
+                    }
                     autoSaveCaseRow(field);
 
                     var allInputs = Array.from(document.querySelectorAll('table.cases-index tbody input:not([type=hidden]):not([type=checkbox]), table.cases-index tbody select'));
