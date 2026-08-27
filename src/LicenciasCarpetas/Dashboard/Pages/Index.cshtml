@@ -416,16 +416,21 @@
                     @{ var licencias = LicenceClassCatalog.Parse(item.LicenceClasses); }
                     <details class="popover-celda licencias-celda" data-case-id="@item.Id">
                         <summary>@(string.IsNullOrWhiteSpace(LicenceClassCatalog.DisplayList(item.LicenceClasses)) ? "—" : LicenceClassCatalog.DisplayList(item.LicenceClasses))</summary>
-                        <div class="popover-panel licencias-opciones">
-                            @foreach (var licence in LicenceClassCatalog.All)
-                            {
-                                <label class="licencia-option-label">
-                                    <input type="checkbox" name="licencias" form="case-form-@item.Id"
-                                           value="@licence" checked="@licencias.Contains(licence)"
-                                           onchange="onLicenciaCheckboxChange(this, @item.Id)" />
-                                    <span>@LicenceClassCatalog.Display(licence)</span>
-                                </label>
-                            }
+                        <div class="popover-panel licencias-opciones" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();">
+                            <div class="licencias-grid">
+                                @foreach (var licence in LicenceClassCatalog.All)
+                                {
+                                    <label class="licencia-option-label">
+                                        <input type="checkbox" name="licencias" form="case-form-@item.Id"
+                                               value="@licence" checked="@licencias.Contains(licence)"
+                                               onchange="onLicenciaCheckboxChange(this, @item.Id)" />
+                                        <span>@LicenceClassCatalog.Display(licence)</span>
+                                    </label>
+                                }
+                            </div>
+                            <div style="margin-top:8px; padding-top:6px; border-top:1px solid #e2e8f0; text-align:right;">
+                                <button type="button" class="btn-primary" style="padding:3px 10px; font-size:var(--font-xs); font-weight:700; border-radius:4px; background:#2563eb; cursor:pointer;" onclick="this.closest('details').removeAttribute('open');">✓ Listo</button>
+                            </div>
                         </div>
                     </details>
                 </td>
