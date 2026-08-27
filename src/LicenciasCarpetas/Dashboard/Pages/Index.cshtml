@@ -280,7 +280,6 @@
                 <th class="name-cell col-sticky-nombre"><a asp-page="/Index" asp-all-route-data="@Model.SortRouteValues(CaseSort.Name)" class="sort-link"><span>Nombre completo</span>@Model.SortIndicator(CaseSort.Name)</a></th>
                 <th class="rut-cell col-sticky-rut"><a asp-page="/Index" asp-all-route-data="@Model.SortRouteValues(CaseSort.Rut)" class="sort-link"><span>RUT</span>@Model.SortIndicator(CaseSort.Rut)</a></th>
                 <th><a asp-page="/Index" asp-all-route-data="@Model.SortRouteValues(CaseSort.Office)" class="sort-link"><span>Oficina</span>@Model.SortIndicator(CaseSort.Office)</a></th>
-                <th title="Número de folio de la licencia. Texto libre">Folio de licencia</th>
                 <th><a asp-page="/Index" asp-all-route-data="@Model.SortRouteValues(CaseSort.FolderUploadedDate)" class="sort-link"><span>Fecha subida de carpeta</span>@Model.SortIndicator(CaseSort.FolderUploadedDate)</a></th>
                 <th><a asp-page="/Index" asp-all-route-data="@Model.SortRouteValues(CaseSort.LastFolderDate)" class="sort-link"><span>Fecha última carpeta</span>@Model.SortIndicator(CaseSort.LastFolderDate)</a></th>
                 @* Sector va junto a Última carpeta: es la fecha de la que se calcula. *@
@@ -292,6 +291,7 @@
                 <th>Comuna</th>
                 <th>Idoneidad</th>
                 <th><a asp-page="/Index" asp-all-route-data="@Model.SortRouteValues(CaseSort.FinalDecision)" class="sort-link"><span>Decisión final</span>@Model.SortIndicator(CaseSort.FinalDecision)</a></th>
+                <th title="Número de folio de la licencia. Texto libre">Folio de licencia</th>
                 <th>Acción</th>
             </tr>
         </thead>
@@ -384,11 +384,6 @@
                 </td>
                 <td class="text-cell">@OfficeCatalog.Display(item.Office)</td>
                 <td>
-                    <input type="text" name="folioLicencia" form="case-form-@item.Id" class="input-inline"
-                           size="@Math.Max(10, (item.FolioLicencia?.Length ?? 0) + 2)" value="@item.FolioLicencia"
-                           />
-                </td>
-                <td>
                     @* Solo la escribe el sistema al marcar un estado de "ya subida" (fillUploadDateIfMissing) —
                        readonly, no disabled, para que el valor siga viajando al guardar. *@
                     <input type="text" name="subida" form="case-form-@item.Id" class="input-inline" size="15"
@@ -462,6 +457,11 @@
                             <option value="@decision" selected="@(item.FinalDecision == decision)">@FinalDecisionCatalog.Display(decision)</option>
                         }
                     </select>
+                </td>
+                <td>
+                    <input type="text" name="folioLicencia" form="case-form-@item.Id" class="input-inline"
+                           size="@Math.Max(10, (item.FolioLicencia?.Length ?? 0) + 2)" value="@item.FolioLicencia"
+                           placeholder="Folio" />
                 </td>
                 <td style="display:flex; gap:6px; align-items:center; justify-content:center;">
                     <button type="button" class="btn-drawer-open" onclick="openCaseDrawer(@item.Id)" title="Abrir panel lateral de detalle">👁️</button>
