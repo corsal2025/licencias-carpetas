@@ -1,0 +1,12 @@
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/publish
+**/tests
+**/*.user
+**/*.suo
+**/*.md
+!TRUENAS_DEPLOY.md

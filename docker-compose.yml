@@ -1,0 +1,18 @@
+services:
+  licencias-carpetas:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: licencias-carpetas-app
+    restart: unless-stopped
+    ports:
+      - "5010:5010"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5010
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    volumes:
+      # Persistencia de base de datos SQLite y archivos de configuración
+      - ./data:/app/data
+      - ./exports:/app/data/exports
+      - ./appsettings.Production.json:/app/appsettings.Production.json:ro
