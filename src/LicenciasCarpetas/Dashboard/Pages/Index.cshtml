@@ -399,7 +399,7 @@
                            size="@lastFolderSize" value="@lastFolderText"
                            title="Fecha de la última carpeta, o la comuna donde está la carpeta" />
                 </td>
-                <td class="text-cell">@FolderSectorCatalog.Display(item.Sector)</td>
+                <td class="text-cell sector-cell">@FolderSectorCatalog.Display(item.Sector)</td>
                 <td>
                     <input type="text" name="codigoF8" form="case-form-@item.Id" class="input-inline"
                            size="@Math.Max(12, (item.CodigoF8?.Length ?? 0) + 2)" value="@item.CodigoF8"
@@ -830,16 +830,66 @@
         }
     }
 
+    function updateSectorCellInRealtime(input) {
+        if (input.name !== 'ultimaCarpeta') return;
+        var row = input.closest('tr');
+        if (!row) return;
+        var sectorCell = row.querySelector('.sector-cell');
+        if (!sectorCell) return;
+
+        var val = (input.value || '').trim();
+        if (!val) {
+            sectorCell.textContent = '—';
+            return;
+        }
+
+        var parts = val.split(/[\/\-\. ]+/).filter(function(p) { 
+            return p && p.toLowerCase() !== 'de' && p.toLowerCase() !== 'del'; 
+        });
+
+        if (parts.length === 3) {
+            var day = parseInt(parts[0], 10);
+            var month = parseInt(parts[1], 10);
+            var year = parseInt(parts[2], 10);
+
+            var monthNames = { 
+                'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 
+                'julio':7, 'agosto':8, 'septiembre':9, 'setiembre':9, 'octubre':10, 
+                'noviembre':11, 'diciembre':12 
+            };
+            if (isNaN(month) && monthNames[parts[1].toLowerCase()]) {
+                month = monthNames[parts[1].toLowerCase()];
+            }
+
+            if (year < 100) year += (year >= 50 ? 1900 : 2000);
+
+            if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                var d = new Date(year, month - 1, day);
+                var cutoff = new Date(2023, 6, 1); // 1 de Julio de 2023
+                if (d < cutoff) {
+                    sectorCell.textContent = 'Archivo';
+                } else {
+                    sectorCell.textContent = 'Oficina 43';
+                }
+                return;
+            }
+        }
+
+        sectorCell.textContent = '—';
+    }
+
     document.querySelectorAll('table.cases-index tbody input, table.cases-index tbody select')
         .forEach(function (field) {
             if (field.type === 'checkbox') return;
 
             field.addEventListener('input', function () {
                 if (field.name === 'subida') delete field.dataset.autofilled;
+                if (field.name === 'ultimaCarpeta') updateSectorCellInRealtime(field);
                 markUnsaved(field);
             });
 
             field.addEventListener('change', function () {
+                if (field.name === 'ultimaCarpeta') updateSectorCellInRealtime(field);
                 autoSaveCaseRow(field);
             });
 
