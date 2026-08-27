@@ -41,11 +41,23 @@ public class IndexModelSolicitarCambioDomicilioTests
         private long _nextId = 1;
 
         public void EnsureSchema() { }
+        public void EnsureSeed(string? csvPath = null) { }
 
         public void Upsert(ComunaContact contact)
         {
             contact.Id = _nextId++;
             _contacts.Add(contact);
+        }
+
+        public void Update(long id, string comuna, string contactEmail, string? notes = null)
+        {
+            var existing = _contacts.FirstOrDefault(c => c.Id == id);
+            if (existing != null)
+            {
+                existing.Comuna = comuna;
+                existing.Email = contactEmail;
+                existing.Notes = notes;
+            }
         }
 
         public IReadOnlyList<ComunaContact> All(string? search = null) => _contacts;

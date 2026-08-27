@@ -59,7 +59,13 @@ public class LoginModel(ILoginService loginService, IUserRepository users, UserP
             new("mod:f8-urgentes", canAccessF8Urgentes ? "true" : "false")
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30),
+            AllowRefresh = true
+        };
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), authProperties);
 
         return RedirectToPage("/Index");
     }

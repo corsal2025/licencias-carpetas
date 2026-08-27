@@ -120,9 +120,9 @@ public sealed class ComunaDirectory(LicenciasCarpetas.Persistence.IComunaContact
                 continue;
             }
 
-            var comuna = parts[0].Trim();
-            var contactEmail = parts[1].Trim();
-            var domain = parts[2].Trim().ToLowerInvariant();
+            var comuna = parts[0].Trim().Trim('"');
+            var contactEmail = parts[1].Trim().Trim('"');
+            var domain = parts[2].Trim().Trim('"').ToLowerInvariant();
 
             if (comuna.Length == 0 || !contactEmail.Contains('@') || domain.Length == 0)
             {
