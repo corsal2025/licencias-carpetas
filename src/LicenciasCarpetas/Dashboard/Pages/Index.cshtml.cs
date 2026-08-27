@@ -132,15 +132,6 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         // el response.json() del cliente reventaba, y la fila quedaba marcada con un mensaje
         // genérico de "sin conexión" que no era la causa real.
         var isAjax = string.Equals(HttpContext?.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.Ordinal);
-        IActionResult SaveResult(string message, bool isError) =>
-            isAjax ? new JsonResult(new { ok = true, isError, message }) : RedirectWithMessage(message, isError);
-
-        var existing = cases.FindById(id);
-        if (existing is null)
-        {
-            return SaveResult("El caso ya no existe.", isError: true);
-        }
-
         var citationDate = ParseDate(citacion);
         var uploadedDate = ParseDate(subida);
 
@@ -158,6 +149,25 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         var lastFolderComuna = lastFolderDate is null && !string.IsNullOrWhiteSpace(ultimaCarpeta)
             ? ultimaCarpeta.Trim()
             : null;
+        var penultimaDate = ParseDate(penultima);
+
+        IActionResult SaveResult(string message, bool isError) =>
+            isAjax ? new JsonResult(new
+            {
+                ok = true,
+                isError,
+                message,
+                citacion = FormatDate(citationDate),
+                subida = FormatDate(uploadedDate),
+                ultimaCarpeta = lastFolderDate is { } lfd ? FormatDate(lfd) : lastFolderComuna,
+                penultima = FormatDate(penultimaDate)
+            }) : RedirectWithMessage(message, isError);
+
+        var existing = cases.FindById(id);
+        if (existing is null)
+        {
+            return SaveResult("El caso ya no existe.", isError: true);
+        }
 
         var normalizedRut = RutValidator.NormalizeAndValidate(rut);
         var fullName = TextNormalizer.DisplayUpper(nombre);
@@ -174,7 +184,7 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
             : LicenceClassCatalog.Serialize(licencias ?? []);
 
         // Los campos que el Excel no trae van por separado, para que una reimportación no los pise.
-        cases.UpdateCaseDetails(id, codigoF8, ParseDate(penultima),
+        cases.UpdateCaseDetails(id, codigoF8, penultimaDate,
             serializedLicencias, folioLicencia, editedBy: User?.Identity?.Name);
         cases.UpdateObservations(id, observaciones, editedBy: User?.Identity?.Name);
 
@@ -197,7 +207,6 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
             var f8Rut = LicenciasCarpetas.F8.Domain.Rut.TryParse(normalizedRut, out var parsedF8Rut)
                 ? parsedF8Rut.ToString()
                 : normalizedRut;
-            var penultimaDate = ParseDate(penultima);
 
             UrgentRequestGuard.Wait();
             try
