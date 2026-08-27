@@ -117,7 +117,7 @@ builder.Services
         // Sin página de "acceso denegado" propia: un rol sin permiso para la pantalla que pidió
         // por URL directa vuelve a Casos, que todos los roles pueden ver.
         cookieOptions.AccessDeniedPath = "/Index";
-        cookieOptions.Cookie.SecurePolicy = CookieSecurePolicy.Always; // dashboard is HTTPS-only
+        cookieOptions.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         cookieOptions.ExpireTimeSpan = TimeSpan.FromHours(8);
         cookieOptions.SlidingExpiration = true;
     });
@@ -284,7 +284,11 @@ if (args.Contains("--open-browser"))
     });
 }
 
-app.UseHttpsRedirection();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
