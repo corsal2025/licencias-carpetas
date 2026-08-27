@@ -14,6 +14,7 @@ public class EstadisticasModel(
     IFolderCaseRepository cases) : PageModel
 {
     public MonthlyStatistics? Statistics { get; private set; }
+    public MonthlyUserStatistics? UserStatistics { get; private set; }
     public IReadOnlyList<int> Years { get; private set; } = [];
     public IReadOnlyList<FolderCase> AttendanceDayCases { get; private set; } = [];
 
@@ -84,6 +85,7 @@ public class EstadisticasModel(
         }
 
         Statistics = statistics.ForMonth(Year, Month);
+        UserStatistics = statistics.UserStatsForMonth(Year, Month);
         Message = TempData["Message"] as string;
 
         if (DateOnly.TryParseExact(AttendanceDate, "yyyy-MM-dd", out var date))

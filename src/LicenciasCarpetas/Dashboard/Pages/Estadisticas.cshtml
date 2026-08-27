@@ -229,7 +229,7 @@
     </div>
 }
 
-<div style="display:flex; gap:16px; flex-wrap:wrap;">
+<div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px;">
     <div class="card table-card" style="flex:1; min-width:320px;">
         <table class="cases table-wide">
             <thead><tr><th>Estado de la carpeta</th><th>Casos</th></tr></thead>
@@ -259,3 +259,323 @@
         </table>
     </div>
 </div>
+
+@* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   SECCIÓN: BALANCE Y PRODUCTIVIDAD POR USUARIO / FUNCIONARIO
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ *@
+@{
+    var userStats = Model.UserStatistics;
+    var userSummaries = userStats?.Summaries ?? [];
+    var totalUserActions = userSummaries.Sum(s => s.TotalActions);
+    var totalUserSubidas = userSummaries.Sum(s => s.SubidasRealizadas);
+    var totalUserAsistencias = userSummaries.Sum(s => s.AsistenciasMarcadas);
+}
+
+<div class="card" style="padding:20px; margin-bottom:24px; border-left:4px solid #2563eb;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+        <div>
+            <h2 class="text-xl" style="margin:0 0 4px; display:flex; align-items:center; gap:8px;">
+                <span>👥 Balance y Productividad por Funcionario</span>
+                <span class="badge" style="background:#2563eb; color:#fff; font-size:12px; padding:2px 8px; border-radius:12px;">@SpanishDate.MonthName(Model.Month) @Model.Year</span>
+            </h2>
+            <p class="text-md" style="margin:0; color:var(--color-text-muted);">
+                Registro de actividad, ritmo de trabajo, atenciones y trámites realizados por cada usuario que ingresa al sistema.
+            </p>
+        </div>
+    </div>
+
+    <!-- KPIs Rápidos por Usuario -->
+    <div class="stats-grid" style="margin-bottom:20px;">
+        <div class="card stat-tile">
+            <div class="stat-value">@userSummaries.Count</div>
+            <div class="stat-label">Funcionarios Activos</div>
+        </div>
+        <div class="card stat-tile">
+            <div class="stat-value">@totalUserActions</div>
+            <div class="stat-label">Total Operaciones</div>
+        </div>
+        <div class="card stat-tile">
+            <div class="stat-value">@totalUserSubidas</div>
+            <div class="stat-label">Carpetas Subidas</div>
+        </div>
+        <div class="card stat-tile">
+            <div class="stat-value">@totalUserAsistencias</div>
+            <div class="stat-label">Atenciones Marcadas</div>
+        </div>
+    </div>
+
+    <!-- Tabla Detallada de Rendimiento -->
+    <div class="card table-card" style="margin-bottom:24px;">
+        <table class="cases table-wide">
+            <thead>
+                <tr style="background:var(--color-bg-alt, #f8fafc);">
+                    <th>Funcionario / Usuario</th>
+                    <th style="text-align:center;">Total Acciones</th>
+                    <th style="text-align:center;">Casos Editados</th>
+                    <th style="text-align:center;">Subidas Realizadas</th>
+                    <th style="text-align:center;">Atenciones</th>
+                    <th style="text-align:center;">Folios Asignados</th>
+                    <th style="text-align:center;">Días Activos</th>
+                    <th style="text-align:center;">Promedio Diario</th>
+                    <th style="text-align:center;">Última Actividad</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (userSummaries.Count == 0)
+                {
+                    <tr>
+                        <td colspan="9" style="text-align:center; padding:20px; color:var(--color-text-muted);">
+                            No hay registros de actividad de usuarios para este mes.
+                        </td>
+                    </tr>
+                }
+                @foreach (var user in userSummaries)
+                {
+                    <tr>
+                        <td class="text-cell" style="font-weight:600; display:flex; align-items:center; gap:8px;">
+                            <span style="display:inline-block; width:28px; height:28px; line-height:28px; text-align:center; border-radius:50%; background:#e0e7ff; color:#3730a3; font-weight:700; font-size:12px;">
+                                @(user.UserName.Length > 0 ? char.ToUpper(user.UserName[0]) : 'U')
+                            </span>
+                            <span>@user.UserName</span>
+                        </td>
+                        <td style="text-align:center; font-weight:700; color:#2563eb;">@user.TotalActions</td>
+                        <td style="text-align:center;">@user.CasesModified</td>
+                        <td style="text-align:center;"><span class="badge" style="background:#dcfce7; color:#15803d; font-weight:600;">@user.SubidasRealizadas</span></td>
+                        <td style="text-align:center;">@user.AsistenciasMarcadas</td>
+                        <td style="text-align:center;">@user.FoliosAsignados</td>
+                        <td style="text-align:center;">@user.ActiveDaysCount d</td>
+                        <td style="text-align:center; font-weight:600;">@user.DailyAverage /d</td>
+                        <td style="text-align:center; font-size:12px; color:var(--color-text-muted);">@user.LastActiveDate</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Gráficos de Visualización Avanzada (Histograma y Dispersión) -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap:20px; margin-top:16px;">
+        
+        <!-- Gráfico 1: Histograma de Carga de Trabajo por Usuario -->
+        <div class="card" style="padding:16px; background:#fff; border:1px solid var(--color-border, #e2e8f0); border-radius:8px;">
+            <h3 class="text-lg" style="margin:0 0 10px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                <span>📊 Histograma de Carga de Trabajo por Funcionario</span>
+            </h3>
+            <p style="font-size:12px; color:var(--color-text-muted); margin:0 0 14px;">
+                Comparativa del volumen total de operaciones y casos gestionados por cada usuario en el mes.
+            </p>
+            <div style="position:relative; height:280px; width:100%;">
+                <canvas id="chartHistogramaUsuarios"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Gráfico de Dispersión / Scatter Plot de Evolución Temporal -->
+        <div class="card" style="padding:16px; background:#fff; border:1px solid var(--color-border, #e2e8f0); border-radius:8px;">
+            <h3 class="text-lg" style="margin:0 0 10px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                <span>🎯 Gráfico de Dispersión: Horarios y Evolución Temporal</span>
+            </h3>
+            <p style="font-size:12px; color:var(--color-text-muted); margin:0 0 14px;">
+                Distribución de trámites a lo largo del mes (Eje X: Días 1..31) vs Hora del día (Eje Y: 08:00 a 18:00).
+            </p>
+            <div style="position:relative; height:280px; width:100%;">
+                <canvas id="chartDispersionUsuarios"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 3: Evolución Diaria y Ritmo de Trabajo Acumulado -->
+        <div class="card" style="padding:16px; background:#fff; border:1px solid var(--color-border, #e2e8f0); border-radius:8px; grid-column: 1 / -1;">
+            <h3 class="text-lg" style="margin:0 0 10px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                <span>📈 Evolución del Ritmo de Trabajo Diario (Línea Temporal)</span>
+            </h3>
+            <p style="font-size:12px; color:var(--color-text-muted); margin:0 0 14px;">
+                Progreso diario de operaciones realizadas por los funcionarios a lo largo del mes.
+            </p>
+            <div style="position:relative; height:260px; width:100%;">
+                <canvas id="chartEvolucionUsuarios"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var userNames = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userSummaries.Select(u => u.UserName)));
+        var totalActions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userSummaries.Select(u => u.TotalActions)));
+        var casesModified = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userSummaries.Select(u => u.CasesModified)));
+        var subidas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userSummaries.Select(u => u.SubidasRealizadas)));
+        var asistencias = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userSummaries.Select(u => u.AsistenciasMarcadas)));
+
+        var colorPalette = [
+            '#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', 
+            '#06b6d4', '#f97316', '#6366f1', '#14b8a6', '#84cc16'
+        ];
+
+        // ── 1. Histograma de Carga de Trabajo ─────────────────────────────────────────
+        var ctxHist = document.getElementById('chartHistogramaUsuarios');
+        if (ctxHist && userNames.length > 0) {
+            new Chart(ctxHist, {
+                type: 'bar',
+                data: {
+                    labels: userNames,
+                    datasets: [
+                        {
+                            label: 'Total Operaciones',
+                            data: totalActions,
+                            backgroundColor: 'rgba(37, 99, 235, 0.75)',
+                            borderColor: '#2563eb',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Casos Modificados',
+                            data: casesModified,
+                            backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                            borderColor: '#10b981',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Carpetas Subidas',
+                            data: subidas,
+                            backgroundColor: 'rgba(245, 158, 11, 0.75)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        // ── 2. Gráfico de Dispersión / Scatter Plot ───────────────────────────────────
+        var rawScatter = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userStats?.ScatterPoints ?? []));
+        var ctxScatter = document.getElementById('chartDispersionUsuarios');
+        if (ctxScatter && rawScatter.length > 0) {
+            // Agrupar puntos por usuario
+            var userDatasets = [];
+            var uniqueUsers = Array.from(new Set(rawScatter.map(p => p.UserName)));
+
+            uniqueUsers.forEach(function (user, idx) {
+                var userPoints = rawScatter.filter(p => p.UserName === user).map(p => ({
+                    x: p.Day,
+                    y: p.Hour,
+                    action: p.ActionType,
+                    time: p.FormattedTime
+                }));
+
+                userDatasets.push({
+                    label: user,
+                    data: userPoints,
+                    backgroundColor: colorPalette[idx % colorPalette.length],
+                    borderColor: colorPalette[idx % colorPalette.length],
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                });
+            });
+
+            new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: userDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Día del Mes' },
+                            min: 1,
+                            max: 31,
+                            ticks: { stepSize: 2 },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Hora del Día' },
+                            min: 8,
+                            max: 18,
+                            ticks: {
+                                callback: function (val) {
+                                    var h = Math.floor(val);
+                                    var m = Math.round((val - h) * 60);
+                                    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+                                }
+                            },
+                            grid: { color: '#f1f5f9' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    var p = ctx.raw;
+                                    return ctx.dataset.label + ' — ' + p.action + ' (' + p.time + ')';
+                                }
+                            }
+                        },
+                        legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        // ── 3. Gráfico de Evolución Diaria por Usuario ───────────────────────────────
+        var daysInMonth = @DateTime.DaysInMonth(Model.Year, Model.Month);
+        var dayLabels = [];
+        for (var d = 1; d <= daysInMonth; d++) dayLabels.push(d.toString());
+
+        var dailyDataByUser = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(userStats?.DailyCountsByUser ?? new Dictionary<string, int[]>()));
+        var ctxEvol = document.getElementById('chartEvolucionUsuarios');
+        if (ctxEvol && Object.keys(dailyDataByUser).length > 0) {
+            var evolDatasets = [];
+            var userIndex = 0;
+            for (var u in dailyDataByUser) {
+                var arr = dailyDataByUser[u];
+                // Slice from 1 to daysInMonth
+                var series = arr.slice(1, daysInMonth + 1);
+                var col = colorPalette[userIndex % colorPalette.length];
+                evolDatasets.push({
+                    label: u,
+                    data: series,
+                    borderColor: col,
+                    backgroundColor: col,
+                    tension: 0.25,
+                    fill: false,
+                    pointRadius: 3
+                });
+                userIndex++;
+            }
+
+            new Chart(ctxEvol, {
+                type: 'line',
+                data: {
+                    labels: dayLabels,
+                    datasets: evolDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { title: { display: true, text: 'Día del Mes' }, grid: { display: false } },
+                        y: { title: { display: true, text: 'Operaciones Registradas' }, beginAtZero: true, grid: { color: '#f1f5f9' } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+    });
+</script>
+}

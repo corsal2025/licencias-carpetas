@@ -67,6 +67,9 @@ public interface IFolderCaseRepository
     /// <summary>Retrieves complete audit trail of modifications for a specific case.</summary>
     IReadOnlyList<CaseAuditEntry> GetAuditLog(long caseId);
 
+    /// <summary>Retrieves all audit logs in a given date range for user statistics.</summary>
+    IReadOnlyList<CaseAuditEntry> GetAuditLogsForPeriod(DateTimeOffset start, DateTimeOffset end);
+
     /// <summary>Cuántos casos hay por clase de licencia en el período. Un caso con varias clases
     /// suma en cada una: la pregunta es cuántas licencias se tramitan, no cuántas personas.</summary>
     IReadOnlyList<(LicenceClass Licence, int Count)> LicenceClassBreakdown(int year, int? month, Office? office);
@@ -905,6 +908,37 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
             ORDER BY ChangedAt DESC, Id DESC
             """;
         command.Parameters.AddWithValue("$caseId", caseId);
+
+        var entries = new List<CaseAuditEntry>();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            entries.Add(new CaseAuditEntry
+            {
+                Id = reader.GetInt64(0),
+                FolderCaseId = reader.GetInt64(1),
+                ChangedBy = reader.GetString(2),
+                ChangedAt = DateTimeOffset.Parse(reader.GetString(3)),
+                FieldName = reader.GetString(4),
+                OldValue = reader.IsDBNull(5) ? null : reader.GetString(5),
+                NewValue = reader.IsDBNull(6) ? null : reader.GetString(6)
+            });
+        }
+        return entries;
+    }
+
+    public IReadOnlyList<CaseAuditEntry> GetAuditLogsForPeriod(DateTimeOffset start, DateTimeOffset end)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT Id, FolderCaseId, ChangedBy, ChangedAt, FieldName, OldValue, NewValue
+            FROM CaseAuditLog
+            WHERE ChangedAt >= $start AND ChangedAt < $end
+            ORDER BY ChangedAt ASC, Id ASC
+            """;
+        command.Parameters.AddWithValue("$start", start.ToString("O"));
+        command.Parameters.AddWithValue("$end", end.ToString("O"));
 
         var entries = new List<CaseAuditEntry>();
         using var reader = command.ExecuteReader();

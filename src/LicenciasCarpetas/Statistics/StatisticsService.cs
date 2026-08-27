@@ -85,4 +85,98 @@ public sealed class StatisticsService(IFolderCaseRepository cases, IDailyCounter
             cases.FinalDecisionBreakdown(year, month, office: null),
             cases.LicenceClassBreakdown(year, month, office: null));
     }
+
+    public MonthlyUserStatistics UserStatsForMonth(int year, int month)
+    {
+        var daysInMonth = DateTime.DaysInMonth(year, month);
+        var start = new DateTimeOffset(new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc));
+        var end = new DateTimeOffset(new DateTime(year, month, daysInMonth, 23, 59, 59, DateTimeKind.Utc));
+
+        var logs = cases.GetAuditLogsForPeriod(start, end);
+
+        var scatterPoints = new List<UserActivityScatterPoint>();
+        var userActions = new Dictionary<string, List<CaseAuditEntry>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var log in logs)
+        {
+            if (string.IsNullOrWhiteSpace(log.ChangedBy)) continue;
+            var user = log.ChangedBy.Trim();
+            if (!userActions.TryGetValue(user, out var list))
+            {
+                list = [];
+                userActions[user] = list;
+            }
+            list.Add(log);
+
+            var localTime = log.ChangedAt.ToLocalTime();
+            var decimalHour = localTime.Hour + (localTime.Minute / 60.0);
+            scatterPoints.Add(new UserActivityScatterPoint(
+                user,
+                localTime.Day,
+                Math.Round(decimalHour, 2),
+                log.FieldName,
+                log.FieldName,
+                log.FolderCaseId,
+                localTime.ToString("dd/MM HH:mm")
+            ));
+        }
+
+        var summaries = new List<UserActivitySummary>();
+        var dailyCountsByUser = new Dictionary<string, int[]>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (user, userLogs) in userActions)
+        {
+            var casesModified = userLogs.Select(l => l.FolderCaseId).Distinct().Count();
+            var subidas = userLogs.Count(l => l.FieldName == "Estado carpeta" && (l.NewValue?.StartsWith("Subida", StringComparison.OrdinalIgnoreCase) == true || l.NewValue?.Contains("Subid", StringComparison.OrdinalIgnoreCase) == true));
+            var asistencias = userLogs.Count(l => l.FieldName == "Asistencia");
+            var folios = userLogs.Count(l => l.FieldName == "Folio licencia" && !string.IsNullOrWhiteSpace(l.NewValue));
+            var activeDays = userLogs.Select(l => l.ChangedAt.ToLocalTime().Date).Distinct().ToList();
+            var activeDaysCount = activeDays.Count;
+            var dailyAvg = activeDaysCount > 0 ? Math.Round((double)userLogs.Count / activeDaysCount, 1) : 0;
+            var lastActive = userLogs.Max(l => l.ChangedAt).ToLocalTime().ToString("dd-MM-yyyy HH:mm");
+
+            var dailyArray = new int[daysInMonth + 1];
+            foreach (var log in userLogs)
+            {
+                var day = log.ChangedAt.ToLocalTime().Day;
+                if (day >= 1 && day <= daysInMonth) dailyArray[day]++;
+            }
+            dailyCountsByUser[user] = dailyArray;
+
+            summaries.Add(new UserActivitySummary(
+                user,
+                userLogs.Count,
+                casesModified,
+                subidas,
+                asistencias,
+                folios,
+                activeDaysCount,
+                dailyAvg,
+                lastActive
+            ));
+        }
+
+        // Si no hay logs de auditoría en ese mes, buscar en FolderCase por UpdatedBy
+        if (summaries.Count == 0)
+        {
+            var monthCases = cases.QueryAll(new CaseFilter { Year = year, Month = month });
+            var byUpdated = monthCases.Where(c => !string.IsNullOrWhiteSpace(c.UpdatedBy))
+                .GroupBy(c => c.UpdatedBy!.Trim(), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var group in byUpdated)
+            {
+                var u = group.Key;
+                var count = group.Count();
+                var subidas = group.Count(c => c.FolderState is { } st && (st == FolderState.SubidaAConaset || st == FolderState.SubidaConF8 || st == FolderState.SubidaConOficio));
+                var asistencias = group.Count(c => c.Attended);
+                var folios = group.Count(c => !string.IsNullOrWhiteSpace(c.FolioLicencia));
+                summaries.Add(new UserActivitySummary(u, count, count, subidas, asistencias, folios, 1, count, DateTime.Today.ToString("dd-MM-yyyy")));
+            }
+        }
+
+        summaries = summaries.OrderByDescending(s => s.TotalActions).ToList();
+        var activeUsers = summaries.Select(s => s.UserName).ToList();
+
+        return new MonthlyUserStatistics(year, month, summaries, scatterPoints, activeUsers, dailyCountsByUser);
+    }
 }
