@@ -313,6 +313,26 @@ static void EnsureDataDirectory(string sqliteDbPath)
     {
         Directory.CreateDirectory(directory);
     }
+
+    if (!File.Exists(sqliteDbPath) || new FileInfo(sqliteDbPath).Length == 0)
+    {
+        var seedCandidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "seed", "carpetas.db"),
+            Path.Combine(AppContext.BaseDirectory, "data", "carpetas.db"),
+            Path.Combine(Directory.GetCurrentDirectory(), "data", "carpetas.db")
+        };
+
+        foreach (var seedPath in seedCandidates)
+        {
+            if (File.Exists(seedPath) && !string.Equals(Path.GetFullPath(seedPath), Path.GetFullPath(sqliteDbPath), StringComparison.OrdinalIgnoreCase))
+            {
+                File.Copy(seedPath, sqliteDbPath, overwrite: true);
+                Console.WriteLine($"Base de datos inicial restaurada desde seed: {seedPath}");
+                break;
+            }
+        }
+    }
 }
 
 static void EnsureSchemas(IServiceProvider services)
