@@ -29,7 +29,7 @@ public static class FolderStateCatalog
         [FolderState.PrimeraLicencia] = "1° LICENCIA",
         [FolderState.SubidaAConaset] = "SUBIDA A CONASET",
         [FolderState.SubidaConF8] = "SUBIDA CON F8",
-        [FolderState.SubidaConOficio] = "SUBIDA CON OFICIO",
+        [FolderState.SubidaConOficio] = "SUBIDA CON CERTIFICADO",
         [FolderState.CambioDomicilioSubidoAConaset] = "CAMBIO DOM. SUBIDO A CONASET",
         [FolderState.CambioDomicilioSubidoConCorreo] = "CAMBIO DOM. SUBIDO CON CORREO",
         [FolderState.CambioDomicilioSolicitado] = "CAMBIO DE DOMICILIO SOLICITADO",
@@ -130,6 +130,7 @@ public static class FolderStateCatalog
         Add("SE ENCUENTRA EN OF.43", FolderState.SeEncuentraEnOficina43);
         Add("SE ENCUENTRA EN OFICINA 43", FolderState.SeEncuentraEnOficina43);
         Add("SE ENCUENTRA EN ARCHIVO", FolderState.SeEncuentraEnArchivos);
+        Add("SUBIDA CON OFICIO", FolderState.SubidaConOficio);
 
         return aliases;
     }

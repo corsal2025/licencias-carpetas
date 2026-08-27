@@ -1956,6 +1956,19 @@ table.cases-index tbody tr.estado-primeralicencia td { background: #FF00FF !impo
 table.cases-index tbody tr.estado-subidaaconaset td { background: #1155CC !important; }
 table.cases-index tbody tr.estado-subidaconf8 td { background: #BF9000 !important; }
 table.cases-index tbody tr.estado-subidaconoficio td { background: #FFE599 !important; }
+
+/* ── Feedback de Autoguardado Instantáneo ───────────────────────────────────── */
+table.cases-index tbody tr.fila-guardando td {
+    background-color: rgba(59, 130, 246, 0.18) !important;
+    transition: background-color 0.2s ease;
+}
+table.cases-index tbody tr.fila-guardada-ok td {
+    background-color: rgba(34, 197, 94, 0.3) !important;
+    transition: background-color 0.3s ease;
+}
+table.cases-index tbody tr.fila-sin-guardar td {
+    border-bottom: 2px dashed #f59e0b;
+}
 table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td { background: #00FFFF !important; }
 table.cases-index tbody tr.estado-cambiodomiciliosubidoconcorreo td { background: #D0E0E3 !important; }
 table.cases-index tbody tr.estado-cambiodomiciliosolicitado td { background: #9FC5E8 !important; }

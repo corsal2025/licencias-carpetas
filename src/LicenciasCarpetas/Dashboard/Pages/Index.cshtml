@@ -368,6 +368,10 @@
                     {
                         <span class="idoneidad-icon" title="Idoneidad moral: REVISAR">⚠️</span>
                     }
+                    else if (item.MoralIdoneity == MoralIdoneity.Aceptada)
+                    {
+                        <span class="idoneidad-icon" title="Idoneidad moral: ACEPTADA">✅</span>
+                    }
                     <input type="text" name="nombre" form="case-form-@item.Id" class="input-inline name-input"
                            size="@nameSize" value="@item.FullName" placeholder="Nombre completo" />
                 </td>
@@ -700,6 +704,7 @@
         fillUploadDateIfMissing(row, select.value);
         toggleSolicitarForm(select);
         markUnsaved(select);
+        autoSaveCaseRow(select);
     }
 
     // Mismo criterio que el servidor (OnPostSave): elegir un estado de "ya subida" escribe la fecha
@@ -742,15 +747,15 @@
     // Igual que repaintRow con el estado de la carpeta: sin esto, el parpadeo y el ícono junto al
     // nombre solo aparecían después de guardar y recargar, y el operador no tenía forma de saber que
     // la selección "prendió" hasta ese momento.
-    var idoneidadIcons = { Alertada: '🚨', Revisar: '⚠️' };
-    var idoneidadTitles = { Alertada: 'Idoneidad moral: ALERTADA', Revisar: 'Idoneidad moral: REVISAR' };
+    var idoneidadIcons = { Alertada: '🚨', Revisar: '⚠️', Aceptada: '✅' };
+    var idoneidadTitles = { Alertada: 'Idoneidad moral: ALERTADA', Revisar: 'Idoneidad moral: REVISAR', Aceptada: 'Idoneidad moral: ACEPTADA' };
 
     function repaintIdoneidad(select) {
         var row = select.closest('tr');
         if (!row) return;
 
         row.classList.remove('row-alertada', 'row-revisar');
-        if (select.value) {
+        if (select.value && select.value !== 'Aceptada') {
             row.classList.add('row-' + select.value.toLowerCase());
         }
 
@@ -769,6 +774,7 @@
         }
 
         markUnsaved(select);
+        autoSaveCaseRow(select);
     }
 
     // Alterna la clase que hace parpadear las filas en ALERTADA. Va en <body>, no por fila: así una
@@ -777,14 +783,79 @@
         document.body.classList.toggle('idoneidad-flash');
     }, 500);
 
+    // ── Autoguardado Instantáneo por AJAX (ENTER y cambio de celda) ───────────────
+    async function autoSaveCaseRow(field) {
+        var row = field.closest('tr');
+        if (!row) return;
+
+        var form = row.querySelector('form[id^="case-form-"]');
+        if (!form) return;
+
+        var formData = new FormData(form);
+
+        var rowInputs = row.querySelectorAll('input:not([type=checkbox]), select, textarea');
+        rowInputs.forEach(function (el) {
+            if (el.name && el.name !== '__RequestVerificationToken') {
+                formData.set(el.name, el.value);
+            }
+        });
+
+        row.classList.remove('fila-sin-guardar', 'fila-guardada-ok');
+        row.classList.add('fila-guardando');
+
+        try {
+            var url = form.getAttribute('action') || (window.location.pathname + window.location.search);
+            var response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                row.classList.remove('fila-guardando', 'fila-sin-guardar');
+                row.classList.add('fila-guardada-ok');
+                setTimeout(function () {
+                    row.classList.remove('fila-guardada-ok');
+                }, 1200);
+            } else {
+                row.classList.remove('fila-guardando');
+                row.classList.add('fila-sin-guardar');
+            }
+        } catch (e) {
+            console.error('Error autoguardando caso:', e);
+            row.classList.remove('fila-guardando');
+            row.classList.add('fila-sin-guardar');
+        }
+    }
+
     document.querySelectorAll('table.cases-index tbody input, table.cases-index tbody select')
         .forEach(function (field) {
             if (field.type === 'checkbox') return;
+
             field.addEventListener('input', function () {
-                // Si el operador toca la fecha a mano deja de ser "la que puso el script": ya no se
-                // borra sola si después destilda el estado de subida.
                 if (field.name === 'subida') delete field.dataset.autofilled;
                 markUnsaved(field);
+            });
+
+            field.addEventListener('change', function () {
+                autoSaveCaseRow(field);
+            });
+
+            field.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    autoSaveCaseRow(field);
+
+                    var allInputs = Array.from(document.querySelectorAll('table.cases-index tbody input:not([type=hidden]):not([type=checkbox]), table.cases-index tbody select'));
+                    var currIndex = allInputs.indexOf(field);
+                    if (currIndex >= 0 && currIndex < allInputs.length - 1) {
+                        var nextInput = allInputs[currIndex + 1];
+                        nextInput.focus();
+                        if (nextInput.select) nextInput.select();
+                    }
+                }
             });
         });
 

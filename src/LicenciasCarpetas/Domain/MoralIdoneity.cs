@@ -4,7 +4,8 @@ namespace LicenciasCarpetas.Domain;
 public enum MoralIdoneity
 {
     Alertada,
-    Revisar
+    Revisar,
+    Aceptada
 }
 
 public static class MoralIdoneityCatalog
@@ -12,7 +13,8 @@ public static class MoralIdoneityCatalog
     private static readonly Dictionary<MoralIdoneity, string> Displays = new()
     {
         [MoralIdoneity.Alertada] = "ALERTADA",
-        [MoralIdoneity.Revisar] = "REVISAR"
+        [MoralIdoneity.Revisar] = "REVISAR",
+        [MoralIdoneity.Aceptada] = "ACEPTADA"
     };
 
     public static IReadOnlyList<MoralIdoneity> All { get; } = [.. Displays.Keys];
