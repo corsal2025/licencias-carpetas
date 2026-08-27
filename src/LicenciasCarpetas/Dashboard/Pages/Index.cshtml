@@ -454,7 +454,7 @@
                     </select>
                 </td>
                 <td>
-                    <select name="decision" form="case-form-@item.Id" class="input-inline">
+                    <select name="decision" form="case-form-@item.Id" class="input-inline" onchange="onDecisionChanged(this)">
                         <option value="">@(item.FinalDecisionRaw ?? "—")</option>
                         @foreach (var decision in FinalDecisionCatalog.All)
                         {
@@ -701,27 +701,25 @@
             row.classList.add('estado-' + select.value.toLowerCase());
         }
 
-        fillUploadDateIfMissing(row, select.value);
+        var isUpload = uploadStates.indexOf(select.value) !== -1;
+        fillUploadDateIfMissing(row, isUpload);
         toggleSolicitarForm(select);
         markUnsaved(select);
         autoSaveCaseRow(select);
     }
 
-    // Mismo criterio que el servidor (OnPostSave): elegir un estado de "ya subida" escribe la fecha
-    // de hoy en Subida carpeta, salvo que ya tenga una — nunca pisa una fecha real ya cargada. Se
-    // hace también acá para que se vea al tiro, no recién después de guardar y recargar.
+    // Mismo criterio que el servidor (OnPostSave): elegir un estado de "ya subida" o una decisión final
+    // (OTORGADO, DENEGADO, etc.) escribe la fecha de hoy en Subida carpeta, salvo que ya tenga una.
     var uploadStates = ['SubidaAConaset', 'SubidaConF8', 'SubidaConOficio',
         'CambioDomicilioSubidoAConaset', 'CambioDomicilioSubidoConCorreo'];
     var spanishMonths = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
         'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-    function fillUploadDateIfMissing(row, estadoValue) {
+    function fillUploadDateIfMissing(row, shouldFill) {
         var subidaInput = row.querySelector('input[name="subida"]');
         if (!subidaInput) return;
 
-        if (uploadStates.indexOf(estadoValue) === -1) {
-            // Se destildó el estado de subida: la fecha que se puso sola se borra con él. Una fecha
-            // real, tipeada a mano, queda — el atributo solo marca la que puso este script.
+        if (!shouldFill) {
             if (subidaInput.dataset.autofilled === 'true') {
                 subidaInput.value = '';
                 delete subidaInput.dataset.autofilled;
@@ -736,6 +734,16 @@
         subidaInput.value = today.getDate() + '/' + spanishMonths[today.getMonth()] + '/' + today.getFullYear();
         subidaInput.dataset.autofilled = 'true';
         markUnsaved(subidaInput);
+    }
+
+    function onDecisionChanged(select) {
+        var row = select.closest('tr');
+        if (!row) return;
+        if (select.value) {
+            fillUploadDateIfMissing(row, true);
+        }
+        markUnsaved(select);
+        autoSaveCaseRow(select);
     }
 
     // Cambiar el desplegable no guarda nada: sin este aviso, el color nuevo hace creer que sí.

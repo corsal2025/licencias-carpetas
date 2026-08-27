@@ -144,9 +144,10 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         var citationDate = ParseDate(citacion);
         var uploadedDate = ParseDate(subida);
 
-        // Marcar un estado de subida es el acto de subirla: la fecha es hoy, y escribirla a mano es
-        // una oportunidad de equivocarse o de olvidarla. Una fecha ya escrita no se toca.
-        if (estado is { } newState && IsUploadState(newState) && uploadedDate is null)
+        // Marcar un estado de subida o registrar decisión final (OTORGADO, DENEGADO, etc.)
+        // escribe la fecha de hoy en Subida de carpeta si está vacía.
+        var isFinalizado = (estado is { } newState && IsUploadState(newState)) || decision is not null;
+        if (isFinalizado && uploadedDate is null)
         {
             uploadedDate = DateOnly.FromDateTime(DateTime.Today);
         }
