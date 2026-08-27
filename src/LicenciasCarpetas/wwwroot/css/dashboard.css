@@ -76,22 +76,19 @@ body {
    izquierda en vez de una franja arriba, para dejarle más alto a la tabla de Casos. */
 .app-shell {
     display: flex;
-    /* height fija, no min-height: con min-height un sidebar con muchos links (Administrador en
-       Cambio de Domicilio, por ejemplo) estira toda la fila más allá de 100vh, y como la tabla de
-       Casos (body.viewport-locked) fija su propio alto a 100vh por separado, quedaban
-       desincronizados — la fila crecía pero la tabla no, rompiendo el recorte que viewport-locked
-       necesita. Con height fija el sidebar se ve obligado a su propio scroll interno en vez de
-       empujar la fila entera. */
-    height: 100vh;
+    min-height: 100vh;
+    width: 100%;
+    background: var(--color-sidebar-bg);
 }
 
 .app-sidebar {
     flex: 0 0 var(--sidebar-width);
     width: var(--sidebar-width);
-    /* Sin esto, un flex item en fila puede ignorar la altura fija del padre y crecer igual según
-       el contenido (el "automatic minimum size" de flexbox) — así el overflow-y de abajo sí llega
-       a activarse en vez de quedar de adorno. */
-    min-height: 0;
+    height: 100vh;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -99,6 +96,17 @@ body {
     border-right: 1px solid var(--color-sidebar-border);
     padding: 16px 14px;
     overflow-y: auto;
+    box-sizing: border-box;
+    z-index: 100;
+}
+
+.app-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg);
+    min-height: 100vh;
 }
 
 .sidebar-brand {

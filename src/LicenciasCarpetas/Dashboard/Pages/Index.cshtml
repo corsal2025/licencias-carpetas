@@ -414,14 +414,15 @@
                 <td>
                     @* Selección múltiple de clases de licencia *@
                     @{ var licencias = LicenceClassCatalog.Parse(item.LicenceClasses); }
-                    <details class="popover-celda licencias-celda">
+                    <details class="popover-celda licencias-celda" data-case-id="@item.Id">
                         <summary>@(string.IsNullOrWhiteSpace(LicenceClassCatalog.DisplayList(item.LicenceClasses)) ? "—" : LicenceClassCatalog.DisplayList(item.LicenceClasses))</summary>
                         <div class="popover-panel licencias-opciones">
                             @foreach (var licence in LicenceClassCatalog.All)
                             {
                                 <label class="licencia-option-label">
                                     <input type="checkbox" name="licencias" form="case-form-@item.Id"
-                                           value="@licence" checked="@licencias.Contains(licence)" />
+                                           value="@licence" checked="@licencias.Contains(licence)"
+                                           onchange="onLicenciaCheckboxChange(this, @item.Id)" />
                                     <span>@LicenceClassCatalog.Display(licence)</span>
                                 </label>
                             }
@@ -1058,25 +1059,57 @@
     // salir.
     var autoSaveControllers = {};
 
+    function onLicenciaCheckboxChange(checkbox, caseId) {
+        var details = checkbox.closest('.licencias-celda');
+        if (details) {
+            var summary = details.querySelector('summary');
+            var checkedBoxes = details.querySelectorAll('input[name="licencias"]:checked');
+            var selected = [];
+            checkedBoxes.forEach(function (cb) {
+                selected.push(cb.value);
+            });
+            if (summary) {
+                summary.textContent = selected.length > 0 ? selected.join(', ') : '—';
+            }
+        }
+        var form = document.getElementById('case-form-' + caseId);
+        if (form) {
+            autoSaveCaseForm(form);
+        }
+    }
+
     function autoSaveCaseForm(form) {
         var row = form.closest('tr');
         if (row) {
             row.classList.add('fila-sin-guardar');
             row.classList.remove('fila-error-guardado');
         }
-        // Debounce corto: si se cambian dos campos de la misma fila casi al mismo tiempo (tabular
-        // entre inputs), se manda un solo guardado con ambos en vez de dos pisándose entre sí.
         var formId = form.id;
         if (autoSaveTimers[formId]) {
             clearTimeout(autoSaveTimers[formId]);
         }
-        autoSaveTimers[formId] = setTimeout(function () { sendAutoSave(form); }, 400);
+        autoSaveTimers[formId] = setTimeout(function () { sendAutoSave(form); }, 300);
     }
 
     function sendAutoSave(form) {
         var formId = form.id;
         var row = form.closest('tr');
-        var body = new URLSearchParams(new FormData(form)).toString();
+        var formData = new FormData(form);
+
+        if (row) {
+            // Asegurar recolección de todos los inputs asociados a este formulario por ID
+            var licenceInputs = row.querySelectorAll('input[name="licencias"]');
+            if (licenceInputs.length > 0) {
+                formData.delete('licencias');
+                licenceInputs.forEach(function(cb) {
+                    if (cb.checked) {
+                        formData.append('licencias', cb.value);
+                    }
+                });
+            }
+        }
+
+        var body = new URLSearchParams(formData).toString();
 
         if (autoSaveControllers[formId]) {
             autoSaveControllers[formId].abort();
