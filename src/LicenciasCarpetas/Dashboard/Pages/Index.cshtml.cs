@@ -234,6 +234,26 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
                 UrgentRequestGuard.Release();
             }
         }
+        else if (normalizedRut is not null)
+        {
+            // Si el estado ya no es NO EXISTE CARPETA, eliminar el caso generado en F8 Urgentes si provino de Casos
+            var f8Rut = LicenciasCarpetas.F8.Domain.Rut.TryParse(normalizedRut, out var parsedF8Rut)
+                ? parsedF8Rut.ToString()
+                : normalizedRut;
+            UrgentRequestGuard.Wait();
+            try
+            {
+                var existingUrgentRequest = urgentRequests.FindByRut(f8Rut);
+                if (existingUrgentRequest is not null && existingUrgentRequest.Origin == "Casos")
+                {
+                    urgentRequests.Delete(existingUrgentRequest.Id);
+                }
+            }
+            finally
+            {
+                UrgentRequestGuard.Release();
+            }
+        }
 
         // Elegir "CAMBIO DE DOMICILIO SOLICITADO" en Casos crea/sincroniza automáticamente la fila
         // en el módulo "Solicitar Cambios de Domicilio" (OutboundAddressChangeRequest), de modo que
@@ -280,6 +300,15 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
                 {
                     outboundRequests.Update(existingOutbound);
                 }
+            }
+        }
+        else
+        {
+            // Si el estado ya no es CAMBIO DE DOMICILIO SOLICITADO, eliminar las solicitudes salientes vinculadas
+            var existingOutboundList = outboundRequests.FindBySourceFolderCaseId(id);
+            foreach (var req in existingOutboundList)
+            {
+                outboundRequests.Delete(req.Id);
             }
         }
 
