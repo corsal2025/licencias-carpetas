@@ -352,7 +352,8 @@ static void EnsureSchemas(IServiceProvider services)
     if (provisioning.HasNoUsers())
     {
         provisioning.Create("raul", "Valparaiso2025!", "Valparaiso2025!", UserRole.Administrador, canAccessCambioDomicilio: true, canAccessF8Urgentes: true);
-        Console.WriteLine("Usuario inicial 'raul' aprovisionado automáticamente.");
+        provisioning.Create("admin", "Valparaiso2025!", "Valparaiso2025!", UserRole.Administrador, canAccessCambioDomicilio: true, canAccessF8Urgentes: true);
+        Console.WriteLine("Usuarios iniciales 'raul' y 'admin' aprovisionados automáticamente.");
     }
     services.GetRequiredService<IUrgentRequestRepository>().EnsureSchema();
     services.GetRequiredService<ICambioDomicilioRequestRepository>().EnsureSchema();
