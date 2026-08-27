@@ -17,8 +17,9 @@ certs/
 # git config also silently matched source folders like F8/Data/ and CambioDomicilio/Data/,
 # excluding real repository code from every commit without a warning).
 /src/LicenciasCarpetas/data/*
-!/src/LicenciasCarpetas/data/README.md
 *.db
+!/src/LicenciasCarpetas/seed/carpetas.db
+!/data/carpetas.db
 
 publish/
 
