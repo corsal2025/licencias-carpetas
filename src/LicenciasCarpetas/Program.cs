@@ -18,6 +18,7 @@ using LicenciasCarpetas.Persistence;
 using LicenciasCarpetas.Reporting;
 using LicenciasCarpetas.Statistics;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 
 // ContentRootPath pinned to the exe's own folder (not the process's current directory) so every
 // relative path in config (SqliteDbPath, ExportDirectory, workbook path) resolves the same way no
@@ -109,23 +110,27 @@ builder.Services.AddSingleton<AddressChangeRoutingService>();
 builder.Services.AddSingleton<CambioDomicilioSyncService>();
 builder.Services.AddSingleton<CambioDomicilioStatisticsService>();
 
+var keysFolder = Path.Combine(Path.GetDirectoryName(databasePath) ?? AppContext.BaseDirectory, "keys");
+Directory.CreateDirectory(keysFolder);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keysFolder))
+    .SetApplicationName("LicenciasCarpetas");
+
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(cookieOptions =>
     {
         cookieOptions.LoginPath = "/Login";
-        // Sin página de "acceso denegado" propia: un rol sin permiso para la pantalla que pidió
-        // por URL directa vuelve a Casos, que todos los roles pueden ver.
         cookieOptions.AccessDeniedPath = "/Index";
+        cookieOptions.Cookie.Name = ".LicenciasCarpetas.Auth";
         cookieOptions.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-        cookieOptions.ExpireTimeSpan = TimeSpan.FromHours(8);
+        cookieOptions.Cookie.SameSite = SameSiteMode.Lax;
+        cookieOptions.Cookie.HttpOnly = true;
+        cookieOptions.ExpireTimeSpan = TimeSpan.FromDays(30);
         cookieOptions.SlidingExpiration = true;
     });
 builder.Services.AddAuthorization(authorizationOptions =>
 {
-    // Mismos claims que Login.cshtml.cs calcula (incondicional salvo Administrativo, donde se
-    // decide por persona) — el nav ya los usa para ocultar los links, esto es lo que de verdad
-    // bloquea la pantalla si alguien entra por URL directa sin el módulo habilitado.
     authorizationOptions.AddPolicy("CambioDomicilioAccess",
         policy => policy.RequireClaim("mod:cambio-domicilio", "true"));
     authorizationOptions.AddPolicy("F8Access",
@@ -341,8 +346,14 @@ static void EnsureSchemas(IServiceProvider services)
     services.GetRequiredService<IDailyCounterRepository>().EnsureSchema();
     var comunaContacts = services.GetRequiredService<IComunaContactRepository>();
     comunaContacts.EnsureSchema();
-    comunaContacts.EnsureSeed();
-    services.GetRequiredService<IUserRepository>().EnsureSchema();
+    var userRepo = services.GetRequiredService<IUserRepository>();
+    userRepo.EnsureSchema();
+    var provisioning = services.GetRequiredService<UserProvisioning>();
+    if (provisioning.HasNoUsers())
+    {
+        provisioning.Create("raul", "Valparaiso2025!", "Valparaiso2025!", UserRole.Administrador, canAccessCambioDomicilio: true, canAccessF8Urgentes: true);
+        Console.WriteLine("Usuario inicial 'raul' aprovisionado automáticamente.");
+    }
     services.GetRequiredService<IUrgentRequestRepository>().EnsureSchema();
     services.GetRequiredService<ICambioDomicilioRequestRepository>().EnsureSchema();
     services.GetRequiredService<IOutboundAddressChangeRequestRepository>().EnsureSchema();

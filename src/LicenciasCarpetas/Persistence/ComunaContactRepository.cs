@@ -6,7 +6,7 @@ namespace LicenciasCarpetas.Persistence;
 public interface IComunaContactRepository
 {
     void EnsureSchema();
-    void EnsureSeed() { }
+    void EnsureSeed(string? csvPath = null);
     void Upsert(ComunaContact contact);
     void Update(long id, string comuna, string email, string? notes = null);
     IReadOnlyList<ComunaContact> All(string? search = null);
@@ -31,10 +31,55 @@ public sealed class ComunaContactRepository(string connectionString) : IComunaCo
         command.ExecuteNonQuery();
     }
 
-    public void EnsureSeed()
+    public void EnsureSeed(string? csvPath = null)
     {
-        using var connection = Open();
-        SeedDefaultContacts(connection);
+        var path = csvPath;
+        if (string.IsNullOrEmpty(path))
+        {
+            var candidates = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "data", "comunas.csv"),
+                Path.Combine(Directory.GetCurrentDirectory(), "data", "comunas.csv"),
+                Path.Combine(AppContext.BaseDirectory, "comunas.csv")
+            };
+            path = candidates.FirstOrDefault(File.Exists);
+        }
+
+        if (!string.IsNullOrEmpty(path) && File.Exists(path))
+        {
+            using var connection = Open();
+            using var tx = connection.BeginTransaction();
+            var lines = File.ReadAllLines(path);
+            foreach (var line in lines.Skip(1))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                var parts = line.Split(',');
+                if (parts.Length >= 2)
+                {
+                    var comuna = parts[0].Trim().Trim('"');
+                    var email = parts[1].Trim().Trim('"');
+                    if (comuna.Length > 0 && email.Contains('@'))
+                    {
+                        using var cmd = connection.CreateCommand();
+                        cmd.Transaction = tx;
+                        cmd.CommandText = """
+                            INSERT INTO ComunaContact (Comuna, Email, Notes)
+                            VALUES ($comuna, $email, $notes)
+                            ON CONFLICT(Comuna, Email) DO NOTHING;
+                            """;
+                        cmd.Parameters.AddWithValue("$comuna", comuna);
+                        cmd.Parameters.AddWithValue("$email", email);
+                        cmd.Parameters.AddWithValue("$notes", "Directorio oficial");
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            tx.Commit();
+            return;
+        }
+
+        using var conn = Open();
+        SeedDefaultContacts(conn);
     }
 
     private static void SeedDefaultContacts(SqliteConnection connection)
