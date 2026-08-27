@@ -29,8 +29,8 @@ public class ComunasModel(IComunaContactRepository contacts) : PageModel
             return RedirectToPage(new { search = Search });
         }
 
-        contacts.Upsert(new ComunaContact { Comuna = comuna.Trim(), Email = correo.Trim() });
-        TempData["Message"] = $"Contacto de {comuna.Trim()} guardado.";
+        contacts.Upsert(new ComunaContact { Comuna = comuna.Trim().ToUpperInvariant(), Email = correo.Trim() });
+        TempData["Message"] = $"Contacto de {comuna.Trim().ToUpperInvariant()} guardado.";
         return RedirectToPage(new { search = Search });
     }
 

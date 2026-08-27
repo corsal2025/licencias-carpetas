@@ -412,27 +412,14 @@
                            placeholder="dd/mes/aaaa" />
                 </td>
                 <td>
-                    @* Selección múltiple de clases de licencia *@
-                    @{ var licencias = LicenceClassCatalog.Parse(item.LicenceClasses); }
-                    <details class="popover-celda licencias-celda" data-case-id="@item.Id">
-                        <summary>@(string.IsNullOrWhiteSpace(LicenceClassCatalog.DisplayList(item.LicenceClasses)) ? "—" : LicenceClassCatalog.DisplayList(item.LicenceClasses))</summary>
-                        <div class="popover-panel licencias-opciones" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();">
-                            <div class="licencias-grid">
-                                @foreach (var licence in LicenceClassCatalog.All)
-                                {
-                                    <label class="licencia-option-label">
-                                        <input type="checkbox" name="licencias" form="case-form-@item.Id"
-                                               value="@licence" checked="@licencias.Contains(licence)"
-                                               onchange="onLicenciaCheckboxChange(this, @item.Id)" />
-                                        <span>@LicenceClassCatalog.Display(licence)</span>
-                                    </label>
-                                }
-                            </div>
-                            <div style="margin-top:8px; padding-top:6px; border-top:1px solid #e2e8f0; text-align:right;">
-                                <button type="button" class="btn-primary" style="padding:3px 10px; font-size:var(--font-xs); font-weight:700; border-radius:4px; background:#2563eb; cursor:pointer;" onclick="this.closest('details').removeAttribute('open');">✓ Listo</button>
-                            </div>
-                        </div>
-                    </details>
+                    @* Selección múltiple de clases de licencia con popover flotante *@
+                    <button type="button" class="btn-licencias-trigger" id="lic-btn-@item.Id"
+                            onclick="openLicenciasPopover(this, @item.Id)"
+                            data-licencias="@(item.LicenceClasses ?? "")">
+                        <span class="lic-btn-text">@(string.IsNullOrWhiteSpace(LicenceClassCatalog.DisplayList(item.LicenceClasses)) ? "—" : LicenceClassCatalog.DisplayList(item.LicenceClasses))</span>
+                        <span class="lic-btn-arrow">▾</span>
+                    </button>
+                    <input type="hidden" name="licenciasSerializadas" id="lic-hidden-@item.Id" form="case-form-@item.Id" value="@(item.LicenceClasses ?? "")" />
                 </td>
                 @* La columna ATENCIÓN se sacó de la tabla por pedido del operador, pero el valor
                    viaja igual en el formulario: sin él, guardar una fila borraría la atención y la
@@ -455,8 +442,8 @@
                     </select>
                 </td>
                 <td>
-                    <input type="text" name="comuna" id="comuna-@item.Id" form="case-form-@item.Id" class="input-inline" style="width:110px;"
-                           value="@item.CambioDomicilioComuna" placeholder="ej: Valparaíso" />
+                    <input type="text" name="comuna" id="comuna-@item.Id" form="case-form-@item.Id" class="input-inline" style="width:110px; text-transform:uppercase;"
+                           value="@item.CambioDomicilioComuna" placeholder="ej: VALPARAÍSO" oninput="this.value = this.value.toUpperCase();" />
                 </td>
                 <td>
                     <select name="idoneidad" form="case-form-@item.Id" class="input-inline" onchange="repaintIdoneidad(this)">
@@ -641,6 +628,25 @@
     </div>
 </div>
 
+<div id="licencias-floating-popover" class="licencias-floating-popover" style="display:none;" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();">
+    <div class="licencias-popover-header">
+        <span id="licencias-popover-title">Clases de Licencia</span>
+        <button type="button" class="observaciones-cerrar" onclick="closeLicenciasPopover()" aria-label="Cerrar" title="Cerrar">✕</button>
+    </div>
+    <div class="licencias-popover-grid">
+        @foreach (var licence in LicenceClassCatalog.All)
+        {
+            <label class="licencia-popover-label">
+                <input type="checkbox" class="lic-popover-cb" value="@licence" onchange="onLicenciaPopoverChange()" />
+                <span>@LicenceClassCatalog.Display(licence)</span>
+            </label>
+        }
+    </div>
+    <div class="licencias-popover-footer">
+        <button type="button" class="btn-primary" style="padding:4px 12px; font-weight:700; border-radius:4px; font-size:var(--font-xs); background:#2563eb; cursor:pointer;" onclick="closeLicenciasPopover()">✓ Listo</button>
+    </div>
+</div>
+
 @section Scripts {
 <script>
     // El color de la fila lo pinta el servidor al cargar, según el estado guardado. Al elegir otra
@@ -782,20 +788,6 @@
             });
         });
 
-    // Actualizar resumen de licencias al cambiar cualquier casilla
-    document.querySelectorAll('.licencias-celda input[type="checkbox"]').forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
-            var cell = checkbox.closest('.licencias-celda');
-            if (!cell) return;
-            var summary = cell.querySelector('summary');
-            var selected = Array.from(cell.querySelectorAll('input[type="checkbox"]:checked')).map(function (c) { return c.value; });
-            if (summary) {
-                summary.textContent = selected.length > 0 ? selected.join(', ') : '—';
-            }
-            markUnsaved(checkbox);
-        });
-    });
-
     // ── Popover Flotante de Observaciones (Portal Independiente) ────────────────
     var activeObsCaseId = null;
     var activeObsTriggerBtn = null;
@@ -916,69 +908,124 @@
         }
     })();
 
-    // ── Popovers de Selección de Licencias ───────────────────────────────────────
-    function posicionarPopover(cell) {
-        var panel = cell.querySelector('.popover-panel');
-        var summary = cell.querySelector('summary');
-        if (!panel || !summary) return;
+    // ── Popover Flotante de Selección de Licencias (Portal Independiente) ────────
+    var activeLicCaseId = null;
+    var activeLicTriggerBtn = null;
 
-        var rect = summary.getBoundingClientRect();
-        panel.style.position = 'fixed';
-        panel.style.zIndex = '9999';
+    function openLicenciasPopover(btn, caseId) {
+        var popover = document.getElementById('licencias-floating-popover');
+        if (!popover) return;
 
-        var ancho = 160;
-        var alto = 200;
-        var top = rect.bottom + 4;
-        if (top + alto > window.innerHeight - 10) {
-            top = Math.max(10, rect.top - alto - 4);
+        if (activeLicCaseId === caseId && popover.style.display !== 'none') {
+            closeLicenciasPopover();
+            return;
         }
+
+        activeLicCaseId = caseId;
+        activeLicTriggerBtn = btn;
+
+        var row = btn.closest('tr');
+        var nameInput = row ? row.querySelector('input[name="nombre"]') : null;
+        var fullName = nameInput ? nameInput.value.trim() : ('Caso #' + caseId);
+
+        var titleSpan = document.getElementById('licencias-popover-title');
+        if (titleSpan) titleSpan.textContent = fullName ? ('Licencias — ' + fullName) : 'Clases de Licencia';
+
+        var hidden = document.getElementById('lic-hidden-' + caseId);
+        var storedVal = hidden ? hidden.value : (btn.getAttribute('data-licencias') || '');
+        var activeClasses = storedVal.split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+
+        popover.querySelectorAll('.lic-popover-cb').forEach(function (cb) {
+            cb.checked = activeClasses.indexOf(cb.value) !== -1;
+        });
+
+        popover.style.display = 'flex';
+        positionLicenciasFloatingPopover();
+    }
+
+    function positionLicenciasFloatingPopover() {
+        var popover = document.getElementById('licencias-floating-popover');
+        if (!popover || popover.style.display === 'none' || !activeLicTriggerBtn) return;
+
+        var rect = activeLicTriggerBtn.getBoundingClientRect();
+        var ancho = 210;
+        var alto = 220;
+
         var left = rect.left;
         if (left + ancho > window.innerWidth - 10) {
             left = Math.max(10, window.innerWidth - ancho - 10);
         }
-        panel.style.top = Math.round(top) + 'px';
-        panel.style.left = Math.round(left) + 'px';
+
+        var top = rect.bottom + 4;
+        if (top + alto > window.innerHeight - 10) {
+            top = Math.max(10, rect.top - alto - 4);
+        }
+
+        popover.style.top = Math.round(top) + 'px';
+        popover.style.left = Math.round(left) + 'px';
     }
 
-    document.querySelectorAll('.popover-celda').forEach(function (cell) {
-        cell.addEventListener('toggle', function () {
-            if (!cell.open) return;
-            document.querySelectorAll('.popover-celda[open]').forEach(function (other) {
-                if (other !== cell) other.removeAttribute('open');
-            });
-            posicionarPopover(cell);
+    function closeLicenciasPopover() {
+        var popover = document.getElementById('licencias-floating-popover');
+        if (popover) popover.style.display = 'none';
+        activeLicCaseId = null;
+        activeLicTriggerBtn = null;
+    }
+
+    function onLicenciaPopoverChange() {
+        if (!activeLicCaseId || !activeLicTriggerBtn) return;
+
+        var popover = document.getElementById('licencias-floating-popover');
+        var checked = [];
+        popover.querySelectorAll('.lic-popover-cb:checked').forEach(function (cb) {
+            checked.push(cb.value);
         });
-    });
+
+        var serialized = checked.join(',');
+        var displayText = checked.length > 0 ? checked.join(', ') : '—';
+
+        activeLicTriggerBtn.setAttribute('data-licencias', serialized);
+        var textSpan = activeLicTriggerBtn.querySelector('.lic-btn-text');
+        if (textSpan) textSpan.textContent = displayText;
+
+        var hidden = document.getElementById('lic-hidden-' + activeLicCaseId);
+        if (hidden) {
+            hidden.value = serialized;
+        }
+
+        var row = activeLicTriggerBtn.closest('tr');
+        if (row) {
+            var form = row.querySelector('form[id^="case-form-"]');
+            if (form) autoSaveCaseForm(form);
+        }
+    }
 
     // Cerrar y reposicionar eventos globales
     document.addEventListener('mousedown', function (event) {
-        var popover = document.getElementById('obs-floating-popover');
-        if (popover && popover.style.display !== 'none') {
-            if (!popover.contains(event.target) && (!activeObsTriggerBtn || !activeObsTriggerBtn.contains(event.target))) {
+        var obsPopover = document.getElementById('obs-floating-popover');
+        if (obsPopover && obsPopover.style.display !== 'none') {
+            if (!obsPopover.contains(event.target) && (!activeObsTriggerBtn || !activeObsTriggerBtn.contains(event.target))) {
                 saveAndCloseObsPopover();
             }
         }
-        document.querySelectorAll('.popover-celda[open]').forEach(function (cell) {
-            if (!cell.contains(event.target)) {
-                cell.removeAttribute('open');
+        var licPopover = document.getElementById('licencias-floating-popover');
+        if (licPopover && licPopover.style.display !== 'none') {
+            if (!licPopover.contains(event.target) && (!activeLicTriggerBtn || !activeLicTriggerBtn.contains(event.target))) {
+                closeLicenciasPopover();
             }
-        });
+        }
     });
 
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             closeObsPopover();
-            document.querySelectorAll('.popover-celda[open]').forEach(function (cell) {
-                cell.removeAttribute('open');
-            });
+            closeLicenciasPopover();
         }
     });
 
     function reposicionarTodo() {
         positionObsFloatingPopover();
-        document.querySelectorAll('.popover-celda[open]').forEach(function (cell) {
-            posicionarPopover(cell);
-        });
+        positionLicenciasFloatingPopover();
     }
 
     var tableCard = document.querySelector('.table-card');

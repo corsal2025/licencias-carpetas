@@ -121,7 +121,7 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
     public IActionResult OnPostSave(long id, string? nombre, string? rut, string? citacion, string? subida,
         string? ultimaCarpeta, FolderState? estado, FinalDecision? decision, MoralIdoneity? idoneidad, string? atencion,
         string? penultima = null, string? codigoF8 = null, LicenceClass[]? licencias = null, string? observaciones = null,
-        string? folioLicencia = null, string? comuna = null)
+        string? folioLicencia = null, string? comuna = null, string? licenciasSerializadas = null)
     {
         // Autoguardado: cada cambio en una celda (elegir un estado, tipear un nombre, tildar una
         // licencia) manda este mismo form entero por fetch() en vez de esperar a que se apriete
@@ -166,11 +166,15 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
             lastFolderDate, lastFolderComuna, estado, decision, idoneidad,
             string.IsNullOrWhiteSpace(atencion) ? null : atencion.Trim(), needsReview,
             editedBy: User?.Identity?.Name,
-            cambioDomicilioComuna: string.IsNullOrWhiteSpace(comuna) ? null : comuna.Trim());
+            cambioDomicilioComuna: string.IsNullOrWhiteSpace(comuna) ? null : comuna.Trim().ToUpperInvariant());
+
+        var serializedLicencias = licenciasSerializadas is not null
+            ? (string.IsNullOrWhiteSpace(licenciasSerializadas) ? null : licenciasSerializadas.Trim())
+            : LicenceClassCatalog.Serialize(licencias ?? []);
 
         // Los campos que el Excel no trae van por separado, para que una reimportación no los pise.
         cases.UpdateCaseDetails(id, codigoF8, ParseDate(penultima),
-            LicenceClassCatalog.Serialize(licencias ?? []), folioLicencia, editedBy: User?.Identity?.Name);
+            serializedLicencias, folioLicencia, editedBy: User?.Identity?.Name);
         cases.UpdateObservations(id, observaciones, editedBy: User?.Identity?.Name);
 
         // Elegir "NO EXISTE CARPETA" en Casos crea automáticamente la fila en F8 Urgentes — mismo
