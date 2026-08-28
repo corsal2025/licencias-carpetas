@@ -1,99 +1,99 @@
 @page
 @model LicenciasCarpetas.Dashboard.Pages.F8.ImpresionMensualModel
 @{
-    ViewData["Title"] = "Impresión mensual";
+    ViewData["Title"] = "Impresión mensual — F8";
 }
 
+<div class="card" style="padding:16px 20px; margin-bottom:16px;" data-print-hide>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; border-bottom:1px solid var(--color-border); padding-bottom:12px;">
+        <a asp-page="/F8/Index" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-weight:600; text-decoration:none; border-radius:var(--radius); font-size:var(--font-sm);">
+            ← Volver a Solicitudes F8
+        </a>
+        <span style="font-size:var(--font-sm); color:var(--color-text-muted);">
+            @Model.Cases.Count carpeta(s) en esta lista
+        </span>
+    </div>
+    <p class="text-md" style="margin:0 0 10px;">
+        Documento de impresión mensual de casos completados (SUBIDA A CONASET) para el mes seleccionado.
+    </p>
 
-<div class="nav-group no-print">
-    <form method="get" style="display:flex; gap:8px; align-items:center;">
-        <label for="month">Mes de trabajo</label>
-        <input type="month" id="month" name="month" value="@Model.Month" />
-        <button type="submit" class="btn-outline">Ver mes</button>
+    <form method="get" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px;">
+        <div>
+            <label class="form-label" for="month">Mes de trabajo</label>
+            <input type="month" id="month" name="month" value="@Model.Month" />
+        </div>
+        <button type="submit" class="btn-primary" style="padding:8px 16px;">Ver mes</button>
     </form>
+
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="btn-primary" style="padding:8px 16px;" onclick="window.print()">
+            Imprimir / Guardar como PDF
+        </button>
+
+        @if (Model.Cases.Count > 0)
+        {
+            <form method="post" asp-page-handler="MarkPrinted"
+                  onsubmit="return confirm('¿Vaciar el listado del mes @Model.Month? Se marcará como impreso.');">
+                <input type="hidden" name="month" value="@Model.Month" />
+                <button type="submit" class="nav-pill">Marcar como impresas</button>
+            </form>
+        }
+    </div>
 </div>
 
-@if (Model.Cases.Count > 0)
-{
-    <div class="nav-group no-print" style="align-items:center;">
-        <button type="button" class="btn-primary" onclick="window.print()">Imprimir / Guardar como PDF</button>
-        <form method="post" asp-page-handler="MarkPrinted" style="display:inline-block;" onsubmit="return confirm('¿Vaciar el listado del mes @Model.Month? Se marcara como impreso.');">
-            <input type="hidden" name="month" value="@Model.Month" />
-            <button type="submit" class="btn-danger">Vaciar listado</button>
-        </form>
-        <label style="display:flex; align-items:center; gap:6px;">
-            Tamaño de hoja
-            <select id="page-size-select" onchange="setPageSize(this.value)">
-                <option value="A4">A4</option>
-                <option value="letter">Letter</option>
-            </select>
-        </label>
-        <span class="text-md" style="color:#666;">Este listado muestra las carpetas completadas (SUBIDA A CONASET) de @Model.Month.</span>
-    </div>
-}
-<style id="page-size-style">@@page { size: A4; margin: 12mm; }</style>
-<script>
-    function setPageSize(size) {
-        document.getElementById('page-size-style').textContent = '\x40page { size: ' + size + '; margin: 12mm; }';
-    }
-</script>
-
-<div class="print-report print-report-visible">
-    <div class="print-header">
-        <div class="print-header-brand">
-            <img src="~/img/logo-municipalidad.png" alt="Municipalidad de Valparaíso" />
-            <div>
-                <div class="org-name">Municipalidad de Valparaíso — Dirección de Tránsito</div>
-                <div class="report-name">F8 — Listado de carpetas — Listado penúltima carpeta</div>
-            </div>
+<div class="card documento">
+    <header class="documento-encabezado">
+        <div>
+            <img src="~/images/logo-municipalidad.png" alt="Municipalidad de Valparaíso" class="documento-logo" />
+            <h1>F8 — Listado de penúltima carpeta</h1>
+            <p class="documento-organismo">
+                Ilustre Municipalidad de Valparaíso<br />
+                Departamento de Licencias de Conducir
+            </p>
         </div>
-        <div class="print-header-folio">
-            <div>Folio: <strong>@Model.Folio</strong></div>
-            <div>Generado: <strong>@Model.GeneratedAt.ToString("dd-MM-yyyy HH:mm")</strong></div>
-        </div>
-    </div>
+        <dl class="documento-datos">
+            <dt>Período</dt><dd>@Model.Month</dd>
+            <dt>Folio</dt><dd>@Model.Folio</dd>
+            <dt>Fecha</dt><dd>@Model.GeneratedAt.ToString("dd-MM-yyyy")</dd>
+            <dt>Solicita</dt><dd>@Model.OperatorName</dd>
+            <dt>Total</dt><dd>@Model.Cases.Count carpeta(s)</dd>
+        </dl>
+    </header>
 
-    <div class="print-subtitle-bar">
-        <span>Casos con carpeta subida a CONASET durante @Model.Month</span>
-        <strong>@Model.Cases.Count registro(s)</strong>
-    </div>
-
-    <table class="cases print-table">
+    <table class="cases documento-tabla">
         <thead>
             <tr>
-                <th>N°</th>
+                <th style="width:38px;">N°</th>
                 <th>Nombre completo</th>
                 <th>RUT</th>
                 <th>Fecha penúltima carpeta</th>
             </tr>
         </thead>
         <tbody>
-            @{ var n = 0; }
-            @foreach (var request in Model.Cases)
-            {
-                n++;
-                <tr>
-                    <td class="text-cell">@n</td>
-                    <td class="name-cell">@request.NombreCompleto</td>
-                    <td class="text-cell">@request.Rut</td>
-                    <td class="text-cell">@LicenciasCarpetas.F8.Domain.SpanishDateFormatter.LongDate(request.FechaPenultimaCarpeta)</td>
-                </tr>
-            }
+        @{ var numero = 1; }
+        @foreach (var item in Model.Cases)
+        {
+            <tr>
+                <td class="text-cell">@(numero++)</td>
+                <td class="text-cell" style="text-align:left;">@item.NombreCompleto</td>
+                <td class="text-cell">@LicenciasCarpetas.F8.Domain.RutFormatter.WithDots(item.Rut)</td>
+                <td class="text-cell">@LicenciasCarpetas.F8.Domain.SpanishDateFormatter.LongDate(item.FechaPenultimaCarpeta)</td>
+            </tr>
+        }
         </tbody>
     </table>
 
-    <p class="print-total">Total: @Model.Cases.Count carpeta(s)</p>
-
-    <div class="print-signatures print-signatures-single">
-        <div class="print-signature">Quien solicita</div>
-    </div>
-
     @if (Model.Cases.Count == 0)
     {
-        <p style="text-align:center; color:#666; padding:20px;">No hay carpetas completadas para @Model.Month.</p>
+        <p class="text-md" style="padding:16px; text-align:center; color:var(--color-text-muted);">
+            No hay carpetas completadas para el mes @Model.Month.
+        </p>
     }
-</div>
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/f8-dashboard.css" asp-append-version="true" />
-}
+    <section class="documento-firmas">
+        <div>
+            <span class="documento-linea"></span>
+            <p>Solicita — @Model.OperatorName<br /><small>Depto. Licencias de Conducir</small></p>
+        </div>
+    </section>
+</div>

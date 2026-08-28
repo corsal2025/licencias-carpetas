@@ -14,6 +14,7 @@ public sealed class SectorF8Model(IUrgentRequestRepository repository) : PageMod
 {
     public FolderSector SelectedSector { get; private set; }
     public IReadOnlyList<UrgentRequest> Cases { get; private set; } = [];
+    public string OperatorName => User.Identity?.Name ?? "—";
 
     public void OnGet(FolderSector sector)
     {

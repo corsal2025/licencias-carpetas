@@ -20,6 +20,7 @@ public sealed class ImpresionMensualModel(IUrgentRequestRepository repository) :
     public IReadOnlyList<UrgentRequest> Cases { get; private set; } = [];
     public string Folio { get; private set; } = string.Empty;
     public DateTimeOffset GeneratedAt { get; private set; }
+    public string OperatorName => User.Identity?.Name ?? "—";
 
     public void OnGet(string? month)
     {

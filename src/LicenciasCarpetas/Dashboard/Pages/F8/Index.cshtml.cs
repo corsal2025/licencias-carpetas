@@ -176,6 +176,16 @@ public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender
             if (normalized == EstadoActualSubida)
             {
                 request.FechaDeSubida = DateOnly.FromDateTime(DateTime.Today);
+                if (request.Marked)
+                {
+                    repository.SetMarked(id, false);
+                    request.Marked = false;
+                }
+                if (request.PendienteCarpeta)
+                {
+                    repository.SetPendienteCarpeta(id, false);
+                    request.PendienteCarpeta = false;
+                }
             }
             else if (normalized != EstadoActualSubida && request.FechaDeSubida is not null)
             {

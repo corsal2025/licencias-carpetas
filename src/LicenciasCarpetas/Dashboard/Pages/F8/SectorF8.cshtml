@@ -1,76 +1,100 @@
 @page
 @model LicenciasCarpetas.Dashboard.Pages.F8.SectorF8Model
 @{
-    ViewData["Title"] = "Cola de impresión F8";
-    var sectorTitle = Model.SelectedSector == LicenciasCarpetas.F8.Domain.FolderSector.Archivo ? "ARCHIVO" : "OFICINA 43";
+    var sectorTitle = Model.SelectedSector == LicenciasCarpetas.F8.Domain.FolderSector.Archivo ? "Archivo" : "Oficina 43";
+    ViewData["Title"] = $"Solicitud de carpetas F8 — {sectorTitle}";
+    var destino = Model.SelectedSector == LicenciasCarpetas.F8.Domain.FolderSector.Archivo
+        ? "Archivo (carpetas anteriores a julio 2023)"
+        : "Oficina 43 (carpetas desde julio 2023)";
 }
 
+<div class="card" style="padding:16px 20px; margin-bottom:16px;" data-print-hide>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; border-bottom:1px solid var(--color-border); padding-bottom:12px;">
+        <a asp-page="/F8/Index" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-weight:600; text-decoration:none; border-radius:var(--radius); font-size:var(--font-sm);">
+            ← Volver a Solicitudes F8
+        </a>
+        <span style="font-size:var(--font-sm); color:var(--color-text-muted);">
+            @Model.Cases.Count carpeta(s) en esta lista
+        </span>
+    </div>
+    <p class="text-md" style="margin:0 0 10px;">
+        Documento para solicitar carpetas físicas a <strong>@destino</strong>.
+    </p>
 
-<div class="card no-print" style="padding:10px 16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-    <a asp-page="/F8/Index" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-weight:600; text-decoration:none; border-radius:var(--radius); font-size:var(--font-sm);">
-        ← Volver a F8 Urgentes
-    </a>
-    @if (Model.Cases.Count > 0)
-    {
-        <button type="button" class="btn-outline" onclick="window.print()">Imprimir informe (PDF)</button>
-    }
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="btn-primary" style="padding:8px 16px;" onclick="window.print()">
+            Imprimir / Guardar como PDF
+        </button>
+
+        @if (Model.Cases.Count > 0)
+        {
+            <form method="post" asp-page-handler="ClearAll" asp-route-sector="@Model.SelectedSector"
+                  onsubmit="return confirm('Se registrarán estas @Model.Cases.Count carpeta(s) como ya pedidas/impresas. ¿Confirmar?');">
+                <button type="submit" class="nav-pill">Marcar como pedidas</button>
+            </form>
+        }
+    </div>
 </div>
 
-<div class="print-report">
-    <h2 class="print-title">INFORME @sectorTitle</h2>
-    <table class="cases print-table">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>RUT</th>
-                <th>Fecha penúltima carpeta</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var request in Model.Cases)
-            {
-                <tr>
-                    <td class="name-cell">@request.NombreCompleto</td>
-                    <td class="text-cell">@request.Rut</td>
-                    <td class="text-cell">@LicenciasCarpetas.F8.Domain.SpanishDateFormatter.LongDate(request.FechaPenultimaCarpeta)</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
+<div class="card documento">
+    <header class="documento-encabezado">
+        <div>
+            <img src="~/images/logo-municipalidad.png" alt="Municipalidad de Valparaíso" class="documento-logo" />
+            <h1>Solicitud de carpetas de conducir</h1>
+            <p class="documento-organismo">
+                Ilustre Municipalidad de Valparaíso<br />
+                Departamento de Licencias de Conducir
+            </p>
+        </div>
+        <dl class="documento-datos">
+            <dt>Destino</dt><dd>@destino</dd>
+            <dt>Período</dt><dd>Todas las carpetas pendientes</dd>
+            <dt>Fecha</dt><dd>@DateTime.Today.ToString("dd-MM-yyyy")</dd>
+            <dt>Solicita</dt><dd>@Model.OperatorName</dd>
+            <dt>Total</dt><dd>@Model.Cases.Count carpeta(s)</dd>
+        </dl>
+    </header>
 
-<div class="card table-card no-print">
-    <table class="cases">
+    <table class="cases documento-tabla">
         <thead>
             <tr>
-                <th>Nombre</th>
+                <th style="width:38px;">N°</th>
+                <th>Nombre completo</th>
                 <th>RUT</th>
                 <th>Código F8</th>
                 <th>Fecha penúltima carpeta</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var request in Model.Cases)
-            {
-                <tr>
-                    <td class="name-cell">@request.NombreCompleto</td>
-                    <td class="text-cell">@request.Rut</td>
-                    <td class="text-cell">@request.CodigoF8</td>
-                    <td class="text-cell">@LicenciasCarpetas.F8.Domain.SpanishDateFormatter.LongDate(request.FechaPenultimaCarpeta)</td>
-                </tr>
-            }
+        @{ var numero = 1; }
+        @foreach (var item in Model.Cases)
+        {
+            <tr>
+                <td class="text-cell">@(numero++)</td>
+                <td class="text-cell" style="text-align:left;">@item.NombreCompleto</td>
+                <td class="text-cell">@LicenciasCarpetas.F8.Domain.RutFormatter.WithDots(item.Rut)</td>
+                <td class="text-cell">@item.CodigoF8</td>
+                <td class="text-cell">@LicenciasCarpetas.F8.Domain.SpanishDateFormatter.LongDate(item.FechaPenultimaCarpeta)</td>
+            </tr>
+        }
         </tbody>
     </table>
+
+    @if (Model.Cases.Count == 0)
+    {
+        <p class="text-md" style="padding:16px; text-align:center; color:var(--color-text-muted);">
+            No hay carpetas pendientes para este sector. Marque casos en Solicitudes F8 para incluirlos en la lista.
+        </p>
+    }
+
+    <section class="documento-firmas">
+        <div>
+            <span class="documento-linea"></span>
+            <p>Solicita — @Model.OperatorName<br /><small>Depto. Licencias de Conducir</small></p>
+        </div>
+        <div>
+            <span class="documento-linea"></span>
+            <p>Entrega conforme<br /><small>@(Model.SelectedSector == LicenciasCarpetas.F8.Domain.FolderSector.Archivo ? "Archivo" : "Oficina 43")</small></p>
+        </div>
+    </section>
 </div>
-
-@if (Model.Cases.Count > 0)
-{
-    <form method="post" asp-page-handler="ClearAll" style="margin-top: 14px;" class="no-print">
-        <input type="hidden" name="sector" value="@Model.SelectedSector" />
-        <button class="btn-primary" type="submit">Marcar todos como impresos</button>
-    </form>
-}
-
-@section Styles {
-    <link rel="stylesheet" href="~/css/f8-dashboard.css" asp-append-version="true" />
-}

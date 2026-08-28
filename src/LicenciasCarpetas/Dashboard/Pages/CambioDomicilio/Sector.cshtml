@@ -1,114 +1,111 @@
 @page "{sector?}"
 @model LicenciasCarpetas.Dashboard.Pages.CambioDomicilio.SectorModel
-@{ ViewData["Title"] = "Cola de impresión — Cambio de Domicilio"; }
+@{
+    var sectorTitle = Model.SelectedSector == LicenciasCarpetas.CambioDomicilio.Domain.FolderSector.Archivo ? "Archivo" : "Oficina 43";
+    ViewData["Title"] = $"Solicitud de carpetas — {sectorTitle}";
+    var destino = Model.SelectedSector == LicenciasCarpetas.CambioDomicilio.Domain.FolderSector.Archivo
+        ? "Archivo (carpetas anteriores a julio 2023)"
+        : "Oficina 43 (carpetas desde julio 2023)";
+}
 
-        <form id="mark-printed-form" method="post" asp-page-handler="MarkPrinted" asp-route-sector="@Model.SelectedSector" style="display:none;"></form>
-        <div class="no-print" style="margin-bottom: 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <a asp-page="/CambioDomicilio/Index" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-weight:600; text-decoration:none; border-radius:var(--radius); font-size:var(--font-sm);">
-                ← Volver a Enviar Cambio de Domicilio
-            </a>
-            <button type="button" class="btn-primary" onclick="markPrintedAndPrint()">Imprimir / Guardar como PDF</button>
+<form id="mark-printed-form" method="post" asp-page-handler="MarkPrinted" asp-route-sector="@Model.SelectedSector" style="display:none;"></form>
+
+<div class="card" style="padding:16px 20px; margin-bottom:16px;" data-print-hide>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; border-bottom:1px solid var(--color-border); padding-bottom:12px;">
+        <a asp-page="/CambioDomicilio/Index" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-weight:600; text-decoration:none; border-radius:var(--radius); font-size:var(--font-sm);">
+            ← Volver a Cambio de Domicilio
+        </a>
+        <span style="font-size:var(--font-sm); color:var(--color-text-muted);">
+            @Model.Cases.Count carpeta(s) en esta lista
+        </span>
+    </div>
+    <p class="text-md" style="margin:0 0 10px;">
+        Documento para solicitar carpetas físicas a <strong>@destino</strong>.
+    </p>
+
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="btn-primary" style="padding:8px 16px;" onclick="markPrintedAndPrint()">
+            Imprimir / Guardar como PDF
+        </button>
+
+        @if (Model.Cases.Count > 0)
+        {
             <form method="post" asp-page-handler="ClearAll" asp-route-sector="@Model.SelectedSector"
                   onsubmit="return confirm('Esto vacía el listado de este sector — quedará en blanco para volver a llenarse con nuevos casos. NO elimina los datos de los contribuyentes, solo los saca de esta lista. ¿Confirmar?');">
-                <button type="submit" class="btn-outline-danger">Vaciar listado</button>
+                <button type="submit" class="nav-pill">Vaciar listado</button>
             </form>
-            <span style="display:flex; gap:6px; align-items:center; margin-left:8px;">
-                <label class="form-label" for="page-size-select" style="margin:0;">Tamaño de hoja</label>
-                <select id="page-size-select" onchange="updatePageSize()"
-                        style="border:1px solid var(--color-border); border-radius:4px; padding:5px 8px; font-size:0.85rem;">
-                    <option value="A4">A4</option>
-                    <option value="letter">Carta</option>
-                    <option value="legal">Oficio</option>
-                </select>
-            </span>
-            <span style="font-size:0.8rem; color:var(--color-text-muted);">
-                Este listado muestra las carpetas asignadas a este sector en Enviar Cambio de Domicilio.
-            </span>
-        </div>
-
-        <div class="doc-sheet">
-            <div class="doc-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:16px;">
-                <div class="doc-title-block" style="display:flex; align-items:center; gap:16px;">
-                    <img src="~/images/logo-municipalidad.png" alt="Municipalidad de Valparaíso" class="doc-seal" style="height:54px; width:auto; max-width:140px; object-fit:contain;" />
-                    <div>
-                        <p class="doc-org" style="margin:0; font-size:var(--font-sm); font-weight:700; color:#475569;">Municipalidad de Valparaíso — Dirección de Tránsito</p>
-                        <h2 style="margin:4px 0 0; font-size:1.25rem; font-weight:800; color:#0f172a;">Cambio de Domicilio — Listado de carpetas — Sector @(Model.SelectedSector == LicenciasCarpetas.CambioDomicilio.Domain.FolderSector.Oficina43 ? "Oficina 43" : "Archivo")</h2>
-                    </div>
-                </div>
-                <div class="doc-meta" style="text-align:right; font-size:var(--font-xs); color:#334155;">
-                    <div>Folio: <strong>@Model.SelectedSector-@DateTimeOffset.Now.ToString("yyyyMMdd-HHmm")</strong></div>
-                    <div>Generado: <strong>@DateTimeOffset.Now.ToString("dd-MM-yyyy HH:mm")</strong></div>
-                </div>
-            </div>
-            <div class="doc-subheader" style="display:flex; justify-content:space-between; font-weight:700; font-size:var(--font-sm); margin-bottom:12px; color:#1e293b;">
-                <span>Solicitudes de cambio de domicilio — carpetas físicas a retirar</span>
-                <span class="badge" style="background:#e2e8f0; color:#0f172a; font-weight:700; padding:4px 10px; border-radius:12px;">@Model.Cases.Count registro(s)</span>
-            </div>
-
-            <div class="card">
-                @if (Model.Cases.Count == 0)
-                {
-                    <p class="doc-empty" style="text-align:center; padding:32px; color:#64748b; font-weight:600;">
-                        No hay carpetas en este sector todavía. Ingrese la "Fecha última carpeta" de los
-                        casos correspondientes en Enviar Cambio de Domicilio para que aparezcan aquí.
-                    </p>
-                }
-                else
-                {
-                    <table class="cases doc-table">
-                        <thead>
-                            <tr>
-                                <th>N°</th>
-                                <th style="text-align:left;">Nombre completo</th>
-                                <th>RUT</th>
-                                <th>Comuna</th>
-                                <th>Fecha última carpeta</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @{ var correlativo = 0; }
-                        @foreach (var item in Model.Cases)
-                        {
-                            correlativo++;
-                            <tr>
-                                <td>@correlativo</td>
-                                <td>@item.FullName</td>
-                                <td style="text-align:center;">@item.Rut</td>
-                                <td style="text-align:center;">@item.Comuna</td>
-                                <td style="text-align:center;">@(item.FechaUltimaCarpeta is { } f ? LicenciasCarpetas.CambioDomicilio.Domain.SpanishDate.Format(f) : "")</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
-                }
-            </div>
-
-            @if (Model.Cases.Count > 0)
-            {
-                <p class="doc-count">Total: @Model.Cases.Count carpeta(s)</p>
-
-                <div class="doc-signoff">
-                    <div>
-                        <p class="sig-line">&nbsp;</p>
-                        Quien solicita
-                    </div>
-                    <div>
-                        <p class="sig-line">&nbsp;</p>
-                        Quien entrega
-                    </div>
-                </div>
-            }
-        </div>
-    <script>
-        function updatePageSize() {
-            var size = document.getElementById('page-size-select').value;
-            document.getElementById('page-size-style').textContent =
-                '@@page { size: ' + size + '; margin: 12mm; }';
         }
+    </div>
+</div>
 
-        function markPrintedAndPrint() {
-            var form = document.getElementById('mark-printed-form');
-            var token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+<div class="card documento">
+    <header class="documento-encabezado">
+        <div>
+            <img src="~/images/logo-municipalidad.png" alt="Municipalidad de Valparaíso" class="documento-logo" />
+            <h1>Solicitud de carpetas de conducir</h1>
+            <p class="documento-organismo">
+                Ilustre Municipalidad de Valparaíso<br />
+                Departamento de Licencias de Conducir
+            </p>
+        </div>
+        <dl class="documento-datos">
+            <dt>Destino</dt><dd>@destino</dd>
+            <dt>Período</dt><dd>Todas las carpetas pendientes</dd>
+            <dt>Fecha</dt><dd>@DateTime.Today.ToString("dd-MM-yyyy")</dd>
+            <dt>Solicita</dt><dd>@Model.OperatorName</dd>
+            <dt>Total</dt><dd>@Model.Cases.Count carpeta(s)</dd>
+        </dl>
+    </header>
+
+    <table class="cases documento-tabla">
+        <thead>
+            <tr>
+                <th style="width:38px;">N°</th>
+                <th>Nombre completo</th>
+                <th>RUT</th>
+                <th>Comuna</th>
+                <th>Fecha de última carpeta</th>
+            </tr>
+        </thead>
+        <tbody>
+        @{ var numero = 1; }
+        @foreach (var item in Model.Cases)
+        {
+            <tr>
+                <td class="text-cell">@(numero++)</td>
+                <td class="text-cell" style="text-align:left;">@item.FullName</td>
+                <td class="text-cell">@item.Rut</td>
+                <td class="text-cell">@item.Comuna</td>
+                <td class="text-cell">@(item.FechaUltimaCarpeta is { } f ? LicenciasCarpetas.CambioDomicilio.Domain.SpanishDate.Format(f) : "")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    @if (Model.Cases.Count == 0)
+    {
+        <p class="text-md" style="padding:16px; text-align:center; color:var(--color-text-muted);">
+            No hay carpetas pendientes para este sector. Marque casos en Cambio de Domicilio para incluirlos en la lista.
+        </p>
+    }
+
+    <section class="documento-firmas">
+        <div>
+            <span class="documento-linea"></span>
+            <p>Solicita — @Model.OperatorName<br /><small>Depto. Licencias de Conducir</small></p>
+        </div>
+        <div>
+            <span class="documento-linea"></span>
+            <p>Entrega conforme<br /><small>@(Model.SelectedSector == LicenciasCarpetas.CambioDomicilio.Domain.FolderSector.Archivo ? "Archivo" : "Oficina 43")</small></p>
+        </div>
+    </section>
+</div>
+
+<script>
+    function markPrintedAndPrint() {
+        var form = document.getElementById('mark-printed-form');
+        var token = form ? form.querySelector('input[name="__RequestVerificationToken"]')?.value : null;
+        if (form && token) {
             fetch(form.action, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -116,5 +113,8 @@
             }).finally(function () {
                 window.print();
             });
+        } else {
+            window.print();
         }
-    </script>
+    }
+</script>

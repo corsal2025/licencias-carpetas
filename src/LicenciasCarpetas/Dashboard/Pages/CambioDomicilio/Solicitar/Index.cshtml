@@ -18,13 +18,6 @@
             @total total (@borradores pendientes / @enviadas enviadas)
         </span>
     </div>
-    <div>
-        <form method="post" asp-page-handler="Sincronizar" style="display:inline;">
-            <button type="submit" class="btn-primary" style="padding:6px 14px; font-size:var(--font-sm); display:inline-flex; align-items:center; gap:6px;">
-                ↻ Sincronizar Ahora
-            </button>
-        </form>
-    </div>
 </div>
 
 @if (Model.Message is not null)

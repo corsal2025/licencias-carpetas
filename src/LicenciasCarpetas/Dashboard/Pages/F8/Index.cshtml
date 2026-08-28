@@ -190,18 +190,17 @@
                     </td>
                     <td class="text-cell">
                         @{
-                            // PENDIENTE (default) and SUBIDA A CONASET (set only via the Subir
-                            // button) are automatic states, not manual choices — CREAR
-                            // CERTIFICADO is the only thing an operator picks from this dropdown.
                             var currentEstadoActual = string.IsNullOrEmpty(request.EstadoActual) ? "PENDIENTE" : request.EstadoActual;
-                            var isLocked = currentEstadoActual == "SUBIDA A CONASET";
                         }
-                        <select class="input-inline estado-actual-select @LicenciasCarpetas.Dashboard.Pages.F8.IndexModel.EstadoActualBadgeClass(request.EstadoActual)" form="estadoactual-@request.Id" name="estadoActual" disabled="@isLocked">
-                            @if (currentEstadoActual != "CREAR CERTIFICADO")
+                        <select class="input-inline estado-actual-select @LicenciasCarpetas.Dashboard.Pages.F8.IndexModel.EstadoActualBadgeClass(request.EstadoActual)" form="estadoactual-@request.Id" name="estadoActual">
+                            @foreach (var option in LicenciasCarpetas.F8.Domain.EstadoCatalog.KnownEstadosActuales)
+                            {
+                                <option value="@option" selected="@(option == currentEstadoActual)">@option</option>
+                            }
+                            @if (!LicenciasCarpetas.F8.Domain.EstadoCatalog.KnownEstadosActuales.Contains(currentEstadoActual))
                             {
                                 <option value="@currentEstadoActual" selected>@currentEstadoActual</option>
                             }
-                            <option value="CREAR CERTIFICADO" selected="@(currentEstadoActual == "CREAR CERTIFICADO")">CREAR CERTIFICADO</option>
                         </select>
                         <span class="pendiente-alert" title="Pendiente" style="@(string.IsNullOrEmpty(request.EstadoActual) || request.EstadoActual == "PENDIENTE" ? "" : "display:none")">⚠</span>
                         <form class="toggle-form" id="estadoactual-@request.Id" method="post" asp-page-handler="SetEstadoActual">

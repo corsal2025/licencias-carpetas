@@ -11,6 +11,7 @@ public class SectorModel(ICambioDomicilioRequestRepository repository) : PageMod
 {
     public FolderSector SelectedSector { get; private set; }
     public IReadOnlyList<PersonRequest> Cases { get; private set; } = [];
+    public string OperatorName => User.Identity?.Name ?? "—";
 
     /// <summary>Cases the operator checked (Marcar, on Casos) show up here — that checkbox is how
     /// the operator picks which contributors get categorized into a sector document, before

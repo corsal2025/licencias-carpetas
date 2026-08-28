@@ -27,13 +27,25 @@ public static class EstadoCatalog
     // entries that both read "Pendiente".
     public static readonly IReadOnlyCollection<string> KnownEstadosActuales = new[]
     {
-        "SUBIDA A CONASET",
-        "CREAR CERTIFICADO",
         "PENDIENTE",
+        "CREAR CERTIFICADO",
+        "SUBIDA A CONASET",
     };
 
-    public static string Canonicalize(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToUpperInvariant();
+    public static string Canonicalize(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var upper = value.Trim().ToUpperInvariant();
+        if (upper is "SUBIDO" or "SUBIDA" or "SUBIDO A CONASET")
+        {
+            return "SUBIDA A CONASET";
+        }
+        return upper;
+    }
 
     public static string? NormalizeForPersistence(string? value, bool isEstado)
     {
