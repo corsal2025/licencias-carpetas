@@ -362,6 +362,7 @@ static void EnsureSchemas(IServiceProvider services)
     var cdOptions = services.GetRequiredService<CambioDomicilioOptions>();
     if (!string.IsNullOrWhiteSpace(cdOptions.ComunaDirectoryCsvPath))
     {
+        comunaContacts.EnsureSeed(cdOptions.ComunaDirectoryCsvPath);
         services.GetRequiredService<IComunaDirectory>().EnsureSeed(cdOptions.ComunaDirectoryCsvPath);
     }
 }
