@@ -97,7 +97,7 @@ public class SolicitarCertificadoTests
 
         Assert.IsType<PageResult>(second);
         Assert.True(model.MessageIsError);
-        Assert.Single(mail.Sent.Where(m => m.To == "javiera.sanchez@munivalpo.cl"));
+        Assert.Single(mail.Sent, m => m.To == "javiera.sanchez@munivalpo.cl");
     }
 
     [Fact]

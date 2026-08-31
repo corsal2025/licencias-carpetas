@@ -5,6 +5,10 @@ bin/
 obj/
 *.user
 
+# Libros Excel: traen nombres y RUT reales, nunca van a git (se leen, no se versionan)
+*.xlsx
+*.xls
+
 # Environment-specific config
 **/appsettings.Development.json
 # Secretos y overrides de instalación: credenciales EWS del correo institucional
