@@ -3,6 +3,9 @@
 @using LicenciasCarpetas.CambioDomicilio.Domain
 @{
     ViewData["Title"] = "Casos — Cambio de Domicilio";
+    // Fija la tabla al alto de la ventana: la barra de scroll horizontal queda siempre pegada
+    // abajo del viewport y visible, en vez de al final de una tabla larga que hay que bajar a buscar.
+    ViewData["BodyClass"] = "viewport-locked";
 }
 
 <div class="card cd-filter-bar" style="padding:8px 14px; margin-bottom:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">

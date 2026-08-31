@@ -4,6 +4,7 @@
 @using LicenciasCarpetas.Domain
 @{
     ViewData["Title"] = "Solicitar Cambios de Domicilio";
+    ViewData["BodyClass"] = "viewport-locked";
     var total = Model.Requests.Count;
     var borradores = Model.Requests.Count(r => r.Status == OutboundRequestStatus.Borrador);
     var enviadas = Model.Requests.Count(r => r.Status == OutboundRequestStatus.Enviada);
