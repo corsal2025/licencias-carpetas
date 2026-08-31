@@ -7,6 +7,8 @@ obj/
 
 # Environment-specific config
 **/appsettings.Development.json
+# Secretos y overrides de instalación: credenciales EWS del correo institucional
+**/appsettings.Local.json
 .env
 
 # TLS certificate private key material

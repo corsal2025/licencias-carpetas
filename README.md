@@ -233,3 +233,13 @@ src/LicenciasCarpetas/
   Dashboard/       # Auth (PBKDF2) y páginas Razor (incluye Dashboard/Pages/F8/ y Dashboard/Pages/CambioDomicilio/)
 tests/LicenciasCarpetas.Tests/
 ```
+
+## Cambio de Domicilio: correo institucional
+
+El botón **"Sincronizar Ahora"** del módulo *Enviar Cambio de Domicilio* ya está cableado a Exchange
+Web Services (`https://mail.munivalpo.cl/EWS/Exchange.asmx`, buzón `cambiodedomicilio@munivalpo.cl`).
+Falta solo cargar `CambioDomicilio:Ews:Username` y `Password`, que **no viajan en git**: van en
+`appsettings.Local.json` junto al `.exe` (plantilla `src/LicenciasCarpetas/appsettings.Local.Example.json`)
+o en variables de entorno. Runbook en [`deploy/README.md`](deploy/README.md) § "Correo institucional (EWS)".
+Funcionamiento completo de principio a fin, con diagramas de flujo: [`docs/cambio-domicilio-informe.md`](docs/cambio-domicilio-informe.md)
+(versión imprimible: `docs/cambio-domicilio-informe.html`).

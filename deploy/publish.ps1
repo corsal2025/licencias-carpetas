@@ -40,7 +40,9 @@ param(
     [string]$AddUser = "",
     [string]$ImportWorkbook = "",
     [switch]$Shortcut,
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [string]$EwsUser = "",
+    [string]$EwsPassword = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -113,6 +115,29 @@ $ComunasCsvSource = Join-Path $RepoRoot "data\comunas.csv"
 if ((Test-Path $ComunasCsvSource) -and (-not (Test-Path $ComunasCsvPublish))) {
     Copy-Item $ComunasCsvSource $ComunasCsvPublish -Force
     Write-Host "  OK - comunas.csv copiado a publish/data" -ForegroundColor Green
+}
+
+# Credenciales del correo institucional (EWS) para el botón "Sincronizar Ahora" del módulo
+# Cambio de Domicilio. Se escriben en publish\appsettings.Local.json, que está fuera de git y
+# que `dotnet publish` no sobrescribe: sobrevive a cada republicación.
+$LocalConfig = Join-Path $PublishPath "appsettings.Local.json"
+if ($EwsUser -and $EwsPassword) {
+    $ewsBlock = [ordered]@{
+        CambioDomicilio = [ordered]@{
+            Ews = [ordered]@{
+                Url      = "https://mail.munivalpo.cl/EWS/Exchange.asmx"
+                Username = $EwsUser
+                Password = $EwsPassword
+            }
+        }
+    }
+    $ewsBlock | ConvertTo-Json -Depth 5 | Out-File -FilePath $LocalConfig -Encoding utf8
+    Write-Host "  OK - credenciales EWS escritas en appsettings.Local.json" -ForegroundColor Green
+} elseif (Test-Path $LocalConfig) {
+    Write-Host "  OK - appsettings.Local.json existente conservado (credenciales EWS)" -ForegroundColor Green
+} else {
+    Write-Host "  appsettings.Local.json no existe: el boton 'Sincronizar Ahora' de Cambio de" -ForegroundColor Yellow
+    Write-Host "  Domicilio fallara hasta configurar CambioDomicilio:Ews (ver deploy\README.md)." -ForegroundColor Yellow
 }
 Write-Host ""
 

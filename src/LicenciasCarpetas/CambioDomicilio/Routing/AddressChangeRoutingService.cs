@@ -32,6 +32,10 @@ public sealed class AddressChangeRoutingService(
 {
     public IReadOnlyList<ComunaRoutingEntry> LoadDirectory() => directory.LoadFromCsv(options.ComunaDirectoryCsvPath ?? string.Empty);
 
+    /// <summary>Count of emails discarded so far (unrecognized/ambiguous comuna). The sync cycle
+    /// snapshots this before and after a run to report how many emails it discarded.</summary>
+    public int DiscardedCount() => discardedRepository.GetAll().Count;
+
     /// <summary>Processes one email found in the source folder ("CARP. PARA PEDIR").</summary>
     public void ProcessIncomingRequest(IncomingEmail email, IReadOnlyList<ComunaRoutingEntry> contacts)
     {

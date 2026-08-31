@@ -304,13 +304,21 @@ public class IndexModel(
 
     public async Task<IActionResult> OnPostSyncNowAsync()
     {
-        var outcome = await routerWorker.RunCycleAsync(HttpContext.RequestAborted);
-        (Message, MessageIsError) = outcome switch
+        var result = await routerWorker.RunCycleAsync(HttpContext.RequestAborted);
+        (Message, MessageIsError) = result.Outcome switch
         {
-            CambioDomicilioSyncOutcome.Completed => ("Sincronización completada.", false),
+            CambioDomicilioSyncOutcome.Completed => (
+                $"Sincronización completada: {result.Creados} caso(s) creado(s), {result.ParaRevision} para revisión, {result.Descartados} correo(s) descartado(s).",
+                false),
+            CambioDomicilioSyncOutcome.SkippedNoDirectory => (
+                "No se pudo leer el directorio de comunas (revise CambioDomicilio:ComunaDirectoryCsvPath). No se procesó ningún correo.",
+                true),
             CambioDomicilioSyncOutcome.SkippedBusy => ("Ya hay una sincronización en curso, intente en unos segundos.", true),
-            CambioDomicilioSyncOutcome.Failed => ("No se pudo completar la sincronización, revise el registro del servidor e intente nuevamente.", true),
-            _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null),
+            CambioDomicilioSyncOutcome.Failed => (
+                "No se pudo completar la sincronización. Revise que las credenciales del correo institucional " +
+                "estén configuradas (CambioDomicilio:Ews Url/Username/Password) y el registro del servidor, e intente nuevamente.",
+                true),
+            _ => throw new ArgumentOutOfRangeException(nameof(result), result.Outcome, null),
         };
         Load();
         return Page();
