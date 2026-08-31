@@ -26,13 +26,13 @@ if (-not (Test-Path $exePath)) {
     throw "No se encontró $exePath. Ejecuta primero: .\deploy\publish.ps1"
 }
 
-# The app opens its own browser tab ~2 s after binding (see Program.cs), so this only
-# opens a tab when the process was already running — otherwise the operator gets two.
+# Doble clic: si la app no corre, la arranca con --open-browser (Program.cs abre la pestaña
+# ~2 s después de enlazar el puerto); si ya corre, solo abre otra pestaña.
 $launcherPath = Join-Path $PublishPath "abrir-dashboard.ps1"
 $launcherContent = @"
 `$running = Get-Process -Name "LicenciasCarpetas" -ErrorAction SilentlyContinue
 if (-not `$running) {
-    Start-Process -FilePath "$exePath" -WorkingDirectory "$PublishPath" -WindowStyle Hidden
+    Start-Process -FilePath "$exePath" -ArgumentList "--open-browser" -WorkingDirectory "$PublishPath" -WindowStyle Hidden
 } else {
     Start-Process "$DashboardUrl"
 }
