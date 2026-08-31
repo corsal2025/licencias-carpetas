@@ -1,0 +1,861 @@
+<title>Cambio de Domicilio — Informe Técnico</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f6f7f9;
+    --surface: #ffffff;
+    --surface-sunk: #eef1f4;
+    --ink: #1b2733;
+    --ink-soft: #37474f;
+    --muted: #5b6a78;
+    --line: #dce2e8;
+    --line-strong: #c3ccd4;
+    --accent: #0b5cab;
+    --accent-soft: #e7f0fa;
+    --good: #1d7a4c;
+    --good-soft: #e4f1ea;
+    --warn: #9a6a12;
+    --warn-soft: #f6edda;
+    --bad: #b0431e;
+    --bad-soft: #f6e6df;
+    --shadow: 0 1px 2px rgba(20,35,50,.06), 0 8px 24px rgba(20,35,50,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #10161c;
+      --surface: #19212a;
+      --surface-sunk: #131b22;
+      --ink: #e4e9ee;
+      --ink-soft: #cdd6de;
+      --muted: #94a2ad;
+      --line: #2b3742;
+      --line-strong: #3a4854;
+      --accent: #57a8e6;
+      --accent-soft: #17293a;
+      --good: #5cc08c;
+      --good-soft: #16281f;
+      --warn: #d7a54a;
+      --warn-soft: #2c2413;
+      --bad: #e08a68;
+      --bad-soft: #2e1c15;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #10161c;
+    --surface: #19212a;
+    --surface-sunk: #131b22;
+    --ink: #e4e9ee;
+    --ink-soft: #cdd6de;
+    --muted: #94a2ad;
+    --line: #2b3742;
+    --line-strong: #3a4854;
+    --accent: #57a8e6;
+    --accent-soft: #17293a;
+    --good: #5cc08c;
+    --good-soft: #16281f;
+    --warn: #d7a54a;
+    --warn-soft: #2c2413;
+    --bad: #e08a68;
+    --bad-soft: #2e1c15;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 clamp(16px, 4vw, 48px) 120px;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 1000px) {
+    .shell { grid-template-columns: 232px minmax(0, 1fr); gap: 56px; }
+  }
+
+  .masthead {
+    grid-column: 1 / -1;
+    border-bottom: 2px solid var(--accent);
+    padding: 44px 0 26px;
+    margin-bottom: 40px;
+  }
+  .crest {
+    font-family: "Libre Franklin", system-ui, sans-serif;
+    font-size: .72rem; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 14px;
+  }
+  .masthead h1 {
+    font-family: "Libre Franklin", system-ui, sans-serif;
+    font-weight: 700; font-size: clamp(1.9rem, 4.4vw, 2.9rem);
+    line-height: 1.08; letter-spacing: -.015em; margin: 0 0 12px; text-wrap: balance;
+  }
+  .masthead .standfirst { font-size: 1.12rem; color: var(--ink-soft); max-width: 60ch; margin: 0 0 22px; }
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 8px 26px;
+    font-family: "Libre Franklin", system-ui, sans-serif; font-size: .82rem; color: var(--muted);
+  }
+  .meta-row b { color: var(--ink); font-weight: 600; }
+
+  .toc { font-family: "Libre Franklin", system-ui, sans-serif; align-self: start; }
+  @media (min-width: 1000px) {
+    .toc { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
+  }
+  .toc p {
+    font-size: .68rem; font-weight: 700; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 12px;
+  }
+  .toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+  .toc li { counter-increment: toc; margin: 0 0 3px; }
+  .toc a {
+    display: grid; grid-template-columns: 22px 1fr; gap: 8px;
+    padding: 5px 8px; border-radius: 5px; font-size: .83rem; line-height: 1.3;
+    color: var(--ink-soft); text-decoration: none;
+  }
+  .toc a::before { content: counter(toc, decimal-leading-zero); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .toc a:hover, .toc a.active { background: var(--accent-soft); color: var(--accent); }
+  .toc a.active { font-weight: 600; }
+
+  article { grid-column: 1 / -1; min-width: 0; }
+  @media (min-width: 1000px) { article { grid-column: 2; } }
+
+  section { margin: 0 0 60px; scroll-margin-top: 24px; }
+  section > h2 {
+    font-family: "Libre Franklin", system-ui, sans-serif;
+    font-weight: 700; font-size: 1.5rem; letter-spacing: -.01em;
+    margin: 0 0 6px; padding-bottom: 8px; border-bottom: 1px solid var(--line-strong);
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: baseline; text-wrap: balance;
+  }
+  section > h2 .num { font-size: .95rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+  section > .lede { color: var(--muted); font-size: 1.02rem; margin: 0 0 24px; max-width: 64ch; }
+
+  h3 {
+    font-family: "Libre Franklin", system-ui, sans-serif;
+    font-weight: 600; font-size: 1.12rem; margin: 32px 0 10px; color: var(--ink);
+  }
+  p { max-width: 68ch; }
+  article a { color: var(--accent); text-underline-offset: 2px; }
+
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: .84em; }
+  p code, li code, td code, dd code {
+    background: var(--surface-sunk); border: 1px solid var(--line);
+    border-radius: 4px; padding: .06em .38em;
+  }
+
+  pre {
+    background: var(--surface-sunk); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); border-radius: 6px;
+    padding: 14px 16px; overflow-x: auto;
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .8rem; line-height: 1.5; margin: 16px 0;
+  }
+  pre code { white-space: pre; background: none; border: 0; padding: 0; }
+
+  ul, ol { max-width: 68ch; padding-left: 1.3em; }
+  li { margin: 4px 0; }
+  li::marker { color: var(--muted); }
+
+  .note {
+    border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    background: var(--surface); border-radius: 6px; padding: 14px 18px; margin: 20px 0;
+    box-shadow: var(--shadow); max-width: 70ch;
+  }
+  .note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .note.bad  { border-left-color: var(--bad);  background: var(--bad-soft); }
+  .note.good { border-left-color: var(--good); background: var(--good-soft); }
+  .note .tag {
+    font-family: "Libre Franklin", system-ui, sans-serif;
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); display: block; margin-bottom: 6px;
+  }
+  .note p { margin: 4px 0; max-width: none; }
+
+  .twrap { overflow-x: auto; margin: 20px 0; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: "Libre Franklin", system-ui, sans-serif;
+    font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); background: var(--surface-sunk);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  .pill {
+    display: inline-block; font-family: "Libre Franklin", system-ui, sans-serif;
+    font-size: .68rem; font-weight: 600; letter-spacing: .03em;
+    padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-strong); white-space: nowrap;
+  }
+  .pill.g { color: var(--good); background: var(--good-soft); }
+  .pill.w { color: var(--warn); background: var(--warn-soft); }
+  .pill.b { color: var(--bad);  background: var(--bad-soft); }
+
+  figure.diagram {
+    margin: 26px 0; padding: 20px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+  }
+  figure.diagram .mermaid { overflow-x: auto; text-align: center; }
+  figure.diagram pre.mermaid {
+    background: none; border: 0; text-align: left;
+    color: var(--muted); font-size: .74rem;
+  }
+  figure.diagram figcaption {
+    font-family: "Libre Franklin", system-ui, sans-serif; font-size: .78rem; color: var(--muted);
+    margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);
+  }
+  figure.diagram figcaption b { color: var(--ink); font-weight: 600; }
+
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; font-size: .92rem; margin: 16px 0; max-width: 72ch; }
+  .kv dt { font-family: "Libre Franklin", system-ui, sans-serif; font-weight: 600; color: var(--muted); }
+  .kv dd { margin: 0; }
+
+  hr.soft { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
+
+  footer.doc {
+    grid-column: 1 / -1; border-top: 2px solid var(--accent); margin-top: 40px; padding-top: 20px;
+    font-family: "Libre Franklin", system-ui, sans-serif; font-size: .8rem; color: var(--muted);
+  }
+
+  @media print {
+    .toc { display: none; }
+    .shell { grid-template-columns: 1fr; max-width: none; padding: 0; }
+    body { font-size: 10.5pt; background: #fff; color: #000; }
+    figure.diagram, .note, .twrap { box-shadow: none; break-inside: avoid; }
+    section > h2, h3 { break-after: avoid; }
+    @page { size: A4; margin: 16mm 15mm; }
+  }
+</style>
+
+<div class="shell">
+
+  <header class="masthead">
+    <p class="crest">Municipalidad de Valparaíso · Depto. Licencias de Conducir</p>
+    <h1>Módulo Cambio de Domicilio: funcionamiento de principio a fin</h1>
+    <p class="standfirst">Cómo el sistema recibe, interpreta, rutea y confirma las solicitudes de traspaso de carpeta entre comunas &mdash; y qué ocurre exactamente al presionar <em>Sincronizar Ahora</em>.</p>
+    <div class="meta-row">
+      <span><b>Ámbito</b> <span class="mono">src/LicenciasCarpetas/CambioDomicilio/**</span></span>
+      <span><b>Fecha</b> 31 de agosto de 2026</span>
+      <span><b>Estado</b> Integrado · 520/520 pruebas · build limpio</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Índice">
+    <p>Contenido</p>
+    <ol>
+      <li><a href="#resumen">Resumen ejecutivo</a></li>
+      <li><a href="#contexto">Qué resuelve y los dos flujos</a></li>
+      <li><a href="#arquitectura">Arquitectura y dependencias</a></li>
+      <li><a href="#boton">El botón «Sincronizar Ahora»</a></li>
+      <li><a href="#correo">Conexión al correo institucional (EWS)</a></li>
+      <li><a href="#extraccion">Extracción de nombre y RUT</a></li>
+      <li><a href="#ruteo">Ruteo por comuna y directorio</a></li>
+      <li><a href="#ciclo">Ciclo de vida de un caso</a></li>
+      <li><a href="#confirmacion">Confirmación de subida y avisos</a></li>
+      <li><a href="#solicitar">Flujo Solicitar (saliente)</a></li>
+      <li><a href="#datos">Persistencia y modelo de datos</a></li>
+      <li><a href="#config">Configuración completa</a></li>
+      <li><a href="#acceso">Acceso y permisos</a></li>
+      <li><a href="#pendiente">Límites y piezas no cableadas</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="resumen">
+      <h2><span class="num">01</span><span>Resumen ejecutivo</span></h2>
+      <p class="lede">El módulo automatiza el trámite de <strong>cambio de domicilio</strong> de licencias de conducir: cuando una persona cambia de comuna, su carpeta física debe viajar entre municipios. Antes esto vivía en una aplicación separada (<span class="mono">outlook-comuna-router</span>). Ahora está plegado dentro de LicenciasCarpetas: un proceso, un login, una base <span class="mono">carpetas.db</span>.</p>
+      <dl class="kv">
+        <dt>Disparador</dt><dd>Manual. El operador presiona <strong>Sincronizar Ahora</strong>. No hay proceso en segundo plano ni sondeo automático del buzón &mdash; decisión de diseño explícita.</dd>
+        <dt>Entrada</dt><dd>Correos en dos carpetas de Outlook del buzón <span class="mono">cambiodedomicilio@munivalpo.cl</span>, leídos por EWS (Exchange Web Services).</dd>
+        <dt>Salida</dt><dd>Casos creados en pantalla, correos de confirmación a la comuna solicitante, un CSV de reporte por ciclo, y avisos (toast Windows / correo interno).</dd>
+        <dt>Dos direcciones</dt><dd><strong>Entrante</strong> (otra comuna nos pide una carpeta) y <strong>Saliente</strong> / «Solicitar» (nosotros pedimos una carpeta a otra comuna). Botones y motores distintos.</dd>
+        <dt>Estado del botón</dt><dd>El cableado entrante está <strong>completo en código</strong>. Solo falta cargar usuario y clave del buzón (ver <a href="#correo">§5</a>).</dd>
+      </dl>
+      <div class="note">
+        <span class="tag">Cómo leer este informe</span>
+        <p>Las secciones 4 y 5 responden la pregunta operativa &mdash; qué pasa al apretar el botón y cómo se conecta al correo. Las secciones 3 y 6&ndash;11 son la referencia técnica del pipeline completo. Cada diagrama está en Mermaid y se reproduce igual en <span class="mono">docs/cambio-domicilio-informe.md</span>.</p>
+      </div>
+    </section>
+
+    <section id="contexto">
+      <h2><span class="num">02</span><span>Qué resuelve y los dos flujos</span></h2>
+      <p class="lede">El trámite legal es el traspaso de la carpeta de licencia entre municipios cuando cambia el domicilio del titular (Decreto 170, art. 14). El municipio puede estar en cualquiera de los dos lados.</p>
+      <h3>Flujo entrante — «Enviar Cambio de Domicilio»</h3>
+      <p>Otra comuna nos escribe pidiendo la carpeta de un contribuyente que se mudó a su territorio. El sistema lee ese correo, extrae nombre y RUT, identifica la comuna por el remitente, crea un <em>caso</em>, y &mdash; una vez que el operador sube la carpeta a Conaset &mdash; envía el correo de confirmación de vuelta.</p>
+      <h3>Flujo saliente — «Solicitar Cambios de Domicilio»</h3>
+      <p>Un contribuyente llega a Valparaíso desde otra comuna. Nosotros necesitamos su carpeta, así que enviamos el correo de solicitud a esa comuna. La fuente aquí no es un buzón sino una planilla Excel matriz; el envío es por SMTP, no EWS.</p>
+      <div class="twrap">
+      <table>
+        <thead><tr><th>Dimensión</th><th>Entrante (Enviar)</th><th>Saliente (Solicitar)</th></tr></thead>
+        <tbody>
+          <tr><td>Página</td><td class="mono">/CambioDomicilio/Index</td><td class="mono">/CambioDomicilio/Solicitar/Index</td></tr>
+          <tr><td>«Sincronizar Ahora» llama a</td><td class="mono">CambioDomicilioSyncService.RunCycleAsync</td><td class="mono">SolicitarMatrizSyncService.Sync</td></tr>
+          <tr><td>Fuente de datos</td><td>Buzón Exchange (carpetas de Outlook)</td><td>Planilla Excel (<span class="mono">SolicitarMatrizExcelPath</span>)</td></tr>
+          <tr><td>Transporte de correo</td><td>EWS (<span class="mono">EwsMailSender</span>)</td><td>SMTP (<span class="mono">SmtpEmailSender</span>, reusado de F8)</td></tr>
+          <tr><td>Directorio de comunas</td><td>CSV <span class="mono">comunas.csv</span> (proyección)</td><td>Tabla <span class="mono">ComunaContact</span> directa</td></tr>
+          <tr><td>Tabla destino</td><td class="mono">PersonRequest</td><td class="mono">OutboundAddressChangeRequest</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section id="arquitectura">
+      <h2><span class="num">03</span><span>Arquitectura y dependencias</span></h2>
+      <p class="lede">Todo el módulo se registra como <em>singletons</em> en <span class="mono">Program.cs</span>. No hay <span class="mono">BackgroundService</span>. Las páginas Razor son transitorias pero comparten los servicios y, por tanto, el semáforo anti-solapamiento.</p>
+      <figure class="diagram">
+        <pre class="mermaid">
+flowchart TB
+    subgraph UI["Paginas Razor -- politica CambioDomicilioAccess"]
+        P1["Index (Enviar) -- boton Sincronizar Ahora"]
+        P2["Solicitar/Index -- boton Sincronizar Ahora"]
+        P3["Comunas / Discarded / Estadisticas / Sector / Certificado"]
+    end
+    subgraph SVC["Servicios (singletons)"]
+        SYNC["CambioDomicilioSyncService<br/>RunCycleAsync + SemaphoreSlim"]
+        ROUTE["AddressChangeRoutingService"]
+        DIR["ComunaDirectory (CSV proyeccion)"]
+        EXTRACT["PersonDataExtractor / RutValidator"]
+        STATS["CambioDomicilioStatisticsService"]
+        REPORT["CsvReportWriter"]
+        NOTIF["INotificationChannel x2<br/>toast Windows / correo interno"]
+        OUTSND["OutboundRequestSender<br/>SolicitarMatrizSyncService"]
+    end
+    subgraph EWSL["Capa EWS"]
+        EREAD["EwsEmailReader<br/>IEmailReader + IEmailMover"]
+        ESEND["EwsMailSender (IMailSender)"]
+        ECLI["EwsClient -- HTTP + SOAP + Basic/TLS"]
+    end
+    subgraph DATA["carpetas.db (SQLite, una sola)"]
+        T1[("PersonRequest / DeletedSourceMessage")]
+        T2[("DiscardedEmail")]
+        T3[("OutboundAddressChangeRequest + Attachment")]
+        T4[("ComunaContact -- 513 correos oficiales")]
+    end
+    EX["Exchange on-premise<br/>mail.munivalpo.cl/EWS/Exchange.asmx"]
+    SMTP["Servidor SMTP institucional"]
+    XLS["Planilla matriz .xlsx"]
+    P1 --> SYNC
+    P1 --> ROUTE
+    P2 --> OUTSND
+    P3 --> DIR & STATS & ROUTE
+    SYNC --> ROUTE --> DIR
+    SYNC --> EREAD
+    SYNC --> REPORT
+    ROUTE --> EXTRACT
+    ROUTE --> ESEND
+    ROUTE --> NOTIF
+    DIR -.proyecta.-> T4
+    EREAD --> ECLI --> EX
+    ESEND --> ECLI
+    ROUTE --> T1 & T2
+    OUTSND --> T3
+    OUTSND --> SMTP
+    OUTSND --> T4
+        </pre>
+        <figcaption><b>Diagrama 1.</b> Componentes y dependencias. Línea punteada = proyección de solo lectura desde la tabla <span class="mono">ComunaContact</span> hacia el CSV; el módulo de ruteo nunca escribe esa tabla.</figcaption>
+      </figure>
+      <h3>Registro en <span class="mono">Program.cs</span> (resumido)</h3>
+      <pre><code>builder.Services.AddSingleton(cambioDomicilioOptions);               // options concreto, no IOptions&lt;T&gt;
+builder.Services.AddSingleton&lt;ICambioDomicilioRequestRepository&gt;(_ =&gt; new CambioDomicilioRequestRepository(connectionString));
+builder.Services.AddSingleton&lt;IOutboundAddressChangeRequestRepository&gt;(_ =&gt; new OutboundAddressChangeRequestRepository(connectionString));
+builder.Services.AddSingleton&lt;IDiscardedEmailRepository&gt;(_ =&gt; new DiscardedEmailRepository(connectionString));
+builder.Services.AddSingleton&lt;IComunaDirectory&gt;(sp =&gt; new ComunaDirectory(sp.GetRequiredService&lt;IComunaContactRepository&gt;()));
+builder.Services.AddSingleton&lt;IEwsClient, EwsClient&gt;();
+builder.Services.AddSingleton&lt;EwsEmailReader&gt;();
+builder.Services.AddSingleton&lt;IEmailReader&gt;(sp =&gt; sp.GetRequiredService&lt;EwsEmailReader&gt;());
+builder.Services.AddSingleton&lt;IEmailMover&gt;(sp =&gt; sp.GetRequiredService&lt;EwsEmailReader&gt;());
+builder.Services.AddSingleton&lt;IMailSender, EwsMailSender&gt;();
+builder.Services.AddSingleton&lt;ICsvReportWriter, CsvReportWriter&gt;();
+builder.Services.AddSingleton&lt;INotificationChannel, WindowsToastNotificationChannel&gt;();
+builder.Services.AddSingleton&lt;INotificationChannel, EmailNotificationChannel&gt;();
+builder.Services.AddSingleton&lt;AddressChangeRoutingService&gt;();
+builder.Services.AddSingleton&lt;CambioDomicilioSyncService&gt;();
+builder.Services.AddSingleton&lt;CambioDomicilioStatisticsService&gt;();</code></pre>
+      <p>El mismo <span class="mono">EwsEmailReader</span> sirve como <span class="mono">IEmailReader</span> y <span class="mono">IEmailMover</span>. No hay implementación falsa o nula en producción: los <em>fakes</em> viven solo en el proyecto de pruebas.</p>
+    </section>
+
+    <section id="boton">
+      <h2><span class="num">04</span><span>El botón «Sincronizar Ahora»</span></h2>
+      <p class="lede">En <span class="mono">/CambioDomicilio/Index</span> el botón es un <span class="mono">&lt;form method="post" asp-page-handler="SyncNow"&gt;</span>. Al enviarse ejecuta <span class="mono">OnPostSyncNowAsync</span>, que hace exactamente una cosa: <span class="mono">await routerWorker.RunCycleAsync(HttpContext.RequestAborted)</span> y traduce el resultado a un mensaje.</p>
+      <figure class="diagram">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor OP as Operador
+    participant PG as OnPostSyncNowAsync
+    participant SY as CambioDomicilioSyncService
+    participant RT as AddressChangeRoutingService
+    participant ER as EwsEmailReader
+    participant EC as EwsClient
+    participant EX as Exchange (EWS)
+    participant DB as carpetas.db
+    OP->>PG: POST handler=SyncNow
+    PG->>SY: RunCycleAsync(ct)
+    SY->>SY: cycleGuard.WaitAsync(0) - hay otro ciclo?
+    alt ya hay uno corriendo
+        SY-->>PG: SkippedBusy
+    else libre
+        SY->>RT: LoadDirectory() lee comunas.csv
+        alt directorio vacio o ilegible
+            SY-->>PG: SkippedNoDirectory (LogCritical)
+        else directorio OK
+            SY->>DB: snapshot de ids y descartes previos
+            SY->>ER: GetMessagesInFolderAsync("CARP. PARA PEDIR")
+            ER->>EC: SOAP FindItem + GetItem
+            EC->>EX: POST Exchange.asmx (Basic/TLS, reintentos)
+            EX-->>EC: XML con los correos
+            EC-->>ER: XDocument
+            ER-->>SY: lista de IncomingEmail
+            loop por cada correo entrante
+                SY->>RT: ProcessIncomingRequest(email, contacts)
+                RT->>DB: INSERT PersonRequest o DiscardedEmail
+            end
+            SY->>ER: GetMessagesInFolderAsync("CARP. YA SUBIDAS")
+            loop por cada confirmacion
+                SY->>RT: ProcessUploadedCase(email)
+                RT->>DB: MarkUploaded(id)
+            end
+            SY->>DB: contar nuevos (creados / revision / descartados)
+            SY->>SY: CsvReportWriter.Write(...) si ReportCsvPath
+            SY-->>PG: Completed(creados, descartados, paraRevision)
+        end
+    end
+    PG->>DB: Load() recarga la grilla
+    PG-->>OP: banner con el resultado
+        </pre>
+        <figcaption><b>Diagrama 2.</b> Secuencia completa de un ciclo entrante. El semáforo <span class="mono">cycleGuard</span> usa espera de tiempo cero: si otro ciclo corre, devuelve <span class="mono">SkippedBusy</span> sin bloquear.</figcaption>
+      </figure>
+      <div class="twrap">
+      <table>
+        <thead><tr><th>Resultado</th><th>Cuándo</th><th>Mensaje al operador</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill g">Completed</span></td><td>El ciclo terminó (aunque procese cero correos)</td><td>«Sincronización completada: N caso(s) creado(s), M para revisión, K descartado(s).»</td></tr>
+          <tr><td><span class="pill w">SkippedBusy</span></td><td>Ya había un ciclo en ejecución</td><td>«Ya hay una sincronización en curso, intente en unos segundos.»</td></tr>
+          <tr><td><span class="pill b">SkippedNoDirectory</span></td><td>El CSV de comunas está vacío o no se pudo leer</td><td>«No se pudo leer el directorio de comunas… No se procesó ningún correo.»</td></tr>
+          <tr><td><span class="pill b">Failed</span></td><td>Excepción fuera del bucle: EWS caído, credenciales malas, fallo de base</td><td>«No se pudo completar la sincronización. Revise que las credenciales del correo institucional estén configuradas (CambioDomicilio:Ews)…»</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="note">
+        <span class="tag">Tolerancia a fallos por correo</span>
+        <p>Una excepción al procesar <em>un</em> correo individual se registra y el lote continúa &mdash; no aborta el ciclo ni produce <span class="mono">Failed</span>. Solo un fallo <em>fuera</em> del bucle devuelve <span class="mono">Failed</span>. La recarga automática de la página cada 120 s <strong>solo re-renderiza</strong>; no dispara sincronización.</p>
+      </div>
+    </section>
+
+    <section id="correo">
+      <h2><span class="num">05</span><span>Conexión al correo institucional (EWS)</span></h2>
+      <p class="lede">El botón ya está conectado en código a Exchange Web Services. El transporte, los reintentos y el parseo SOAP están implementados y probados. Lo único que falta para que funcione en el equipo es <strong>cargar el usuario y la clave</strong> del buzón.</p>
+      <h3>Cómo está armada la conexión</h3>
+      <dl class="kv">
+        <dt>Endpoint</dt><dd><span class="mono">https://mail.munivalpo.cl/EWS/Exchange.asmx</span> &mdash; ya está en <span class="mono">appsettings.json</span>, clave <span class="mono">CambioDomicilio:Ews:Url</span>.</dd>
+        <dt>Autenticación</dt><dd>Basic sobre TLS. La cabecera <span class="mono">Authorization: Basic base64("usuario:clave")</span> se arma en <span class="mono">EwsClient</span>. Basic sobre NTLM por determinismo multiplataforma.</dd>
+        <dt>Buzón</dt><dd><span class="mono">cambiodedomicilio@munivalpo.cl</span> (compartido). EWS opera sobre el buzón que autentican las credenciales.</dd>
+        <dt>Transporte</dt><dd><span class="mono">HttpClient</span> con timeout 100 s. Reintenta ante <span class="mono">408, 429, 500, 502, 503, 504</span> y <span class="mono">HttpRequestException</span>, hasta 4 intentos con retroceso exponencial desde 2 s.</dd>
+        <dt>Protocolo</dt><dd><span class="mono">Exchange2013_SP1</span>. Todos los valores se inyectan como nodos XML (escape estructural).</dd>
+        <dt>Validación</dt><dd>Perezosa. <span class="mono">EwsClient</span> es singleton y nadie lo resuelve al arranque: un <span class="mono">CambioDomicilio:Ews</span> mal configurado <strong>no impide que la app inicie</strong>; el error aparece recién al presionar el botón (<span class="mono">Failed</span>).</dd>
+      </dl>
+      <h3>Carpetas de Outlook que usa</h3>
+      <div class="twrap">
+      <table>
+        <thead><tr><th>Rol</th><th>Clave de config</th><th>Valor por defecto</th></tr></thead>
+        <tbody>
+          <tr><td>Lee solicitudes entrantes</td><td class="mono">CambioDomicilio:SourceFolderName</td><td class="mono">CARP. PARA PEDIR</td></tr>
+          <tr><td>Lee confirmaciones de subida</td><td class="mono">CambioDomicilio:ConfirmationFolderName</td><td class="mono">CARP. YA SUBIDAS</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>Al confirmar una subida con «Marcar subida», el correo original se <strong>mueve</strong> de la primera carpeta a la segunda y se marca como no leído. Deben existir en el buzón con ese nombre exacto; si se renombran, hay que actualizar la config (el lector se auto-repara una vez si detecta que la carpeta cambió, pero no adivina un nombre nuevo).</p>
+      <h3>Lo que falta y cómo cargarlo</h3>
+      <div class="note bad">
+        <span class="tag">Pendiente de configuración — no es código</span>
+        <p><span class="mono">CambioDomicilio:Ews:Username</span> y <span class="mono">CambioDomicilio:Ews:Password</span> <strong>no están en <span class="mono">appsettings.json</span> a propósito</strong>: son secretos y no deben viajar en git. Sin ellos, cada SOAP recibe 401 y el botón muestra <span class="mono">Failed</span>.</p>
+      </div>
+      <p>Van en <span class="mono">appsettings.Local.json</span>, <strong>junto al <span class="mono">.exe</span></strong>. Ese archivo está fuera de git y <span class="mono">dotnet publish</span> <strong>no lo sobrescribe</strong>, así que sobrevive a cada <span class="mono">git pull</span> + republicación. Plantilla versionada: <span class="mono">src/LicenciasCarpetas/appsettings.Local.Example.json</span>.</p>
+      <pre><code># Opcion A -- al publicar, pasando las credenciales:
+.\deploy\publish.ps1 -EwsUser "servervalpo\cambiodedomicilio" -EwsPassword "********"
+
+# Opcion B -- a mano:
+copy src\LicenciasCarpetas\appsettings.Local.Example.json publish\appsettings.Local.json
+notepad publish\appsettings.Local.json
+
+# Opcion C -- sin archivo, variables de entorno de la maquina:
+setx CambioDomicilio__Ews__Username "servervalpo\cambiodedomicilio"
+setx CambioDomicilio__Ews__Password "********"</code></pre>
+      <p>Contenido de <span class="mono">appsettings.Local.json</span> (la clave real va aquí, nunca en git):</p>
+      <pre><code>{
+  "CambioDomicilio": {
+    "Ews": {
+      "Url": "https://mail.munivalpo.cl/EWS/Exchange.asmx",
+      "Username": "servervalpo\\cambiodedomicilio",
+      "Password": "********"
+    }
+  }
+}</code></pre>
+      <div class="note good">
+        <span class="tag">Cambio aplicado en este trabajo</span>
+        <p><span class="mono">Program.cs</span> ahora carga <span class="mono">appsettings.Local.json</span> como fuente de configuración opcional; <span class="mono">.gitignore</span> lo excluye; <span class="mono">deploy/publish.ps1</span> acepta <span class="mono">-EwsUser</span> / <span class="mono">-EwsPassword</span>; y el mensaje de error del botón ahora nombra explícitamente la configuración que falta. Detalle en <span class="mono">deploy/README.md</span> § «Correo institucional (EWS)».</p>
+      </div>
+      <h3>Prueba de humo de la conexión</h3>
+      <ol>
+        <li>Cargar las credenciales (opción A, B o C).</li>
+        <li>Abrir el dashboard, entrar con un usuario que tenga el módulo, ir a <strong>Enviar Cambio de Domicilio</strong>.</li>
+        <li>Presionar <strong>Sincronizar Ahora</strong>.</li>
+        <li><strong>Éxito:</strong> banner verde «Sincronización completada…». Si el buzón tenía correos en <span class="mono">CARP. PARA PEDIR</span>, aparecen como casos.</li>
+        <li><strong>401 / credenciales:</strong> banner rojo <span class="mono">Failed</span> con la mención a <span class="mono">CambioDomicilio:Ews</span>. Revisar usuario/clave y que el buzón permita EWS.</li>
+        <li><strong>Carpeta inexistente:</strong> el ciclo igual completa; en el log del servidor queda un <em>warning</em> y devuelve lista vacía.</li>
+      </ol>
+    </section>
+
+    <section id="extraccion">
+      <h2><span class="num">06</span><span>Extracción de nombre y RUT</span></h2>
+      <p class="lede"><span class="mono">PersonDataExtractor</span> fue calibrado contra 38 correos reales de producción. Del lado entrante solo saca dos campos: <strong>RUT</strong> y <strong>nombre completo</strong>.</p>
+      <h3>Orden de prioridad para el RUT</h3>
+      <ol>
+        <li>Con prefijo: <span class="mono">RUT:</span> / <span class="mono">R.U.T.</span> / <span class="mono">RUN</span>, puntos opcionales.</li>
+        <li>Con puntos y guion: <span class="mono">12.345.678-9</span>.</li>
+        <li>Sin puntos: <span class="mono">12345678-9</span>.</li>
+        <li>Separado por espacios (export de Viña del Mar): cuerpo y dígito verificador con 1&ndash;10 espacios.</li>
+      </ol>
+      <p>Cada candidato se valida con el dígito verificador (módulo 11) en <span class="mono">RutValidator</span>. El primero válido gana. El nombre se busca en una ventana de ±90 caracteres alrededor del RUT: se prefiere la última secuencia de 2&ndash;5 palabras capitalizadas <em>antes</em> del RUT, si no la primera <em>después</em>. Palabras de borde (<span class="mono">DON</span>, <span class="mono">DOÑA</span>, <span class="mono">SR</span>, <span class="mono">CÉDULA</span>&hellip;) se recortan.</p>
+      <figure class="diagram">
+        <pre class="mermaid">
+flowchart TD
+    A["cuerpo del correo"] --> B["quitar banner CORREO EXTERNO"]
+    B --> C["buscar todos los RUT por prioridad"]
+    C --> D{"RUT con digito<br/>verificador valido?"}
+    D -->|no| E["ExtractedPersonData(null, null)"]
+    D -->|si| F["buscar nombre en ventana +/- 90 car."]
+    F --> G{"nombre hallado?"}
+    G -->|si| H["ExtractedPersonData(nombre, rut)"]
+    G -->|no| I["ExtractedPersonData(null, rut) -> NeedsReview"]
+    subgraph asunto["ademas: ExtractFromSubject"]
+        J["quitar RV: RE: FW: y relleno"] --> K["extraer solo RUT validado<br/>nombre siempre null -> NeedsReview"]
+    end
+    H --> M["MergeContributors: unir por RUT,<br/>preferir el lado con nombre"]
+    I --> M
+    K --> M
+        </pre>
+        <figcaption><b>Diagrama 3.</b> Extracción. <span class="mono">ExtractAll</span> emite un registro por cada RUT válido en el cuerpo, en orden de aparición, acotando la búsqueda de nombre a los RUT vecinos.</figcaption>
+      </figure>
+    </section>
+
+    <section id="ruteo">
+      <h2><span class="num">07</span><span>Ruteo por comuna y directorio</span></h2>
+      <p class="lede"><span class="mono">AddressChangeRoutingService.ProcessIncomingRequest</span> decide, para cada correo, si crea un caso o lo descarta para revisión manual. La comuna se identifica por el <strong>remitente</strong>.</p>
+      <figure class="diagram">
+        <pre class="mermaid">
+flowchart TD
+    S(["correo entrante"]) --> T1{"MessageId ya<br/>marcado como borrado?"}
+    T1 -->|si| X1(["ignorar (tumba)"])
+    T1 -->|no| T2{"ya existe caso por<br/>ese SourceMessageId?"}
+    T2 -->|si| X2(["revertir subida accidental"])
+    T2 -->|no| T3{"dominio del remitente<br/>= OwnDomain?"}
+    T3 -->|si| X3(["ignorar (correo interno)"])
+    T3 -->|no| R["ResolveByDomain(remitente, contacts)"]
+    R --> D1{"coincidencia<br/>exacta de correo?"}
+    D1 -->|si| OK["comuna resuelta"]
+    D1 -->|no| D2{"exactamente 1 comuna<br/>para ese dominio?"}
+    D2 -->|si| OK
+    D2 -->|no| DIS(["INSERT DiscardedEmail<br/>dominio ambiguo / no reconocido"])
+    OK --> EXT["extraer contribuyentes (cuerpo + asunto)"]
+    EXT --> LOOP["por cada contribuyente"]
+    LOOP --> DEDUP{"ya existe por<br/>RUT+comuna o nombre+comuna?"}
+    DEDUP -->|si| SKIP(["omitir"])
+    DEDUP -->|no| INS(["INSERT PersonRequest<br/>Status=Pending, NeedsReview si falta dato"])
+        </pre>
+        <figcaption><b>Diagrama 4.</b> Decisión de ruteo. «Dominio ambiguo» = varias comunas comparten el mismo dominio de correo (webmail); el sistema no adivina y manda a descartados.</figcaption>
+      </figure>
+      <h3>El directorio de comunas</h3>
+      <p>La fuente de verdad editable es la tabla <span class="mono">ComunaContact</span> en <span class="mono">carpetas.db</span> (los 513 correos oficiales del Excel Madre). El motor de ruteo entrante consume un CSV, <span class="mono">data/comunas.csv</span>, que es una <strong>proyección de solo lectura</strong> de esa tabla:</p>
+      <ul>
+        <li><span class="mono">ComunaDirectory.EnsureSeed</span> escribe el CSV desde la tabla solo si el CSV falta o está vacío y la tabla tiene filas.</li>
+        <li>Nunca escribe de vuelta a <span class="mono">ComunaContact</span> ni fabrica comunas. Si la tabla también está vacía, el directorio queda ausente y el ciclo reporta <span class="mono">SkippedNoDirectory</span>.</li>
+        <li>La ruta relativa se ancla a <span class="mono">AppContext.BaseDirectory</span> vía <span class="mono">CambioDomicilioPathResolver</span>.</li>
+        <li>Editar un correo en la pantalla <strong>Comunas</strong> reescribe el CSV de forma atómica (temporal + <span class="mono">File.Move</span>). Esa edición <strong>no</strong> toca la tabla, y no afecta al flujo saliente.</li>
+      </ul>
+      <div class="note warn">
+        <span class="tag">Dos fuentes de contacto</span>
+        <p>El flujo <strong>entrante</strong> usa el CSV; el <strong>saliente</strong> usa la tabla <span class="mono">ComunaContact</span>. Si se edita un correo en la pantalla Comunas, el cambio aplica al entrante de inmediato pero al saliente solo si también se actualiza la tabla.</p>
+      </div>
+    </section>
+
+    <section id="ciclo">
+      <h2><span class="num">08</span><span>Ciclo de vida de un caso</span></h2>
+      <p class="lede">Un <span class="mono">PersonRequest</span> tiene dos ejes independientes: <strong>Status</strong> (avance del trámite de correo) y <strong>Destination</strong> (a qué bandeja de trabajo pertenece).</p>
+      <figure class="diagram">
+        <pre class="mermaid">
+stateDiagram-v2
+    [*] --> Pending: correo entrante ruteado
+    Pending --> Uploaded: operador Marcar subida<br/>(mueve correo a CARP. YA SUBIDAS)
+    Uploaded --> Confirmed: se envia correo de confirmacion<br/>a la comuna solicitante
+    Confirmed --> Pending: Deshacer y rectificar<br/>(envia correo de rectificacion)
+    Pending --> [*]: eliminar (deja tumba DeletedSourceMessage)
+    note right of Pending
+        NeedsReview = true si falta
+        nombre o RUT (revision manual)
+    end note
+    note right of Uploaded
+        requiere FechaUltimaCarpeta
+        o marca SinCarpeta
+    end note
+        </pre>
+        <figcaption><b>Diagrama 5.</b> Estados de <span class="mono">Status</span>. En paralelo, <span class="mono">Destination</span> puede pasar de <span class="mono">None</span> a <span class="mono">F8</span> o <span class="mono">Certificado</span> («Traspaso a…»), sacando el caso de la lista principal.</figcaption>
+      </figure>
+      <p>Reprocesar el mismo correo no duplica: se busca por <span class="mono">RUT + comuna</span> (o <span class="mono">nombre + comuna</span> si falta el RUT). Al eliminar un caso se guarda su <span class="mono">SourceMessageId</span> en <span class="mono">DeletedSourceMessage</span>; el siguiente ciclo ve esa tumba y no recrea el caso.</p>
+    </section>
+
+    <section id="confirmacion">
+      <h2><span class="num">09</span><span>Confirmación de subida y avisos</span></h2>
+      <p class="lede">Cuando el operador presiona «Marcar subida», el sistema mueve el correo original, marca el caso como subido y envía el correo de confirmación a la comuna que lo pidió, todo en un paso (<span class="mono">MarkUploadedAndConfirmAsync</span>).</p>
+      <figure class="diagram">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor OP as Operador
+    participant PG as IndexModel
+    participant RT as AddressChangeRoutingService
+    participant MV as EwsEmailReader (IEmailMover)
+    participant SN as EwsMailSender
+    participant NF as INotificationChannel x2
+    participant DB as carpetas.db
+    OP->>PG: Marcar subida (caso id)
+    PG->>RT: MarkUploadedAndConfirmAsync(id, userId, contacts)
+    RT->>RT: validar Status=Pending, datos completos,<br/>FechaUltimaCarpeta o SinCarpeta
+    RT->>MV: MoveAndMarkUnreadAsync(msgId,<br/>CARP. PARA PEDIR -> CARP. YA SUBIDAS)
+    MV-->>RT: ok / false (continua igual)
+    RT->>DB: MarkUploaded(id)
+    RT->>SN: SendAsync(correo comuna, plantilla UploadConfirmation)
+    SN-->>RT: enviado
+    RT->>DB: UpdateStatusToConfirmed(id, now, userId)
+    RT->>NF: NotifyConfirmationSent(nombre, rut, comuna)
+    NF-->>NF: toast Windows (si habilitado)<br/>+ correo interno (si NotificationEmailAddress)
+    RT-->>PG: ConfirmationResult(Sent=true)
+        </pre>
+        <figcaption><b>Diagrama 6.</b> Confirmación de subida. Los avisos se disparan <strong>solo</strong> al final de un envío de confirmación exitoso &mdash; no al descartar, ni al rectificar, ni en los flujos de certificado.</figcaption>
+      </figure>
+      <div class="twrap">
+      <table>
+        <thead><tr><th>Plantilla de correo</th><th>Se usa en</th><th>Para qué</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">UploadConfirmation</td><td>confirmación normal</td><td>«Carpeta subida a Conaset» a la comuna solicitante</td></tr>
+          <tr><td class="mono">ConfirmationRectification</td><td>«Deshacer y rectificar»</td><td>retracta una confirmación enviada por error</td></tr>
+          <tr><td class="mono">ConfirmationSentNotification</td><td>canal de correo interno</td><td>aviso «[Gestión de Licencias] Confirmación enviada»</td></tr>
+          <tr><td class="mono">CertificateRequestBatch</td><td>pantalla Certificado</td><td>lista batch a Secretaría Municipal</td></tr>
+          <tr><td class="mono">CertificateAcknowledgement</td><td>pantalla Certificado</td><td>acuse por comuna de que se emitirá certificado</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section id="solicitar">
+      <h2><span class="num">10</span><span>Flujo Solicitar (saliente)</span></h2>
+      <p class="lede">Dirección opuesta: Valparaíso pide una carpeta a otra comuna. Las filas son <span class="mono">OutboundAddressChangeRequest</span>, siempre creadas como <span class="mono">Borrador</span> y luego <span class="mono">Enviada</span>.</p>
+      <figure class="diagram">
+        <pre class="mermaid">
+flowchart TD
+    subgraph orig["Dos origenes de una solicitud saliente"]
+        O1["Pantalla Casos/Agenda<br/>FolderCase = CAMBIO DE DOMICILIO SOLICITADO<br/>crea y envia de inmediato"]
+        O2["Boton Sincronizar Ahora<br/>SolicitarMatrizSyncService.Sync"]
+    end
+    O2 --> XLS{"Excel matriz<br/>configurado y existe?"}
+    XLS -->|no| NOOP(["NoOp -- sin efecto"])
+    XLS -->|si| GUARD{"SyncGuard.Wait(0)<br/>otra sync activa?"}
+    GUARD -->|no| BUSY(["alerta: sync en curso"])
+    GUARD -->|si| READ["leer filas: RUT, NOMBRE, COMUNA"]
+    READ --> VAL{"validar RUT + nombre + comuna"}
+    VAL -->|invalido| ALERT(["alerta por fila, saltar"])
+    VAL -->|ya existe RUT| SKIP(["omitir silencioso"])
+    VAL -->|nuevo| INS(["INSERT OutboundAddressChangeRequest<br/>Status = Borrador"])
+    O1 --> SEND
+    INS --> LIST["listado Solicitar"]
+    LIST --> BTN["operador: boton Solicitar por fila"]
+    BTN --> SEND["OutboundRequestSender.SendAsync"]
+    SEND --> C{"contacto en ComunaContact?"}
+    C -->|no| NC(["NoContact"])
+    C -->|si| SMTP["SMTP: asunto + cuerpo Decreto 170 art.14<br/>+ adjuntos"]
+    SMTP --> MS(["MarkSent -> Enviada"])
+        </pre>
+        <figcaption><b>Diagrama 7.</b> Flujo saliente. A diferencia del <span class="mono">MatrizSyncService</span> de F8, este <strong>nunca reescribe</strong> el Excel: solo lee. El envío es por SMTP y el directorio es la tabla <span class="mono">ComunaContact</span>, no el CSV.</figcaption>
+      </figure>
+      <p><span class="mono">WorkflowState</span> (paso físico de la carpeta en el flujo Conaset) es un eje distinto de <span class="mono">Status</span> (¿correo enviado?). Si la solicitud nació de un <span class="mono">FolderCase</span>, al elegir un estado real se propaga de vuelta al caso de origen en la pantalla Casos.</p>
+    </section>
+
+    <section id="datos">
+      <h2><span class="num">11</span><span>Persistencia y modelo de datos</span></h2>
+      <p class="lede">Todo en la misma <span class="mono">carpetas.db</span>. Cada repositorio crea su esquema en <span class="mono">EnsureSchema()</span>, invocado desde <span class="mono">Program.EnsureSchemas</span> al arranque, después del respaldo automático. Cambios puramente aditivos: cero migración de datos existentes.</p>
+      <figure class="diagram">
+        <pre class="mermaid">
+erDiagram
+    PersonRequest {
+        int Id PK
+        string FullName "NULL"
+        string Rut "NULL"
+        string Comuna "NULL"
+        string SourceMessageId "no unico"
+        string Status "Pending/Uploaded/Confirmed"
+        string Destination "None/F8/Certificado"
+        bool NeedsReview
+        bool SinCarpeta
+        date FechaUltimaCarpeta "NULL"
+        date ConfirmedAt "NULL"
+        date ReceivedAt
+    }
+    DeletedSourceMessage {
+        string SourceMessageId PK
+        date DeletedAt
+    }
+    DiscardedEmail {
+        int Id PK
+        string SourceMessageId "UNIQUE"
+        string Reason
+        date DiscardedAt
+    }
+    OutboundAddressChangeRequest {
+        int Id PK
+        string FullName
+        string Rut
+        string DestinationComuna
+        string Status "Borrador/Enviada"
+        string WorkflowState "NULL"
+        int SourceFolderCaseId "NULL"
+        date SentAt "NULL"
+    }
+    OutboundAddressChangeAttachment {
+        int Id PK
+        int RequestId FK
+        string FileName
+        string StoredPath
+    }
+    ComunaContact {
+        int Id PK
+        string Comuna
+        string Email
+    }
+    OutboundAddressChangeRequest ||--o{ OutboundAddressChangeAttachment : "tiene"
+    ComunaContact ||..o{ PersonRequest : "resuelve via CSV"
+    ComunaContact ||..o{ OutboundAddressChangeRequest : "resuelve directo"
+        </pre>
+        <figcaption><b>Diagrama 8.</b> Modelo de datos del módulo. Las relaciones punteadas son lógicas (no hay <span class="mono">FOREIGN KEY</span> declarada): la comuna se guarda como texto en cada solicitud.</figcaption>
+      </figure>
+      <p>Las cuatro tablas del módulo conviven sin colisión con las del núcleo (<span class="mono">FolderCase</span>, <span class="mono">DailyCounter</span>, <span class="mono">DashboardUser</span>) y las de F8 (<span class="mono">UrgentRequest</span>). Verificado por <span class="mono">CambioDomicilioRequestRepositoryTests.Coexists_in_the_same_database_file_as_FolderCase_and_UrgentRequest</span>.</p>
+    </section>
+
+    <section id="config">
+      <h2><span class="num">12</span><span>Configuración completa</span></h2>
+      <p class="lede">Sección <span class="mono">CambioDomicilio</span> de <span class="mono">appsettings.json</span>. Todas las propiedades son opcionales: sin la sección, la app arranca igual y el resto de módulos no se ve afectado.</p>
+      <div class="twrap">
+      <table>
+        <thead><tr><th>Clave</th><th>Por defecto / en appsettings</th><th>Para qué</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Ews:Url</td><td class="mono">…/EWS/Exchange.asmx</td><td>Endpoint de Exchange</td></tr>
+          <tr><td class="mono">Ews:Username</td><td><span class="pill b">ausente</span> → Local</td><td>Usuario del buzón (secreto)</td></tr>
+          <tr><td class="mono">Ews:Password</td><td><span class="pill b">ausente</span> → Local</td><td>Clave del buzón (secreto)</td></tr>
+          <tr><td class="mono">OwnDomain</td><td class="mono">munivalpo.cl</td><td>Ignora correo interno; base del ruteo por dominio</td></tr>
+          <tr><td class="mono">SourceFolderName</td><td class="mono">CARP. PARA PEDIR</td><td>Carpeta Outlook de solicitudes entrantes</td></tr>
+          <tr><td class="mono">ConfirmationFolderName</td><td class="mono">CARP. YA SUBIDAS</td><td>Carpeta Outlook de confirmaciones</td></tr>
+          <tr><td class="mono">PlazoDiasHabiles</td><td>15</td><td>Plazo legal en días hábiles desde recepción</td></tr>
+          <tr><td class="mono">ComunaDirectoryCsvPath</td><td class="mono">data/comunas.csv</td><td>CSV proyectado del directorio (anclado a BaseDirectory)</td></tr>
+          <tr><td class="mono">ReportCsvPath</td><td class="mono">data/reports/cambio-domicilio.csv</td><td>CSV de reporte por ciclo (anclado a BaseDirectory)</td></tr>
+          <tr><td class="mono">SolicitarMatrizExcelPath</td><td><span class="pill w">ausente</span></td><td>Excel matriz del flujo saliente (off si no se define)</td></tr>
+          <tr><td class="mono">NotificationEmailAddress</td><td class="mono">"" (vacío)</td><td>Destino del aviso interno; vacío = canal apagado</td></tr>
+          <tr><td class="mono">CertificateRequestEmailAddress</td><td class="mono">matias.villalobos@munivalpo.cl</td><td>Destino del batch de certificados</td></tr>
+          <tr><td class="mono">ToastNotificationsEnabled</td><td>true</td><td>Toast de Windows al confirmar (no-op en servidor headless)</td></tr>
+          <tr><td class="mono">MailboxAddress</td><td class="mono">cambiodedomicilio@munivalpo.cl</td><td><span class="pill w">sin uso</span> — ninguna línea lo lee</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p><span class="mono">Ews:Username/Password</span> se resuelven también desde variables de entorno con el separador <span class="mono">__</span>: <span class="mono">CambioDomicilio__Ews__Username</span>.</p>
+    </section>
+
+    <section id="acceso">
+      <h2><span class="num">13</span><span>Acceso y permisos</span></h2>
+      <p class="lede">Todas las páginas del módulo están tras la política <span class="mono">CambioDomicilioAccess</span>, que exige el <em>claim</em> <span class="mono">mod:cambio-domicilio = true</span>.</p>
+      <dl class="kv">
+        <dt>Política</dt><dd><span class="mono">policy.RequireClaim("mod:cambio-domicilio", "true")</span> en <span class="mono">Program.cs</span>.</dd>
+        <dt>Claim</dt><dd>Se emite al iniciar sesión: automático para roles con acceso total a módulos; para el rol <span class="mono">Administrativo</span> depende del flag por usuario <span class="mono">DashboardUser.CanAccessCambioDomicilio</span>.</dd>
+        <dt>Cómo se otorga</dt><dd>Pantalla <span class="mono">/Usuarios</span> (checkbox «módulo Cambio de Domicilio» al crear o al editar rol), o <span class="mono">UserProvisioning.Create(...)</span>. La siembra de primer arranque crea <span class="mono">raul</span> y <span class="mono">admin</span> ya con el módulo.</dd>
+        <dt>Navegación</dt><dd>El sidebar muestra los dos enlaces solo si el usuario tiene el claim; verificado por prueba de que el HTML servido a un usuario sin el claim no contiene la entrada.</dd>
+      </dl>
+    </section>
+
+    <section id="pendiente">
+      <h2><span class="num">14</span><span>Límites y piezas no cableadas</span></h2>
+      <p class="lede">Honesto sobre el estado real: lo que existe en código pero no tiene camino de uso desde la interfaz.</p>
+      <ul>
+        <li><strong>Sin página F8 propia del módulo.</strong> «Traspaso a F8» pone <span class="mono">Destination = F8</span> y el caso desaparece de la lista, pero no hay pantalla dentro de <span class="mono">CambioDomicilio/</span> que liste esos casos (<span class="mono">Dashboard/Pages/F8/</span> es otro módulo, tabla <span class="mono">UrgentRequest</span>). Las estadísticas sí los agregan.</li>
+        <li><strong>Ruta <span class="mono">viaF8</span>.</strong> <span class="mono">SendConfirmationAsync</span> acepta <span class="mono">bool viaF8</span> y existe la plantilla <span class="mono">UploadConfirmationF8</span>, pero todos los llamadores pasan <span class="mono">false</span>.</li>
+        <li><strong><span class="mono">GetTurnaroundDistribution</span></strong> está implementado en el servicio de estadísticas pero la página no lo consume.</li>
+        <li><strong>Sin sondeo automático.</strong> Deliberado. Ambos botones «Sincronizar Ahora» son los únicos disparadores.</li>
+        <li><strong><span class="mono">MailboxAddress</span></strong> está configurado pero ninguna línea lo lee.</li>
+        <li><strong>Métodos huérfanos del repositorio</strong> (<span class="mono">SetPenultimasCarpetasPdfGenerated</span>, <span class="mono">SetSinCarpeta</span>, <span class="mono">SetCodigoF8</span>) sin llamador desde el módulo.</li>
+      </ul>
+      <hr class="soft">
+      <h3>Cambios aplicados en este trabajo</h3>
+      <div class="twrap">
+      <table>
+        <thead><tr><th>Área</th><th>Cambio</th></tr></thead>
+        <tbody>
+          <tr><td>Verificación SDD</td><td>Change <span class="mono">cambio-domicilio-integracion</span> re-verificado (0 críticos, 520/520 pruebas) y archivado; specs fusionadas a <span class="mono">openspec/specs/</span>.</td></tr>
+          <tr><td>Config EWS</td><td><span class="mono">Program.cs</span> carga <span class="mono">appsettings.Local.json</span> (opcional, fuera de git). Plantilla <span class="mono">appsettings.Local.Example.json</span>.</td></tr>
+          <tr><td>Despliegue</td><td><span class="mono">deploy/publish.ps1</span> acepta <span class="mono">-EwsUser</span> / <span class="mono">-EwsPassword</span>. <span class="mono">deploy/README.md</span> § «Correo institucional (EWS)».</td></tr>
+          <tr><td>UX del botón</td><td>El mensaje de error <span class="mono">Failed</span> nombra explícitamente <span class="mono">CambioDomicilio:Ews</span> (Url/Username/Password).</td></tr>
+          <tr><td>Fixes previos del verify</td><td>C1 (reporte CSV), C2 (proyección unidireccional del directorio), W1 (singleton en vez de BackgroundService), W2 (conteos en la UI), W3 (<span class="mono">SkippedNoDirectory</span>), W4 (rutas ancladas a BaseDirectory), W6 (prueba de navegación).</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+  </article>
+
+  <footer class="doc">
+    Informe generado el 31 de agosto de 2026 · LicenciasCarpetas · Depto. Licencias de Conducir, Ilustre Municipalidad de Valparaíso · Diagramas en Mermaid, reproducidos en <span class="mono">docs/cambio-domicilio-informe.md</span>.
+  </footer>
+
+</div>
+
+<!-- mermaid.min.js viaja junto a este archivo (docs/mermaid.min.js): los diagramas se renderizan
+     sin conexion. Si se abre el .html suelto sin ese archivo al lado, los bloques quedan como
+     texto Mermaid legible. -->
+<script src="mermaid.min.js"></script>
+<script>
+  (function () {
+    var dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    var explicit = document.documentElement.getAttribute("data-theme");
+    if (explicit === "dark") dark = true;
+    if (explicit === "light") dark = false;
+    try {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: dark ? "dark" : "neutral",
+        securityLevel: "loose",
+        flowchart: { htmlLabels: true, curve: "basis" },
+        themeVariables: { fontFamily: "Libre Franklin, system-ui, sans-serif" }
+      });
+    } catch (e) { /* offline: los bloques quedan como texto Mermaid legible */ }
+
+    var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+    if ("IntersectionObserver" in window) {
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) {
+            links.forEach(function (l) { l.classList.remove("active"); });
+            if (map[en.target.id]) map[en.target.id].classList.add("active");
+          }
+        });
+      }, { rootMargin: "-10% 0px -80% 0px" });
+      document.querySelectorAll("section[id]").forEach(function (s) { obs.observe(s); });
+    }
+  })();
+</script>
