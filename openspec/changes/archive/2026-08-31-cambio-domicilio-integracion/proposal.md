@@ -80,7 +80,7 @@ Las tablas nuevas en `carpetas.db` quedan huérfanas pero inertes; hay respaldo 
 
 ## Success Criteria
 
-- [ ] Un operador con `mod:cambio-domicilio` abre el módulo desde el nav sin segundo login.
-- [ ] "Sincronizar ahora" procesa las carpetas y crea/actualiza casos igual que la app hermana.
-- [ ] `ComunaContact` sigue funcionando sin cambios de comportamiento.
-- [ ] Sin sección `CambioDomicilio:` configurada, el resto de la app arranca igual.
+- [x] Un operador con `mod:cambio-domicilio` abre el módulo desde el nav sin segundo login. *(nav interno `asp-page`, `CambioDomicilioAccessTests`)*
+- [x] "Sincronizar ahora" procesa las carpetas y crea/actualiza casos igual que la app hermana. *(el reporte CSV por ciclo ahora se escribe de verdad — C1 remediado; `OnPostSyncNowTests`)*
+- [x] `ComunaContact` sigue funcionando sin cambios de comportamiento. *(C2 remediado: el módulo de ruteo ya no escribe en `ComunaContact` ni fabrica comunas — proyección de solo lectura en un solo sentido; spec enmendada)*
+- [x] Sin sección `CambioDomicilio:` configurada, el resto de la app arranca igual. *(`CambioDomicilioStartupTests`)*

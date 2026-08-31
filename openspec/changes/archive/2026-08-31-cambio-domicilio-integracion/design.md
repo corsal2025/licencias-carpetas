@@ -39,7 +39,7 @@ Se usa `Data/` (no `Persistence/`) por consistencia con `F8/Data/`. No se portan
 | Decisión | Elegido | Alternativa rechazada | Razón |
 |---|---|---|---|
 | `IPersonRequestRepository` → `ICambioDomicilioRequestRepository` | Renombrar | Mantener nombre | "PersonRequest" no dice nada en una app que ya tiene `FolderCase` y `UrgentRequest`; el prefijo de módulo lo ubica igual que `IUrgentRequestRepository`. El **tipo de dominio** `PersonRequest` se mantiene (es el nombre de la tabla y de todo el SQL portado). |
-| `Domain.ComunaContact` (record CSV) → `ComunaRoutingEntry` | Renombrar | Mantener / fusionar | `LicenciasCarpetas.Domain.ComunaContact` ya existe (tabla de notificación). Convivir con dos `ComunaContact` obligaría a alias `using` en cada página. Cero fusión (decisión del proposal). |
+| `Domain.ComunaContact` (record CSV) → `ComunaRoutingEntry` | Renombrar | Mantener | `LicenciasCarpetas.Domain.ComunaContact` ya existe (tabla de notificación). Convivir con dos `ComunaContact` obligaría a alias `using` en cada página. **Modelo de datos:** `ComunaContact` (tabla) es la **única fuente editable** de datos de ruteo (cargada con los 513 correos oficiales, commit 01dc110); `ComunaRoutingEntry`/el CSV de ruteo es una **proyección de solo lectura** derivada de esa tabla en **un solo sentido** (`ComunaContact` → CSV). El módulo de ruteo **NUNCA** escribe en `ComunaContact` ni fabrica comunas: si la tabla está vacía, el directorio queda ausente y el ciclo devuelve `SkippedNoDirectory`. |
 | `StatisticsService` → `CambioDomicilioStatisticsService` | Renombrar | Mantener | `LicenciasCarpetas.Statistics.StatisticsService` ya está registrado **por tipo concreto** en `Program.cs:52`; dos tipos homónimos en el mismo contenedor es una trampa de lectura. |
 | `RouterWorker : BackgroundService` → `CambioDomicilioSyncService` (singleton, sin `BackgroundService`) | Convertir | `AddHostedService` | Su `ExecuteAsync` solo llamaba `EnsureSchema()`, que acá lo hace `EnsureSchemas()`. Sin ciclo automático, `BackgroundService` es andamiaje muerto. `RunCycleAsync` pasa a `public`. |
 | `Mail/` se pliega en `Ews/` | Sí | Carpeta propia | Son 2 interfaces (`IEmailReader`, `IMailSender`) cuya única implementación es EWS. |
@@ -50,12 +50,20 @@ namespaces (`CambioDomicilio.Domain`) los separan y ninguna clase usa ambos.
 
 ## SQLite Schema
 
-Tablas nuevas en `carpetas.db`: **`PersonRequest`**, **`DeletedSourceMessage`**, **`DiscardedEmail`**.
+Tablas nuevas en `carpetas.db`: **`PersonRequest`**, **`DeletedSourceMessage`**, **`DiscardedEmail`**,
+más **`OutboundAddressChangeRequest`** + **`OutboundAddressChangeAttachment`** del sub-flujo
+*Solicitar* (ver "Fase añadida: Solicitar / OutboundAddressChangeRequest" abajo).
 
 Sin colisión: las tablas existentes son `FolderCase`, `DailyCounter`, `ComunaContact`,
 `DashboardUser`, `UrgentRequest`, `UrgentRequestFlag`, `UrgentImportRun` (verificado por grep de
 `CREATE TABLE IF NOT EXISTS` en `src/`). No se prefija: los nombres ya son únicos y el SQL portado
 queda intacto (un prefijo obligaría a reescribir cada query de los dos repositorios).
+
+**Nota de coexistencia de esquema (tercer módulo):** con *Solicitar*, `carpetas.db` aloja ahora
+tres módulos (Gestión de Licencias, F8, Cambio de Domicilio) y Cambio de Domicilio aporta hasta
+cinco tablas propias. Se verificó por grep de `CREATE TABLE IF NOT EXISTS` que ninguno de los
+nombres `OutboundAddressChangeRequest`/`OutboundAddressChangeAttachment` colisiona con una tabla
+existente. `EnsureSchemas()` en `Program.cs` crea todas en orden, después del `DatabaseBackup`.
 
 Wiring en `Program.cs`, dentro de `EnsureSchemas()` (línea ~258), después de
 `IUrgentRequestRepository.EnsureSchema()`:
@@ -102,23 +110,33 @@ en el arranque.
 ```csharp
 public async Task<IActionResult> OnPostSyncNowAsync()
 {
-    var outcome = await syncService.RunCycleAsync(HttpContext.RequestAborted);
-    (Message, MessageIsError) = outcome switch
+    var result = await syncService.RunCycleAsync(HttpContext.RequestAborted);
+    (Message, MessageIsError) = result.Outcome switch
     {
-        CambioDomicilioSyncOutcome.Completed => ("Sincronización completada.", false),
+        CambioDomicilioSyncOutcome.Completed => (
+            $"Sincronización completada: {result.Creados} caso(s) creado(s), {result.ParaRevision} para revisión, {result.Descartados} correo(s) descartado(s).", false),
+        CambioDomicilioSyncOutcome.SkippedNoDirectory => (
+            "No se pudo leer el directorio de comunas (revise CambioDomicilio:ComunaDirectoryCsvPath). No se procesó ningún correo.", true),
         CambioDomicilioSyncOutcome.SkippedBusy => ("Ya hay una sincronización en curso, intente en unos segundos.", true),
         CambioDomicilioSyncOutcome.Failed => ("No se pudo completar la sincronización, revise el registro del servidor e intente nuevamente.", true),
-        _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null),
+        _ => throw new ArgumentOutOfRangeException(nameof(result), result.Outcome, null),
     };
     Load();
     return Page();
 }
 ```
 
-Revisión post-Fase-6: el `bool` original (`ran`) confundía "ciclo completado" con "hubo un error pero
-`RunCycleAsync` igual devolvió `true`" — el catch de nivel superior tragaba la excepción (EWS caído,
-por ejemplo) y reportaba éxito al operador. `CambioDomicilioSyncOutcome` (`Completed`/`SkippedBusy`/
-`Failed`) distingue las tres situaciones reales.
+`RunCycleAsync` devuelve `CambioDomicilioSyncResult(Outcome, Creados, Descartados, ParaRevision)`:
+
+- El `bool` original (`ran`) confundía "ciclo completado" con "hubo un error pero devolvió `true`".
+  `CambioDomicilioSyncOutcome` distingue: `Completed`, `SkippedBusy` (ciclo en curso),
+  `SkippedNoDirectory` (directorio vacío/ilegible — **no** es éxito, W3) y `Failed` (excepción).
+- Los conteos `(Creados, Descartados, ParaRevision)` cierran el escenario Cycle Reporting de la
+  spec: la UI muestra los números exactos, no solo la grilla (W2). El CSV por ciclo refleja lo mismo.
+- `CambioDomicilioSyncService` es un **singleton plano** (no `BackgroundService`): sin polling
+  automático, `ExecuteAsync` era andamiaje muerto y se eliminó; `EnsureSchema` lo hace
+  `EnsureSchemas()` en `Program.cs`. `RunCycleAsync` es `public`. El `SemaphoreSlim cycleGuard`
+  sigue siendo campo `private readonly` del singleton (W1).
 
 El `SemaphoreSlim cycleGuard = new(1,1)` vive como campo `private readonly` de
 `CambioDomicilioSyncService`, registrado **singleton**: es lo único que hace válido el guard —
@@ -169,6 +187,31 @@ Actualizar también el comentario de las líneas 72-75 (ya no hay app externa). 
 4. `RouterOptions` pierde 3 claves y todas sus propiedades dejan de ser `required`.
 5. Se descarta `Dashboard/Auth/*`, `PasswordReset*`, `Mutex` de instancia única, `DataProtection`
    y `--smoke-test`: ya existen o no aplican en el host anfitrión.
+
+## Fase añadida: Solicitar / OutboundAddressChangeRequest
+
+Además del flujo "recibir pedidos de otras comunas" (todo lo anterior), el módulo incluye el flujo
+inverso **Solicitar Cambios de Domicilio** (pedirle carpetas a otras comunas), portado del mismo
+`outlook-comuna-router`. No estaba dimensionado en el proposal original; se documenta aquí como
+fase añadida ejecutada durante el apply.
+
+| Pieza | Ubicación |
+|---|---|
+| Páginas | `src/LicenciasCarpetas/Dashboard/Pages/CambioDomicilio/Solicitar/{Index,...}.cshtml(.cs)`, todas con `[Authorize(Policy = "CambioDomicilioAccess")]` |
+| Envío EWS | `CambioDomicilio/Solicitar/OutboundRequestSender.cs`, `SolicitarMatrizSyncService.cs` |
+| Dominio | `CambioDomicilio/Domain/OutboundAddressChangeRequest.cs` (+ `OutboundAddressChangeAttachment`, estado `Borrador`) |
+| Datos | `CambioDomicilio/Data/OutboundAddressChangeRequestRepository.cs` (tablas `OutboundAddressChangeRequest`, `OutboundAddressChangeAttachment`) |
+| Config | `CambioDomicilio:SolicitarMatrizExcelPath` — Excel opcional con las peticiones a cargar (botón "Sincronizar Ahora" en Solicitar); mismo patrón que `F8:MatrizExcelPath`: sin configurar, el botón lo indica y no hace nada. Se resuelve contra `AppContext.BaseDirectory` si es relativa. |
+| Nav | segunda entrada del sidebar (`📤 Solicitar Cambios de Domicilio`), gateada por `puedeCambioDomicilio` |
+
+## Config: rutas relativas
+
+`ComunaDirectoryCsvPath`, `ReportCsvPath` y `SolicitarMatrizExcelPath` se resuelven **una vez** en
+`Program.cs` (helper `CambioDomicilioPathResolver.ResolveAgainstBaseDirectory`) contra
+`AppContext.BaseDirectory` cuando son relativas, antes de registrar `CambioDomicilioOptions` como
+singleton — mismo pin que `Carpetas:SqliteDbPath`. Los consumidores reciben la ruta ya absoluta.
+`appsettings.json` publica `ReportCsvPath: "data/reports/cambio-domicilio.csv"` para que el reporte
+CSV por ciclo se escriba de verdad en producción.
 
 ## Testing Strategy
 
