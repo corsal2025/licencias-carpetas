@@ -248,6 +248,15 @@
     }
 </datalist>
 
+@* Comunas del directorio oficial: la columna Comuna se autocompleta al tipear y despliega la lista
+   completa al enfocar. Sigue siendo texto libre — la lista solo evita escribirlas enteras. *@
+<datalist id="comuna-opciones">
+    @foreach (var comuna in Model.ComunaSuggestions)
+    {
+        <option value="@comuna"></option>
+    }
+</datalist>
+
 @* Un solo checkbox por fila: marca para impresión por sector Y selecciona para borrado masivo
    a la vez (decisión del usuario pese al riesgo de que un click de más en "Eliminar
    seleccionados" borre filas que solo se querían marcar — el borrado es soft-delete,
@@ -442,6 +451,7 @@
                 </td>
                 <td>
                     <input type="text" name="comuna" id="comuna-@item.Id" form="case-form-@item.Id" class="input-inline" style="width:110px; text-transform:uppercase;"
+                           list="comuna-opciones" autocomplete="off"
                            value="@item.CambioDomicilioComuna" placeholder="ej: VALPARAÍSO" oninput="this.value = this.value.toUpperCase();" />
                 </td>
                 <td>
@@ -555,7 +565,8 @@
                 </div>
                 <div class="drawer-field">
                     <label>Comuna Destino</label>
-                    <input type="text" id="drawer-comuna" placeholder="ej: Antofagasta" onchange="syncDrawerToRow('comuna', this.value)" />
+                    <input type="text" id="drawer-comuna" list="comuna-opciones" autocomplete="off" placeholder="ej: Antofagasta"
+                           oninput="this.value = this.value.toUpperCase();" onchange="syncDrawerToRow('comuna', this.value)" />
                 </div>
             </div>
         </div>

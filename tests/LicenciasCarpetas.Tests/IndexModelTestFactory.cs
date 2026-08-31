@@ -30,6 +30,6 @@ internal static class IndexModelTestFactory
         var outboundRequests = new FakeOutboundAddressChangeRequestRepository();
         var sender = new OutboundRequestSender(outboundRequests, db.Contacts, new NoopEmailSender());
         urgentRequests = new FakeUrgentRequestRepositoryForCasos();
-        return new(db.Cases, exporter, options, outboundRequests, sender, urgentRequests);
+        return new(db.Cases, exporter, options, outboundRequests, sender, urgentRequests, db.Contacts);
     }
 }
