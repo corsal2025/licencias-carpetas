@@ -81,6 +81,8 @@ public class SolicitarCertificadoTests
         Assert.Contains("18.785.387-7", sent.Subject);
         Assert.Contains("GUSTAVO PEÑA CASTRO", sent.Body);
         Assert.Contains("18.785.387-7", sent.Body);
+        // La comuna no va en el correo: todos estos casos son personas de Valparaíso.
+        Assert.DoesNotContain("CATEMU", sent.Body);
         Assert.NotNull(repo.FindById(id)!.CertificadoNotifiedAt);
     }
 
