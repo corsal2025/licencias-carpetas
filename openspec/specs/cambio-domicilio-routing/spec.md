@@ -81,9 +81,16 @@ The system MUST write a CSV report per cycle and MUST report accurate success/fa
 back to the operator in the UI, without silently swallowing per-item errors.
 
 #### Scenario: Cycle with mixed outcomes
-- GIVEN a cycle that creates 3 cases, discards 1 invalid RUT, and fails to resolve 1 comuna
+- GIVEN a cycle that creates 3 cases, flags 1 for review, and discards 1 unresolved comuna
 - WHEN the cycle finishes
-- THEN the CSV report and the UI MUST both reflect those exact counts
+- THEN the CSV report and the UI status message MUST both reflect those exact counts
+  (`Creados` / `ParaRevision` / `Descartados`)
+
+#### Scenario: No routing directory available
+- GIVEN a cycle where the routing directory resolves to zero comunas
+- WHEN the cycle runs
+- THEN it MUST NOT report success: the outcome MUST be a distinct `SkippedNoDirectory` state with
+  an operator-facing error, and no mail MUST be read
 
 ### Requirement: Configuration Section
 The system MUST read EWS, mailbox, folder names, deadline, SQLite path, directory CSV path,
@@ -97,16 +104,29 @@ EWS/SMTP credentials sourced from User Secrets or environment variables, never c
 - THEN the application MUST start normally and other modules MUST be unaffected
 
 ### Requirement: Non-Goals
-The system MUST NOT alter EWS protocol logic during the port, MUST NOT merge `ComunaContact`
-with the routing `Directories` CSV, and MUST NOT decommission or migrate users from the sibling
-app `outlook-comuna-router` as part of this change.
-
-#### Scenario: ComunaContact unaffected
-- GIVEN the existing `ComunaContact` notification list
-- WHEN the Cambio de Domicilio module is folded in
-- THEN `ComunaContact` behavior and schema MUST remain unchanged
+The system MUST NOT alter EWS protocol logic during the port, and MUST NOT decommission or
+migrate users from the sibling app `outlook-comuna-router` as part of this change.
 
 #### Scenario: Sibling app still running
 - GIVEN the fold-in is deployed
 - WHEN an operator opens `outlook-comuna-router` directly
 - THEN it MUST still function against its own `router.db`, independent of licencias-carpetas
+
+### Requirement: Routing Directory Is a One-Directional Projection of ComunaContact
+`ComunaContact` (the SQLite table, editable from the Comunas screens and populated with the
+official comuna emails — see commit 01dc110) is the single editable source of comuna routing
+data. The routing `Directories` CSV is a **read-only projection** derived from that table
+one-directionally (`ComunaContact` table -> routing CSV). The routing module MUST NOT write to
+`ComunaContact` and MUST NOT fabricate comuna rows: if the CSV is missing/empty it is
+regenerated from `ComunaContact`, and if `ComunaContact` is also empty the directory stays
+absent and the sync cycle reports `SkippedNoDirectory` rather than routing against invented data.
+
+#### Scenario: ComunaContact is never written by the routing module
+- GIVEN the existing `ComunaContact` table
+- WHEN the Cambio de Domicilio routing module regenerates the routing CSV
+- THEN it MUST only read `ComunaContact`; `ComunaContact` behavior and schema MUST remain unchanged
+
+#### Scenario: Empty source produces no directory, not fake data
+- GIVEN a missing routing CSV and an empty `ComunaContact` table
+- WHEN a sync cycle runs
+- THEN no CSV is fabricated and the cycle returns `SkippedNoDirectory` with an operator-facing error
