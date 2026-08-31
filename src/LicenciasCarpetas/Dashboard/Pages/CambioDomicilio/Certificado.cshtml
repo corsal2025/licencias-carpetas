@@ -1,7 +1,10 @@
 @page
 @model LicenciasCarpetas.Dashboard.Pages.CambioDomicilio.CertificadoModel
 @using LicenciasCarpetas.CambioDomicilio.Domain
-@{ ViewData["Title"] = "Certificado — Cambio de Domicilio"; }
+@{
+    ViewData["Title"] = "Certificado — Cambio de Domicilio";
+    ViewData["BodyClass"] = "viewport-locked";
+}
 
         @if (Model.Message is not null)
         {
