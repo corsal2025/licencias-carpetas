@@ -34,6 +34,10 @@ builder.Configuration
     .SetBasePath(baseDir)
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    // Secretos y overrides de la instalación (credenciales EWS del correo institucional, rutas
+    // locales). Va fuera de git y `dotnet publish` NO lo sobrescribe, así que sobrevive a cada
+    // republicación. Ver deploy/README.md ("Correo institucional (EWS)").
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 
 var options = builder.Configuration.GetSection(CarpetasOptions.SectionName).Get<CarpetasOptions>()
@@ -91,6 +95,15 @@ builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 // recién falla cuando alguien de verdad usa "Sincronizar ahora", no al arrancar (ver EwsClient.cs).
 var cambioDomicilioOptions = builder.Configuration.GetSection(CambioDomicilioOptions.SectionName)
     .Get<CambioDomicilioOptions>() ?? new CambioDomicilioOptions();
+// Pin relative paths to the exe folder, same as Carpetas:SqliteDbPath above — otherwise the
+// routing directory / report resolve against the process working directory and read empty when
+// launched from a shortcut or Task Scheduler.
+cambioDomicilioOptions.ComunaDirectoryCsvPath = CambioDomicilioPathResolver
+    .ResolveAgainstBaseDirectory(cambioDomicilioOptions.ComunaDirectoryCsvPath, AppContext.BaseDirectory);
+cambioDomicilioOptions.ReportCsvPath = CambioDomicilioPathResolver
+    .ResolveAgainstBaseDirectory(cambioDomicilioOptions.ReportCsvPath, AppContext.BaseDirectory);
+cambioDomicilioOptions.SolicitarMatrizExcelPath = CambioDomicilioPathResolver
+    .ResolveAgainstBaseDirectory(cambioDomicilioOptions.SolicitarMatrizExcelPath, AppContext.BaseDirectory);
 builder.Services.AddSingleton(cambioDomicilioOptions);
 builder.Services.AddSingleton<ICambioDomicilioRequestRepository>(_ => new CambioDomicilioRequestRepository(connectionString));
 builder.Services.AddSingleton<IOutboundAddressChangeRequestRepository>(_ => new OutboundAddressChangeRequestRepository(connectionString));

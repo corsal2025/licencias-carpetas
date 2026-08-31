@@ -33,67 +33,39 @@ public interface IComunaDirectory
 
 public sealed class ComunaDirectory(LicenciasCarpetas.Persistence.IComunaContactRepository? contactRepository = null) : IComunaDirectory
 {
-    private static readonly string DefaultSeedCsv = """
-        Comuna,ContactEmail,Domain
-        VIÑA DEL MAR,licencias@vinadelmar.cl,vinadelmar.cl
-        QUILPUÉ,licencias@quilpue.cl,quilpue.cl
-        VILLA ALEMANA,licencias@villalemana.cl,villalemana.cl
-        CONCÓN,licencias@concon.cl,concon.cl
-        CASABLANCA,licencias@municipalidadcasablanca.cl,municipalidadcasablanca.cl
-        QUILLOTA,licencias@quillota.cl,quillota.cl
-        LA CALERA,licencias@lacalera.cl,lacalera.cl
-        LIMACHE,licencias@munilimache.cl,munilimache.cl
-        SAN ANTONIO,licencias@sanantonio.cl,sanantonio.cl
-        SANTIAGO,licencias@munistgo.cl,munistgo.cl
-        PROVIDENCIA,licencias@providencia.cl,providencia.cl
-        LAS CONDES,licencias@lascondes.cl,lascondes.cl
-        ÑUÑOA,licencias@nunoa.cl,nunoa.cl
-        MAIPÚ,licencias@maipu.cl,maipu.cl
-        LA FLORIDA,licencias@laflorida.cl,laflorida.cl
-        RANCAGUA,licencias@rancagua.cl,rancagua.cl
-        CONCEPCIÓN,licencias@concepcion.cl,concepcion.cl
-        LA SERENA,licencias@laserena.cl,laserena.cl
-        ANTOFAGASTA,licencias@municipalidadantofagasta.cl,municipalidadantofagasta.cl
-        TEMUCO,licencias@temuco.cl,temuco.cl
-        PUERTO MONTT,licencias@puertomontt.cl,puertomontt.cl
-        """;
-
+    /// <summary>
+    /// The routing directory CSV is a one-directional, read-only projection of the
+    /// <c>ComunaContact</c> table (the single editable source, populated from the official 513
+    /// comuna emails — see commit 01dc110). This regenerates the CSV from that table when it is
+    /// missing or empty. It NEVER fabricates comunas and NEVER writes back to <c>ComunaContact</c>:
+    /// if the table is also empty, the directory stays absent and the sync cycle surfaces that as
+    /// <c>SkippedNoDirectory</c> instead of routing against invented data.
+    /// </summary>
     public void EnsureSeed(string csvPath)
     {
         if (string.IsNullOrWhiteSpace(csvPath)) return;
-        if (!File.Exists(csvPath) || new FileInfo(csvPath).Length == 0)
+        if (File.Exists(csvPath) && new FileInfo(csvPath).Length > 0) return;
+        if (contactRepository is null) return;
+
+        var existingContacts = contactRepository.All();
+        if (existingContacts.Count == 0) return;
+
+        try
         {
-            try
+            var dir = Path.GetDirectoryName(csvPath);
+            if (!string.IsNullOrEmpty(dir))
             {
-                var dir = Path.GetDirectoryName(csvPath);
-                if (!string.IsNullOrEmpty(dir))
-                {
-                    Directory.CreateDirectory(dir);
-                }
-
-                if (contactRepository is not null)
-                {
-                    var existingContacts = contactRepository.All();
-                    if (existingContacts.Count > 0)
-                    {
-                        var linesList = new List<string> { "Comuna,ContactEmail,Domain" };
-                        foreach (var c in existingContacts)
-                        {
-                            var domain = ExtractDomain(c.Email);
-                            linesList.Add($"{c.Comuna},{c.Email},{domain}");
-                        }
-                        File.WriteAllLines(csvPath, linesList);
-                        return;
-                    }
-                }
-
-                File.WriteAllText(csvPath, DefaultSeedCsv);
-                SeedRepositoryFromDefault();
+                Directory.CreateDirectory(dir);
             }
-            catch
-            {
-                // Silencioso si falla escritura
-            }
+
+            var lines = new List<string> { "Comuna,ContactEmail,Domain" };
+            lines.AddRange(existingContacts.Select(c => $"{c.Comuna},{c.Email},{ExtractDomain(c.Email)}"));
+            File.WriteAllLines(csvPath, lines);
+        }
+        catch
+        {
+            // Best-effort: if the projection can't be written, the empty directory surfaces at
+            // cycle time as SkippedNoDirectory rather than a silent success.
         }
     }
 
@@ -229,27 +201,6 @@ public sealed class ComunaDirectory(LicenciasCarpetas.Persistence.IComunaContact
         File.WriteAllLines(tempPath, lines);
         File.Move(tempPath, csvPath, overwrite: true);
         return true;
-    }
-
-    private void SeedRepositoryFromDefault()
-    {
-        if (contactRepository is null) return;
-        var lines = DefaultSeedCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        foreach (var line in lines.Skip(1))
-        {
-            var parts = line.Split(',');
-            if (parts.Length >= 2)
-            {
-                var comuna = parts[0].Trim();
-                var email = parts[1].Trim();
-                contactRepository.Upsert(new LicenciasCarpetas.Domain.ComunaContact
-                {
-                    Comuna = comuna,
-                    Email = email,
-                    Notes = "Directorio inicial"
-                });
-            }
-        }
     }
 
     private static bool IsValidDomainShape(string domain) =>

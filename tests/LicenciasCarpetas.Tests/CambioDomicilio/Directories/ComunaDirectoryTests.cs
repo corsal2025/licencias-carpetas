@@ -1,11 +1,64 @@
 using LicenciasCarpetas.CambioDomicilio.Directories;
 using LicenciasCarpetas.CambioDomicilio.Domain;
+using LicenciasCarpetas.Persistence;
 using Xunit;
 
 namespace LicenciasCarpetas.Tests.CambioDomicilio.Directories;
 
 public class ComunaDirectoryTests
 {
+    /// <summary>C2: the routing directory CSV is a one-directional, read-only projection of the
+    /// ComunaContact table. EnsureSeed regenerates the CSV from that table — never the other way
+    /// around, and never with fabricated data.</summary>
+    [Fact]
+    public void EnsureSeed_MissingCsv_ProjectsRowsFromComunaContactTableOneDirectionally()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".csv");
+        var contactRepo = new FakeComunaContactRepository(
+            new LicenciasCarpetas.Domain.ComunaContact { Comuna = "CATEMU", Email = "rfloresc@municatemu.cl" },
+            new LicenciasCarpetas.Domain.ComunaContact { Comuna = "COLINA", Email = "luis@colina.cl" });
+        var directory = new ComunaDirectory(contactRepo);
+
+        directory.EnsureSeed(path);
+
+        try
+        {
+            var reloaded = directory.LoadFromCsv(path);
+            Assert.Equal(2, reloaded.Count);
+            Assert.Equal("rfloresc@municatemu.cl", reloaded.Single(c => c.Comuna == "CATEMU").ContactEmail);
+            Assert.Equal("municatemu.cl", reloaded.Single(c => c.Comuna == "CATEMU").Domain);
+            Assert.Empty(contactRepo.UpsertedContacts); // never writes back to ComunaContact
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void EnsureSeed_EmptyComunaContactTable_DoesNotFabricateADirectory()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".csv");
+        var directory = new ComunaDirectory(new FakeComunaContactRepository());
+
+        directory.EnsureSeed(path);
+
+        Assert.False(File.Exists(path)); // no fake comunas — an empty source stays empty
+    }
+
+    private sealed class FakeComunaContactRepository(params LicenciasCarpetas.Domain.ComunaContact[] seed) : IComunaContactRepository
+    {
+        private readonly List<LicenciasCarpetas.Domain.ComunaContact> _contacts = [.. seed];
+        public List<LicenciasCarpetas.Domain.ComunaContact> UpsertedContacts { get; } = [];
+
+        public void EnsureSchema() { }
+        public void EnsureSeed(string? csvPath = null) { }
+        public void Upsert(LicenciasCarpetas.Domain.ComunaContact contact) { UpsertedContacts.Add(contact); _contacts.Add(contact); }
+        public void Update(long id, string comuna, string email, string? notes = null) { }
+        public IReadOnlyList<LicenciasCarpetas.Domain.ComunaContact> All(string? search = null) => _contacts;
+        public void Delete(long id) { }
+    }
+
     private static readonly IReadOnlyList<ComunaRoutingEntry> Contacts =
     [
         new ComunaRoutingEntry("Catemu", "rfloresc@municatemu.cl", "municatemu.cl")

@@ -85,3 +85,37 @@ dotnet dev-certs https --trust   # requiere el SDK; si no lo hay, aceptar la adv
 
 Si se copia también `publish\data\carpetas.db`, el equipo arranca con todos los casos ya
 importados; si no, se importa el Excel allí mismo.
+
+## Correo institucional (EWS)
+
+El botón **"Sincronizar Ahora"** del módulo *Enviar Cambio de Domicilio* se conecta por EWS al buzón
+compartido `cambiodedomicilio@munivalpo.cl` (`https://mail.munivalpo.cl/EWS/Exchange.asmx`, auth
+Basic sobre TLS). La URL y demás parámetros ya están en `appsettings.json`; **falta solo el usuario y
+la clave del buzón**, que no viajan en git.
+
+Van en `appsettings.Local.json` **junto al `.exe`** (plantilla: `appsettings.Local.Example.json`).
+Ese archivo está fuera de git y `dotnet publish` **no lo sobrescribe**: sobrevive a cada `git pull` +
+republicación.
+
+Dos formas de dejarlo:
+
+```powershell
+# a) Al publicar, pasando las credenciales (las escribe en publish\appsettings.Local.json):
+.\deploy\publish.ps1 -EwsUser "cambiodedomicilio@munivalpo.cl" -EwsPassword "LA-CLAVE"
+
+# b) A mano: copiar la plantilla y editarla
+copy src\LicenciasCarpetas\appsettings.Local.Example.json publish\appsettings.Local.json
+notepad publish\appsettings.Local.json
+```
+
+Alternativa sin archivo (variables de entorno de la máquina):
+
+```powershell
+setx CambioDomicilio__Ews__Username "cambiodedomicilio@munivalpo.cl"
+setx CambioDomicilio__Ews__Password "LA-CLAVE"
+```
+
+Sin credenciales, la app arranca igual y todo lo demás funciona; solo "Sincronizar Ahora" muestra
+error hasta configurarlas. Las carpetas de Outlook que lee (`CARP. PARA PEDIR`) y a las que mueve el
+correo ya subido (`CARP. YA SUBIDAS`) deben existir en ese buzón con ese nombre exacto; se cambian en
+`appsettings.json` (`CambioDomicilio:SourceFolderName` / `ConfirmationFolderName`).

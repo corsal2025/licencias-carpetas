@@ -82,6 +82,11 @@ public class OnPostSyncNowTests
             Assert.IsType<PageResult>(result);
             Assert.False(pageModel.MessageIsError);
             Assert.Contains("completada", pageModel.Message, StringComparison.OrdinalIgnoreCase);
+            // W2: the routing spec's Cycle Reporting scenario — the exact counts must reach the UI
+            // message, not just the grid: 1 created, 1 for review, 1 discarded.
+            Assert.Contains("1 caso(s) creado(s)", pageModel.Message);
+            Assert.Contains("1 para revisión", pageModel.Message);
+            Assert.Contains("1 correo(s) descartado(s)", pageModel.Message);
 
             var all = repository.GetAll();
             Assert.Equal(2, all.Count); // created + unresolved; the discarded email never becomes a PersonRequest
