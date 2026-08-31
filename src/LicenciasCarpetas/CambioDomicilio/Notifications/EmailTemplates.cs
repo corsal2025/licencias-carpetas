@@ -59,8 +59,9 @@ public static class EmailTemplates
 
     /// <summary>Predetermined request to Secretaría Municipal to produce the certification document
     /// for one contributor whose physical folder could not be located. Carries that person's name
-    /// and RUT — one email per case, sent from the Certificado screen.</summary>
-    public static (string Subject, string Body) CertificateRequest(string fullName, string rut, string comuna) => (
+    /// and RUT — one email per case, sent from the Certificado screen. No comuna: every case here is
+    /// a person who held their licence in Valparaíso, that's exactly what the certificate attests.</summary>
+    public static (string Subject, string Body) CertificateRequest(string fullName, string rut) => (
         Subject: $"Solicitud de certificado de acreditación – {fullName}, RUT {rut}",
         Body: $"""
             Junto con saludar,
@@ -71,7 +72,6 @@ public static class EmailTemplates
 
             Nombre:  {fullName}
             RUT:     {rut}
-            Comuna solicitante: {comuna}
 
             El certificado validará formalmente que la persona señalada obtuvo y mantuvo vigente su
             licencia de conducir en esta comuna.

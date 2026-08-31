@@ -30,7 +30,7 @@ public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender
 
     private const string EstadoActualSubida = "SUBIDA A CONASET";
     private const string EstadoActualCertificado = "CREAR CERTIFICADO";
-    private const string CertificadoRecipient = "matias.villalobos@munivalpo.cl";
+    private const string CertificadoRecipient = "javiera.sanchez@munivalpo.cl";
 
     [TempData]
     public string? SyncMessage { get; set; }
@@ -254,7 +254,7 @@ public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender
             var rutDisplay = RutFormatter.WithDots(request.Rut);
             var subject = $"Solicitud de certificado - {request.NombreCompleto}";
             var body = $"""
-                Estimado Matías,
+                Estimada Javiera,
 
                 Se solicita gestionar el certificado ante la Dirección para el siguiente contribuyente:
 

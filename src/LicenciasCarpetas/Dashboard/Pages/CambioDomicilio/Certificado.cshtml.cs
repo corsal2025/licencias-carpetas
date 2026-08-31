@@ -142,12 +142,11 @@ public class CertificadoModel(
             return Page();
         }
 
-        var comuna = item.Comuna ?? string.Empty;
-        var (subject, body) = EmailTemplates.CertificateRequest(item.FullName, item.Rut, comuna);
+        var (subject, body) = EmailTemplates.CertificateRequest(item.FullName, item.Rut);
         await mailSender.SendAsync(options.CertificateRequestEmailAddress, subject, body, HttpContext.RequestAborted);
 
         var contact = routingService.LoadDirectory()
-            .FirstOrDefault(c => string.Equals(c.Comuna, comuna, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(c => string.Equals(c.Comuna, item.Comuna ?? string.Empty, StringComparison.OrdinalIgnoreCase));
         if (contact is not null)
         {
             var (ackSubject, ackBody) = EmailTemplates.CertificateAcknowledgement(item.FullName, item.Rut);
