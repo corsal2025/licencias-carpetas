@@ -1,6 +1,6 @@
 using LicenciasCarpetas.CambioDomicilio.Data;
 using LicenciasCarpetas.CambioDomicilio.Domain;
-using LicenciasCarpetas.F8.Services;
+using LicenciasCarpetas.CambioDomicilio.Ews;
 using LicenciasCarpetas.Persistence;
 
 namespace LicenciasCarpetas.CambioDomicilio.Solicitar;
@@ -17,21 +17,21 @@ public enum OutboundSendOutcome
     /// <summary>No comuna contact is registered for the request's destination — nothing was sent.</summary>
     NoContact,
 
-    /// <summary>The SMTP send itself failed — the request stays Borrador so the operator can retry.</summary>
+    /// <summary>The email send itself failed — the request stays Borrador so the operator can retry.</summary>
     SendFailed
 }
 
 public sealed record OutboundSendResult(OutboundSendOutcome Outcome, string DestinationComuna);
 
 /// <summary>Everything shared by every "send this outbound Cambio de Domicilio request" flow:
-/// comuna-contact lookup, subject/body construction, the SMTP send with its failure handling, and
-/// MarkSent — used by both Solicitar/IndexModel.OnPostSolicitar (the outbound-requests list) and
-/// IndexModel.OnPostSolicitarCambioDomicilio (the one-click Casos button), which otherwise
-/// duplicated this ~40-line sequence with slightly different bugs.</summary>
+/// comuna-contact lookup, subject/body construction, the send (por EWS, el mismo transporte del
+/// buzón institucional que usa el flujo entrante) with its failure handling, and MarkSent — used by
+/// both Solicitar/IndexModel.OnPostSolicitar (the outbound-requests list) and
+/// IndexModel.OnPostSolicitarCambioDomicilio (the one-click Casos button).</summary>
 public sealed class OutboundRequestSender(
     IOutboundAddressChangeRequestRepository repository,
     IComunaContactRepository comunaContactRepository,
-    IEmailSender emailSender)
+    IMailSender mailSender)
 {
     public async Task<OutboundSendResult> SendAsync(
         OutboundAddressChangeRequest request,
@@ -41,6 +41,8 @@ public sealed class OutboundRequestSender(
     {
         var contacts = comunaContactRepository.All()
             .Where(c => string.Equals(c.Comuna, request.DestinationComuna, StringComparison.OrdinalIgnoreCase))
+            .Select(c => c.Email)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
         if (contacts.Count == 0)
         {
@@ -49,18 +51,18 @@ public sealed class OutboundRequestSender(
 
         var subject = $"Solicitud de cambio de domicilio — {request.FullName} ({request.Rut})";
         var body = BuildBody(request);
-        var emailAttachments = attachments
-            .Select(a => new EmailAttachment(a.FileName, a.ContentType, a.StoredPath))
-            .ToList();
-        var to = string.Join(";", contacts.Select(c => c.Email));
 
         try
         {
-            await emailSender.SendAsync(to, subject, body, emailAttachments, cancellationToken);
+            // Un correo por dirección registrada de la comuna (EWS envía a un destinatario por vez).
+            foreach (var to in contacts)
+            {
+                await mailSender.SendAsync(to, subject, body, cancellationToken);
+            }
         }
-        catch (Exception ex) when (ex is System.Net.Mail.SmtpException or System.Net.Sockets.SocketException or InvalidOperationException)
+        catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or System.Net.Sockets.SocketException or TaskCanceledException)
         {
-            Console.WriteLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}] Envío de solicitud de cambio de domicilio #{request.Id} a comuna '{request.DestinationComuna}' falló (SMTP).");
+            Console.WriteLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}] Envío de solicitud de cambio de domicilio #{request.Id} a comuna '{request.DestinationComuna}' falló: {ex.Message}");
             return new OutboundSendResult(OutboundSendOutcome.SendFailed, request.DestinationComuna);
         }
 

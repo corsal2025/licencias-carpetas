@@ -26,7 +26,7 @@
 }
 
 <div class="card table-card">
-    <table class="cases cases-index table-wide">
+    <table class="cases cases-index cases-f8">
         <thead>
             <tr>
                 <th style="width:40px; text-align:center;">#</th>
@@ -70,7 +70,8 @@
                         </select>
                     </form>
                 </td>
-                <td style="text-align:center; white-space:nowrap; display:flex; gap:6px; align-items:center; justify-content:center;">
+                <td style="text-align:center; white-space:nowrap;">
+                  <div style="display:inline-flex; gap:6px; align-items:center; justify-content:center;">
                     @if (item.Status == OutboundRequestStatus.Borrador)
                     {
                         <form method="post" asp-page-handler="Solicitar" asp-route-id="@item.Id" style="display:inline;"
@@ -90,6 +91,7 @@
                           onsubmit="return confirm('¿Eliminar esta solicitud de cambio de domicilio?');">
                         <button type="submit" class="btn-danger" style="padding:3px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" title="Eliminar solicitud">🗑️</button>
                     </form>
+                  </div>
                 </td>
             </tr>
         }

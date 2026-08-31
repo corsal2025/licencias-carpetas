@@ -1,7 +1,7 @@
+using LicenciasCarpetas.CambioDomicilio.Ews;
 using LicenciasCarpetas.CambioDomicilio.Solicitar;
 using LicenciasCarpetas.Configuration;
 using LicenciasCarpetas.Dashboard.Pages;
-using LicenciasCarpetas.F8.Services;
 using LicenciasCarpetas.Reporting;
 using LicenciasCarpetas.Tests.CambioDomicilio.Solicitar;
 
@@ -12,10 +12,9 @@ namespace LicenciasCarpetas.Tests;
 /// of tests whose actual subject is listing/paging/export/editing.</summary>
 internal static class IndexModelTestFactory
 {
-    private sealed class NoopEmailSender : IEmailSender
+    private sealed class NoopEmailSender : IMailSender
     {
-        public Task SendAsync(string to, string subject, string body,
-            IReadOnlyList<EmailAttachment>? attachments = null, CancellationToken cancellationToken = default)
+        public Task SendAsync(string toAddress, string subject, string body, CancellationToken cancellationToken)
             => Task.CompletedTask;
     }
 
