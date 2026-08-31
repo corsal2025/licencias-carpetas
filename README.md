@@ -96,8 +96,11 @@ dotnet run -c Release --project src/LicenciasCarpetas
 ```
 
 Abre `http://localhost:5010`. Kestrel escucha solo HTTP en ese puerto (`Kestrel:Endpoints` en
-`appsettings.json`), el mismo binding que usan Docker y Render detrás del proxy inverso; no hay
-HTTPS ni redirección local.
+`appsettings.json`), el mismo binding que usa Docker detrás de un proxy inverso; no hay HTTPS ni
+redirección local.
+
+La aplicación corre **on-premise**, en el equipo del departamento (necesita estar dentro de la red
+municipal para llegar al buzón de Exchange). No hay despliegue en la nube.
 
 La ruta por defecto del Excel se configura en `Carpetas:DefaultWorkbookPath` (ver
 `appsettings.Example.json`) y queda precargada en la pantalla `/Importar`.
