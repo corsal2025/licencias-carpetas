@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using LicenciasCarpetas.CambioDomicilio;
 using LicenciasCarpetas.CambioDomicilio.Domain;
+using LicenciasCarpetas.CambioDomicilio.Ews;
 using LicenciasCarpetas.CambioDomicilio.Solicitar;
 using LicenciasCarpetas.Dashboard.Pages.CambioDomicilio.Solicitar;
 using LicenciasCarpetas.Domain;
-using LicenciasCarpetas.F8.Services;
 using LicenciasCarpetas.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -58,16 +58,15 @@ public class IndexModelTests
         public void Delete(long id) => _contacts.RemoveAll(c => c.Id == id);
     }
 
-    private sealed class RecordingEmailSender : IEmailSender
+    private sealed class RecordingEmailSender : IMailSender
     {
         public string? To { get; private set; }
         public int CallCount { get; private set; }
 
-        public Task SendAsync(string to, string subject, string body,
-            IReadOnlyList<EmailAttachment>? attachments = null, CancellationToken cancellationToken = default)
+        public Task SendAsync(string toAddress, string subject, string body, CancellationToken cancellationToken)
         {
             CallCount++;
-            To = to;
+            To = toAddress;
             return Task.CompletedTask;
         }
     }
