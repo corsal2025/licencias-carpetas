@@ -16,7 +16,7 @@
 
 param(
     [string]$PublishPath = (Join-Path $PSScriptRoot "..\publish"),
-    [string]$DashboardUrl = "https://localhost:5011"
+    [string]$DashboardUrl = "http://localhost:5010"
 )
 
 $ErrorActionPreference = "Stop"

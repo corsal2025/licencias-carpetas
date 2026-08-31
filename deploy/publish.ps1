@@ -167,4 +167,4 @@ if ($Shortcut) {
 Write-Host "=== Listo ===" -ForegroundColor Cyan
 Write-Host "Ejecutable:  $Exe"
 Write-Host "Importar:    .\LicenciasCarpetas.exe --import `"<ruta del .xlsx>`""
-Write-Host "Dashboard:   https://localhost:5011"
+Write-Host "Dashboard:   http://localhost:5010"

@@ -18,7 +18,7 @@ Desde una máquina con .NET 10 SDK y el repositorio clonado:
 Eso hace, en orden:
 
 1. **`-DevCert`** — instala y confía el certificado HTTPS de desarrollo (`dotnet dev-certs https --trust`).
-   Sin esto el navegador muestra advertencia al abrir `https://localhost:5011`.
+   (La app corre en HTTP en `http://localhost:5010`, así que este paso hoy es opcional.)
 2. Compila, corre las 89 pruebas y publica en `publish\LicenciasCarpetas.exe` (~109 MB, incluye el
    runtime). Con `-SkipTests` se salta las pruebas.
 3. Avisa si `Carpetas:DefaultWorkbookPath` está vacío. No es obligatorio: la ruta del Excel también
@@ -34,7 +34,7 @@ Eso hace, en orden:
 Doble clic en el acceso directo del Escritorio:
 
 - Si la aplicación no está corriendo, la inicia; ella misma abre el navegador a los ~2 segundos.
-- Si ya está corriendo, solo abre `https://localhost:5011` en una pestaña nueva.
+- Si ya está corriendo, solo abre `http://localhost:5010` en una pestaña nueva.
 
 Para cerrarla: Administrador de tareas → proceso `LicenciasCarpetas`.
 
