@@ -34,15 +34,19 @@ public sealed class ComunaContactRepository(string connectionString) : IComunaCo
     public void EnsureSeed(string? csvPath = null)
     {
         var path = csvPath;
-        if (string.IsNullOrEmpty(path))
+        // Si la ruta configurada no existe (típico en un contenedor sin volumen: data/ va vacío),
+        // se busca el directorio oficial en los lugares donde sí viaja con la app. seed/comunas.csv
+        // se incrusta en el publish (ver LicenciasCarpetas.csproj), así que siempre está presente.
+        if (string.IsNullOrEmpty(path) || !File.Exists(path))
         {
             var candidates = new[]
             {
+                Path.Combine(AppContext.BaseDirectory, "seed", "comunas.csv"),
                 Path.Combine(AppContext.BaseDirectory, "data", "comunas.csv"),
                 Path.Combine(Directory.GetCurrentDirectory(), "data", "comunas.csv"),
                 Path.Combine(AppContext.BaseDirectory, "comunas.csv")
             };
-            path = candidates.FirstOrDefault(File.Exists);
+            path = candidates.FirstOrDefault(File.Exists) ?? path;
         }
 
         if (!string.IsNullOrEmpty(path) && File.Exists(path))
