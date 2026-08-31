@@ -284,6 +284,40 @@ if (args.Contains("--import"))
     return;
 }
 
+// Diagnóstico del correo institucional: reproduce lo que hace "Sincronizar Ahora" al leer el
+// buzón por EWS, e imprime el error real (sin tener que buscar en el log del servidor).
+if (args.Contains("--test-ews"))
+{
+    var cd = app.Services.GetRequiredService<CambioDomicilioOptions>();
+    Console.WriteLine($"Url:      {cd.Ews?.Url ?? "(sin configurar)"}");
+    Console.WriteLine($"Username: {cd.Ews?.Username ?? "(sin configurar)"}");
+    Console.WriteLine($"Password: {(string.IsNullOrEmpty(cd.Ews?.Password) ? "(sin configurar)" : new string('*', cd.Ews!.Password!.Length))}");
+    Console.WriteLine($"Carpetas: '{cd.SourceFolderName}' / '{cd.ConfirmationFolderName}'");
+    Console.WriteLine();
+
+    try
+    {
+        var reader = app.Services.GetRequiredService<LicenciasCarpetas.CambioDomicilio.Ews.IEmailReader>();
+        foreach (var folder in new[] { cd.SourceFolderName, cd.ConfirmationFolderName })
+        {
+            var messages = await reader.GetMessagesInFolderAsync(folder, CancellationToken.None);
+            Console.WriteLine($"OK  '{folder}': {messages.Count} correo(s).");
+        }
+        Console.WriteLine("\nConexión EWS correcta.");
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"\nFALLÓ: {ex.GetType().Name}: {ex.Message}");
+        for (var inner = ex.InnerException; inner is not null; inner = inner.InnerException)
+        {
+            Console.Error.WriteLine($"  causado por {inner.GetType().Name}: {inner.Message}");
+        }
+        Environment.ExitCode = 1;
+    }
+
+    return;
+}
+
 // Solo abre el navegador automáticamente si se especifica --open-browser en la línea de comandos
 if (args.Contains("--open-browser"))
 {
