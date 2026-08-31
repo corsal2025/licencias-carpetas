@@ -47,4 +47,29 @@ public class ComunaSeedValidationTests(ITestOutputHelper output)
             if (File.Exists(tempDb)) File.Delete(tempDb);
         }
     }
+
+    /// <summary>En un contenedor sin volumen, la ruta configurada (data/comunas.csv) no existe.
+    /// EnsureSeed debe caer al directorio oficial embebido en seed/comunas.csv y poblar la tabla
+    /// igual.</summary>
+    [Fact]
+    public void EnsureSeed_falls_back_to_the_bundled_seed_csv_when_the_configured_path_is_missing()
+    {
+        var bundled = Path.Combine(AppContext.BaseDirectory, "seed", "comunas.csv");
+        Assert.True(File.Exists(bundled), "seed/comunas.csv debe viajar con la app (LicenciasCarpetas.csproj)");
+
+        var tempDb = Path.Combine(Path.GetTempPath(), $"test_seedfallback_{Guid.NewGuid():N}.db");
+        try
+        {
+            var repo = new ComunaContactRepository($"Data Source={tempDb}");
+            repo.EnsureSchema();
+            repo.EnsureSeed(Path.Combine(Path.GetTempPath(), $"no-existe-{Guid.NewGuid():N}", "comunas.csv"));
+
+            Assert.True(repo.All().Count >= 300, $"esperaba >=300 comunas desde el seed embebido, hubo {repo.All().Count}");
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            if (File.Exists(tempDb)) File.Delete(tempDb);
+        }
+    }
 }

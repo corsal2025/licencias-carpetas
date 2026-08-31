@@ -29,7 +29,11 @@
          wwwroot *next to the exe*. The SDK only copies wwwroot on publish, which left the app
          running from bin/ with no stylesheet at all — copy it to the build output too. -->
     <Content Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
-    <Content Update="seed\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Datos semilla que deben viajar SIEMPRE con la app (build, publish, Docker): el directorio
+         oficial de comunas. Sin esto, en un contenedor sin data/comunas.csv el directorio queda
+         vacío y el ruteo de Cambio de Domicilio no funciona. -->
+    <None Remove="seed\**" />
+    <Content Include="seed\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
