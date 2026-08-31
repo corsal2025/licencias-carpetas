@@ -95,8 +95,9 @@ Correos de comunas:  494
 dotnet run -c Release --project src/LicenciasCarpetas
 ```
 
-Abre `https://localhost:5011` (el puerto HTTP 5010 solo redirige). Los puertos son distintos a los
-de `outlook-comuna-router` (5000/5001) para que ambos puedan correr a la vez.
+Abre `http://localhost:5010`. Kestrel escucha solo HTTP en ese puerto (`Kestrel:Endpoints` en
+`appsettings.json`), el mismo binding que usan Docker y Render detrás del proxy inverso; no hay
+HTTPS ni redirección local.
 
 La ruta por defecto del Excel se configura en `Carpetas:DefaultWorkbookPath` (ver
 `appsettings.Example.json`) y queda precargada en la pantalla `/Importar`.

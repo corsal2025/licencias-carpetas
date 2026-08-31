@@ -326,7 +326,9 @@ if (args.Contains("--open-browser"))
         try
         {
             await Task.Delay(1500);
-            var url = "https://localhost:5011";
+            // Kestrel escucha solo HTTP en 5010 (ver appsettings.json → Kestrel:Endpoints), sin HTTPS
+            // ni redirección: el mismo binding que usan Docker y Render detrás del proxy.
+            var url = "http://localhost:5010";
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Exception ex)
