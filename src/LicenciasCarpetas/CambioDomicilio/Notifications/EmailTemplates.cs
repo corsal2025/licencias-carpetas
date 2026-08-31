@@ -57,28 +57,28 @@ public static class EmailTemplates
             para el contribuyente {fullName}, RUT {rut}.
             """);
 
-    /// <summary>Batch notice to Secretaría Municipal listing every contributor whose physical
-    /// folder could not be located, so a certification document can be produced for each one.</summary>
-    public static (string Subject, string Body) CertificateRequestBatch(
-        IReadOnlyList<(string FullName, string Rut, string Comuna, string ComunaEmail)> rows)
-    {
-        var table = string.Join(Environment.NewLine, rows.Select(r =>
-            $"- {r.FullName}, RUT {r.Rut}, comuna {r.Comuna} (correo: {r.ComunaEmail})"));
+    /// <summary>Predetermined request to Secretaría Municipal to produce the certification document
+    /// for one contributor whose physical folder could not be located. Carries that person's name
+    /// and RUT — one email per case, sent from the Certificado screen.</summary>
+    public static (string Subject, string Body) CertificateRequest(string fullName, string rut, string comuna) => (
+        Subject: $"Solicitud de certificado de acreditación – {fullName}, RUT {rut}",
+        Body: $"""
+            Junto con saludar,
 
-        return (
-            Subject: $"Solicitud de certificados – carpetas no encontradas ({rows.Count})",
-            Body: $"""
-                Junto con saludar,
+            Se solicita la elaboración del certificado de acreditación para el siguiente
+            contribuyente, cuya carpeta física no fue posible localizar en el sistema de
+            almacenamiento:
 
-                Se listan a continuación los contribuyentes cuya carpeta física no fue posible
-                localizar, para la elaboración del certificado de acreditación correspondiente:
+            Nombre:  {fullName}
+            RUT:     {rut}
+            Comuna solicitante: {comuna}
 
-                {table}
+            El certificado validará formalmente que la persona señalada obtuvo y mantuvo vigente su
+            licencia de conducir en esta comuna.
 
-                Saluda atentamente,
-                Municipalidad de Valparaíso
-                """);
-    }
+            Saluda atentamente,
+            Municipalidad de Valparaíso
+            """);
 
     /// <summary>Sent to the requesting comuna to explain that, since the physical folder couldn't
     /// be found, a certification document will be issued instead (Secretaría Municipal process).</summary>

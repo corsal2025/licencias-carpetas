@@ -8,15 +8,6 @@
             <p class="message-banner @(Model.MessageIsError ? "message-error" : "")">@Model.Message</p>
         }
 
-        <div class="card" style="padding: 12px 24px; margin-bottom: 16px;">
-            <form method="post" asp-page-handler="NotifyCertificado"
-                  onsubmit="return confirm('Esto enviará el correo de aviso de certificado a Secretaría Municipal, más una respuesta a cada comuna de los casos pendientes. ¿Confirmar?');">
-                <button type="submit" class="btn-primary" style="padding:8px 16px;">
-                    Avisar certificado (@Model.Cases.Count(c => c.CertificadoNotifiedAt is null) pendiente(s))
-                </button>
-            </form>
-        </div>
-
         <div class="card table-card">
             <table class="cases cases-index cases-f8">
                 <thead>
@@ -140,6 +131,20 @@
                                 <button type="submit" class="btn-outline-danger" style="padding:4px 10px; font-size:0.72rem;"
                                         title="Deshacer traspaso a Certificado y volver el caso a Casos">Deshacer traspaso</button>
                             </form>
+                            @if (item.CertificadoNotifiedAt is { } notifiedAt)
+                            {
+                                <span class="badge badge-confirmed" title="Correo de solicitud enviado a Secretaría Municipal"
+                                      style="font-size:0.72rem;">Certificado solicitado @notifiedAt.LocalDateTime.ToString("dd-MM-yyyy")</span>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="SolicitarCertificado"
+                                      onsubmit="return confirm('Esto enviará el correo predeterminado de solicitud de certificado para @(item.FullName?.Replace("'", "\\'")) (RUT @item.Rut) a Secretaría Municipal, más un aviso a la comuna. ¿Confirmar?');">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn-primary" style="padding:4px 10px; font-size:0.72rem;"
+                                            title="Enviar la solicitud de certificado de esta persona a Secretaría Municipal">Solicitar certificado</button>
+                                </form>
+                            }
                         </td>
                     </tr>
                 }
