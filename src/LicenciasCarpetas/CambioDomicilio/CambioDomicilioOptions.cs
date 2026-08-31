@@ -29,7 +29,7 @@ public sealed class CambioDomicilioOptions
     public string? NotificationEmailAddress { get; set; }
 
     /// <summary>Recipient for the "carpeta no encontrada" batch notification.</summary>
-    public string CertificateRequestEmailAddress { get; set; } = "matias.villalobos@munivalpo.cl";
+    public string CertificateRequestEmailAddress { get; set; } = "javiera.sanchez@munivalpo.cl";
 
     public bool ToastNotificationsEnabled { get; set; } = true;
 }

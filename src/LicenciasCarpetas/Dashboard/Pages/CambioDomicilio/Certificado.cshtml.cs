@@ -16,8 +16,8 @@ namespace LicenciasCarpetas.Dashboard.Pages.CambioDomicilio;
 /// dedicated screen for cases whose physical folder could not be located, resolved via the
 /// certificate-request flow instead of the normal upload/confirm flow. Cases here never go
 /// through Marcar subida/Confirmar/Deshacer y rectificar (that's F8/Casos-only); the only special
-/// action is "Avisar certificado", which emails Secretaría Municipal a batch list plus an
-/// acknowledgement to each contributor's comuna.</summary>
+/// action is "Solicitar certificado" per row, which emails Secretaría Municipal the predetermined
+/// request for that one contributor plus an acknowledgement to their comuna.</summary>
 [Authorize(Policy = "CambioDomicilioAccess")]
 public class CertificadoModel(
     ICambioDomicilioRequestRepository repository,
@@ -111,47 +111,51 @@ public class CertificadoModel(
         return RedirectToPage();
     }
 
-    /// <summary>Sends the "carpeta no encontrada" batch email to Secretaría Municipal listing every
-    /// not-yet-notified Certificado case, plus an individual acknowledgement email to each
-    /// contributor's comuna, then marks every case included as notified so the next batch doesn't
-    /// repeat names.</summary>
-    public async Task<IActionResult> OnPostNotifyCertificadoAsync()
+    /// <summary>Sends the predetermined certificate-request email for ONE case to Secretaría
+    /// Municipal (<see cref="CambioDomicilioOptions.CertificateRequestEmailAddress"/>), carrying that
+    /// contributor's name and RUT, plus an acknowledgement to the requesting comuna, then marks the
+    /// case as notified so the button can't be pressed twice.</summary>
+    public async Task<IActionResult> OnPostSolicitarCertificadoAsync(long id)
     {
-        var pending = repository.GetAll()
-            .Where(c => c.Destination == CaseDestination.Certificado && c.CertificadoNotifiedAt is null)
-            .ToList();
-
-        if (pending.Count == 0)
+        var item = repository.FindById(id);
+        if (item is null || item.Destination != CaseDestination.Certificado)
         {
-            Message = "No hay casos Certificado pendientes de aviso.";
+            Message = "El caso no está en la bandeja de Certificado.";
             MessageIsError = true;
             Load();
             return Page();
         }
 
-        var contacts = routingService.LoadDirectory();
-        var rows = new List<(string FullName, string Rut, string Comuna, string ComunaEmail)>();
-        foreach (var item in pending)
+        if (item.CertificadoNotifiedAt is not null)
         {
-            var contact = contacts.FirstOrDefault(c => string.Equals(c.Comuna, item.Comuna, StringComparison.OrdinalIgnoreCase));
-            rows.Add((item.FullName ?? string.Empty, item.Rut ?? string.Empty, item.Comuna ?? string.Empty, contact?.ContactEmail ?? "(sin correo registrado)"));
+            Message = "El certificado de este caso ya fue solicitado.";
+            MessageIsError = true;
+            Load();
+            return Page();
         }
 
-        var (batchSubject, batchBody) = EmailTemplates.CertificateRequestBatch(rows);
-        await mailSender.SendAsync(options.CertificateRequestEmailAddress, batchSubject, batchBody, HttpContext.RequestAborted);
-
-        foreach (var item in pending)
+        if (string.IsNullOrWhiteSpace(item.FullName) || string.IsNullOrWhiteSpace(item.Rut))
         {
-            var contact = contacts.FirstOrDefault(c => string.Equals(c.Comuna, item.Comuna, StringComparison.OrdinalIgnoreCase));
-            if (contact is not null)
-            {
-                var (subject, body) = EmailTemplates.CertificateAcknowledgement(item.FullName ?? string.Empty, item.Rut ?? string.Empty);
-                await mailSender.SendAsync(contact.ContactEmail, subject, body, HttpContext.RequestAborted);
-            }
-            repository.SetCertificadoNotified(item.Id, DateTimeOffset.UtcNow);
+            Message = "Complete el nombre y el RUT del contribuyente antes de solicitar el certificado.";
+            MessageIsError = true;
+            Load();
+            return Page();
         }
 
-        Message = $"Aviso de certificado enviado para {pending.Count} caso(s).";
+        var comuna = item.Comuna ?? string.Empty;
+        var (subject, body) = EmailTemplates.CertificateRequest(item.FullName, item.Rut, comuna);
+        await mailSender.SendAsync(options.CertificateRequestEmailAddress, subject, body, HttpContext.RequestAborted);
+
+        var contact = routingService.LoadDirectory()
+            .FirstOrDefault(c => string.Equals(c.Comuna, comuna, StringComparison.OrdinalIgnoreCase));
+        if (contact is not null)
+        {
+            var (ackSubject, ackBody) = EmailTemplates.CertificateAcknowledgement(item.FullName, item.Rut);
+            await mailSender.SendAsync(contact.ContactEmail, ackSubject, ackBody, HttpContext.RequestAborted);
+        }
+
+        repository.SetCertificadoNotified(item.Id, DateTimeOffset.UtcNow);
+        Message = $"Certificado solicitado a {options.CertificateRequestEmailAddress} para {item.FullName}, RUT {item.Rut}.";
         Load();
         return Page();
     }
