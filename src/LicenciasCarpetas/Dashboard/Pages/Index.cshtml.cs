@@ -18,8 +18,11 @@ namespace LicenciasCarpetas.Dashboard.Pages;
 [Authorize]
 public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter, CarpetasOptions options,
     IOutboundAddressChangeRequestRepository outboundRequests, OutboundRequestSender sender,
-    IUrgentRequestRepository urgentRequests) : PageModel
+    IUrgentRequestRepository urgentRequests, IComunaContactRepository comunaContacts) : PageModel
 {
+    /// <summary>Nombres de comuna del directorio oficial, para el autocompletar de la columna Comuna.</summary>
+    public IReadOnlyList<string> ComunaSuggestions { get; private set; } = [];
+
     // Autoguardado dispara OnPostSave en cada cambio de celda — dos filas distintas con el mismo
     // RUT (el propio DuplicateRuts de esta pantalla dice que eso pasa) puestas en "NO EXISTE
     // CARPETA" casi al mismo tiempo podían pasar las dos el FindByRut antes de que la primera
@@ -517,6 +520,12 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         NeedsReviewCount = cases.CountNeedingReview();
         Years = cases.DistinctYears();
         DuplicateRuts = [.. cases.DuplicateRuts(filter)];
+        ComunaSuggestions = [.. comunaContacts.All()
+            .Select(c => c.Comuna)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Select(c => c.Trim().ToUpperInvariant())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c, StringComparer.Create(new System.Globalization.CultureInfo("es-CL"), ignoreCase: true))];
 
         // TempData sólo existe dentro de una petición; fuera de ella (por ejemplo en las pruebas de
         // la página) es null y leerla reventaría antes de llegar a lo que se está probando.
