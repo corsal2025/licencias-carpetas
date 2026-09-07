@@ -3,12 +3,17 @@ namespace LicenciasCarpetas.Domain;
 /// <summary>"DECISIÓN FINAL" column — the outcome of the citation once the folder was reviewed.</summary>
 public enum FinalDecision
 {
+    // El valor se guarda en la base como el número ordinal (FolderCaseRepository), así que los
+    // valores nuevos van SIEMPRE al final: reordenar los de arriba reinterpreta datos ya guardados.
     Otorgado,
     Denegado,
     ParaDenegar,
     EsperaExamen,
     SinSgl,
-    ClasePendiente
+    ClasePendiente,
+    ExamenMedico,
+    ExamenTeorico,
+    ExamenPractico
 }
 
 public static class FinalDecisionCatalog
@@ -20,7 +25,10 @@ public static class FinalDecisionCatalog
         [FinalDecision.ParaDenegar] = "PARA DENEGAR",
         [FinalDecision.EsperaExamen] = "ESPERA EXAMEN",
         [FinalDecision.SinSgl] = "S/SGL",
-        [FinalDecision.ClasePendiente] = "CLASE PENDIENTE"
+        [FinalDecision.ClasePendiente] = "CLASE PENDIENTE",
+        [FinalDecision.ExamenMedico] = "EX. MÉDICO",
+        [FinalDecision.ExamenTeorico] = "EX. TEÓRICO",
+        [FinalDecision.ExamenPractico] = "EX. PRÁCTICO"
     };
 
     private static readonly Dictionary<string, FinalDecision> Aliases = BuildAliases();
