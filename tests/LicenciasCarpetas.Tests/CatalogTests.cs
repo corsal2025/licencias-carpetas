@@ -31,8 +31,31 @@ public class CatalogTests
     [InlineData("S/SGL", FinalDecision.SinSgl)]
     [InlineData("CLASE PENDIENTE ", FinalDecision.ClasePendiente)]
     [InlineData("PARA DENEGAR", FinalDecision.ParaDenegar)]
+    [InlineData("EX. MÉDICO", FinalDecision.ExamenMedico)]
+    [InlineData("EX. MEDICO", FinalDecision.ExamenMedico)]
+    [InlineData("EXAMEN MÉDICO", FinalDecision.ExamenMedico)]
+    [InlineData("EX. TEÓRICO", FinalDecision.ExamenTeorico)]
+    [InlineData("EXAMEN TEORICO", FinalDecision.ExamenTeorico)]
+    [InlineData("EX. PRÁCTICO", FinalDecision.ExamenPractico)]
+    [InlineData("EXAMEN PRACTICO", FinalDecision.ExamenPractico)]
     public void FinalDecision_collapses_accent_and_spacing_variants(string text, FinalDecision expected)
         => Assert.Equal(expected, FinalDecisionCatalog.TryResolve(text));
+
+    [Theory]
+    [InlineData(FinalDecision.ExamenMedico, "EX. MÉDICO")]
+    [InlineData(FinalDecision.ExamenTeorico, "EX. TEÓRICO")]
+    [InlineData(FinalDecision.ExamenPractico, "EX. PRÁCTICO")]
+    public void FinalDecision_shows_the_short_exam_labels(FinalDecision decision, string expected)
+        => Assert.Equal(expected, FinalDecisionCatalog.Display(decision));
+
+    [Fact]
+    public void FinalDecision_catalog_lists_every_value_including_the_three_exam_outcomes()
+    {
+        Assert.Equal(Enum.GetValues<FinalDecision>().Length, FinalDecisionCatalog.All.Count);
+        Assert.Contains(FinalDecision.ExamenMedico, FinalDecisionCatalog.All);
+        Assert.Contains(FinalDecision.ExamenTeorico, FinalDecisionCatalog.All);
+        Assert.Contains(FinalDecision.ExamenPractico, FinalDecisionCatalog.All);
+    }
 
     [Theory]
     [InlineData("ALERTADA", MoralIdoneity.Alertada)]
