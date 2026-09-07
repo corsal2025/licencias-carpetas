@@ -136,7 +136,8 @@ public sealed class IndexModel(
             OutboundSendOutcome.NoContact =>
                 $"No hay correo de contacto registrado para '{result.DestinationComuna}'. Agréguelo en Comunas antes de enviar.",
             OutboundSendOutcome.SendFailed =>
-                "No se pudo enviar el correo (revise la configuración SMTP o la conexión). La solicitud sigue como Borrador — puede reintentar.",
+                "No se pudo enviar el correo: el servidor de correo institucional (EWS) no respondió. " +
+                "La solicitud sigue como Borrador — reintente cuando el correo vuelva.",
             OutboundSendOutcome.Sent => $"Solicitud enviada a {result.DestinationComuna}.",
             _ => "El correo se envió, pero la solicitud ya figuraba como enviada (posiblemente por otra pestaña/operador)."
         };
