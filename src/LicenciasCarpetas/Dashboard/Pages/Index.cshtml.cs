@@ -497,7 +497,8 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
                 $"No hay correo de contacto registrado para '{result.DestinationComuna}'. Agréguelo en Comunas antes de solicitar.",
                 isError: true),
             OutboundSendOutcome.SendFailed => RedirectWithMessage(
-                "No se pudo enviar el correo (revise la configuración SMTP o la conexión). La solicitud quedó como Borrador — puede reintentar desde Solicitar Cambios de Domicilio.",
+                "No se pudo enviar el correo: el servidor de correo institucional (EWS) no respondió. " +
+                "La solicitud quedó como Borrador — reintente desde Solicitar Cambios de Domicilio cuando el correo vuelva.",
                 isError: true),
             OutboundSendOutcome.Sent => RedirectWithMessage($"Solicitud creada y correo enviado a {result.DestinationComuna}."),
             _ => RedirectWithMessage("El correo se envió, pero la solicitud ya figuraba como enviada (posiblemente por otra pestaña/operador).")

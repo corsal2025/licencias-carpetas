@@ -71,18 +71,26 @@ public class IndexModelTests
         }
     }
 
+    /// <summary>Nunca responde — imita un EWS colgado (TCP conecta, el servidor no contesta).</summary>
+    private sealed class HangingEmailSender : IMailSender
+    {
+        public Task SendAsync(string toAddress, string subject, string body, CancellationToken cancellationToken)
+            => Task.Delay(Timeout.Infinite, cancellationToken);
+    }
+
     private sealed record Fixture(
         IndexModel Model,
         FakeOutboundAddressChangeRequestRepository Repository,
         FakeComunaContactRepository ComunaContacts,
         RecordingEmailSender EmailSender);
 
-    private static Fixture BuildModel(SqliteTestDatabase db, CambioDomicilioOptions? options = null)
+    private static Fixture BuildModel(SqliteTestDatabase db, CambioDomicilioOptions? options = null,
+        IMailSender? mailSender = null, TimeSpan? sendTimeout = null)
     {
         var repository = new FakeOutboundAddressChangeRequestRepository();
         var comunaContacts = new FakeComunaContactRepository();
         var emailSender = new RecordingEmailSender();
-        var sender = new OutboundRequestSender(repository, comunaContacts, emailSender);
+        var sender = new OutboundRequestSender(repository, comunaContacts, mailSender ?? emailSender, sendTimeout);
 
         var httpContext = new DefaultHttpContext
         {
@@ -152,6 +160,27 @@ public class IndexModelTests
 
         Assert.IsType<RedirectToPageResult>(result);
         Assert.Equal(1, fixture.EmailSender.CallCount);
+    }
+
+    /// <summary>EWS caído: EwsClient reintenta hasta 4 veces con 100 s de timeout cada una, así que
+    /// sin un tope propio la pantalla queda colgada minutos. OutboundRequestSender corta el envío a
+    /// los segundos configurados y deja la solicitud como Borrador para reintentar.</summary>
+    [Fact]
+    public async Task OnPostSolicitar_MailServerHangs_FailsFastAndKeepsItAsDraft()
+    {
+        using var db = new SqliteTestDatabase();
+        var fixture = BuildModel(db, mailSender: new HangingEmailSender(),
+            sendTimeout: TimeSpan.FromMilliseconds(200));
+        fixture.ComunaContacts.Upsert(new ComunaContact { Comuna = "Quillota", Email = "contacto@muniquillota.cl" });
+        var id = SeedDraft(fixture.Repository);
+
+        var start = DateTime.UtcNow;
+        var result = await fixture.Model.OnPostSolicitar(id);
+        var elapsed = DateTime.UtcNow - start;
+
+        Assert.IsType<RedirectToPageResult>(result);
+        Assert.True(elapsed < TimeSpan.FromSeconds(5), $"debía cortar rápido, tardó {elapsed.TotalSeconds:0.0}s");
+        Assert.Equal(OutboundRequestStatus.Borrador, fixture.Repository.FindById(id)!.Status);
     }
 
     [Fact]

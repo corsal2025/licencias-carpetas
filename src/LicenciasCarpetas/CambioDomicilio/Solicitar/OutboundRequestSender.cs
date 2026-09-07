@@ -31,8 +31,15 @@ public sealed record OutboundSendResult(OutboundSendOutcome Outcome, string Dest
 public sealed class OutboundRequestSender(
     IOutboundAddressChangeRequestRepository repository,
     IComunaContactRepository comunaContactRepository,
-    IMailSender mailSender)
+    IMailSender mailSender,
+    TimeSpan? interactiveSendTimeout = null)
 {
+    /// <summary>El envío es siempre interactivo — el operador espera en la pantalla. EwsClient
+    /// reintenta hasta 4 veces con 100 s de timeout cada una, así que un EWS caído dejaría la
+    /// pantalla colgada varios minutos antes de mostrar el error. Se corta acá y se reporta
+    /// SendFailed: la solicitud queda como Borrador para reintentar cuando el correo vuelva.</summary>
+    private readonly TimeSpan _sendTimeout = interactiveSendTimeout ?? TimeSpan.FromSeconds(20);
+
     public async Task<OutboundSendResult> SendAsync(
         OutboundAddressChangeRequest request,
         IReadOnlyList<OutboundAddressChangeAttachment> attachments,
@@ -52,17 +59,23 @@ public sealed class OutboundRequestSender(
         var subject = $"Solicitud de cambio de domicilio — {request.FullName} ({request.Rut})";
         var body = BuildBody(request);
 
+        using var sendCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        sendCts.CancelAfter(_sendTimeout);
+
         try
         {
             // Un correo por dirección registrada de la comuna (EWS envía a un destinatario por vez).
             foreach (var to in contacts)
             {
-                await mailSender.SendAsync(to, subject, body, cancellationToken);
+                await mailSender.SendAsync(to, subject, body, sendCts.Token);
             }
         }
-        catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or System.Net.Sockets.SocketException or TaskCanceledException)
+        catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or System.Net.Sockets.SocketException or OperationCanceledException)
         {
-            Console.WriteLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}] Envío de solicitud de cambio de domicilio #{request.Id} a comuna '{request.DestinationComuna}' falló: {ex.Message}");
+            var motivo = ex is OperationCanceledException && !cancellationToken.IsCancellationRequested
+                ? $"el servidor de correo (EWS) no respondió en {_sendTimeout.TotalSeconds:0} s"
+                : ex.Message;
+            Console.WriteLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}] Envío de solicitud de cambio de domicilio #{request.Id} a comuna '{request.DestinationComuna}' falló: {motivo}");
             return new OutboundSendResult(OutboundSendOutcome.SendFailed, request.DestinationComuna);
         }
 
