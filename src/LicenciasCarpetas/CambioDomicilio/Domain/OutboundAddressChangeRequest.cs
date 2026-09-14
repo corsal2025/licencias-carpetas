@@ -1,4 +1,4 @@
-using LicenciasCarpetas.Domain;
+﻿using LicenciasCarpetas.Domain;
 
 namespace LicenciasCarpetas.CambioDomicilio.Domain;
 
@@ -24,6 +24,7 @@ public sealed class OutboundAddressChangeRequest
     public OutboundRequestStatus Status { get; set; } = OutboundRequestStatus.Borrador;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? SentAt { get; set; }
+    public DateTimeOffset? UploadedAt { get; set; }
     public long? SentByUserId { get; set; }
     public long CreatedByUserId { get; set; }
 

@@ -58,6 +58,7 @@ public interface ICambioDomicilioRequestRepository
     void RecordDeletedSourceMessage(string sourceMessageId);
 
     bool IsSourceMessageDeleted(string sourceMessageId);
+    void ClearDeletedSourceMessage(string sourceMessageId);
 
     IReadOnlyList<PersonRequest> GetAll();
 }
@@ -113,6 +114,12 @@ public sealed class CambioDomicilioRequestRepository(string connectionString) : 
         EnsureColumnExists(connection, "SinCarpeta", "SinCarpeta INTEGER NOT NULL DEFAULT 0");
         EnsureColumnExists(connection, "PenultimasCarpetasPdfGeneratedAt", "PenultimasCarpetasPdfGeneratedAt TEXT NULL");
         RemoveSourceMessageIdUniqueConstraintIfPresent(connection);
+
+        using (var cleanCmd = connection.CreateCommand())
+        {
+            cleanCmd.CommandText = "DELETE FROM PersonRequest WHERE SourceMessageId LIKE 'gestion-%';";
+            cleanCmd.ExecuteNonQuery();
+        }
 
         // Backfill migration: cases transferred under the old single-destination mechanism
         // (MovedToF8At) must be recognized under the new generic Destination/TransferredAt
@@ -452,6 +459,15 @@ public sealed class CambioDomicilioRequestRepository(string connectionString) : 
         command.CommandText = "SELECT 1 FROM DeletedSourceMessage WHERE SourceMessageId = $id";
         command.Parameters.AddWithValue("$id", sourceMessageId);
         return command.ExecuteScalar() is not null;
+    }
+
+    public void ClearDeletedSourceMessage(string sourceMessageId)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM DeletedSourceMessage WHERE SourceMessageId = $id";
+        command.Parameters.AddWithValue("$id", sourceMessageId);
+        command.ExecuteNonQuery();
     }
 
     public void SetMarked(long id, bool marked)

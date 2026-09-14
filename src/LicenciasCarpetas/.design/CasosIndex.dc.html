@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{
+      --navy:#173b6b; --navy-soft:#eaf1fb;
+      --bg:#f7f8fb; --surface:#ffffff;
+      --border:#e7e9f0; --border-soft:#f0f1f5;
+      --text:#1f2430; --text-muted:#7b8394;
+      --blue:#3b6fe0; --blue-soft:#e9f0ff;
+      --green:#2f9e6e; --green-soft:#e8f8f0;
+      --red:#e0605f; --red-soft:#fdeceb;
+      --amber:#d99a2b; --amber-soft:#fdf3e2;
+      --radius-lg:22px; --radius-md:16px; --radius-sm:12px;
+      --shadow:0 6px 20px -8px rgba(31,36,48,.10);
+    }
+    *{box-sizing:border-box;}
+    body{margin:0; font-family:"Segoe UI", system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--text);}
+    a{color:var(--blue); text-decoration:none;}
+    .icon{width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+    table{border-collapse:collapse; width:100%;}
+    th{
+      text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+      color:var(--text-muted); padding:12px 14px; background:#fafbfd; border-bottom:1px solid var(--border);
+      white-space:nowrap; position:sticky; top:0;
+    }
+    td{padding:11px 14px; font-size:13px; border-bottom:1px solid var(--border-soft); white-space:nowrap; vertical-align:middle;}
+    tr.alt td{background:#fafbfd;}
+    tr:hover td{background:var(--blue-soft);}
+    .pill{display:inline-flex; align-items:center; gap:5px; padding:4px 11px; border-radius:999px; font-size:11.5px; font-weight:700;}
+    .chip{display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; font-size:10.5px; font-weight:700;}
+  </style>
+</helmet>
+
+<div style="width:1440px; min-height:900px; background:var(--bg); padding:32px 36px 44px;">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px;">
+    <div>
+      <h1 style="margin:0 0 4px; font-size:22px; font-weight:800; color:var(--navy);">Casos</h1>
+      <p style="margin:0; font-size:13px; color:var(--text-muted);">316 trámites en Gestión de Licencias &middot; Septiembre 2026</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button style="all:unset; display:flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--border); color:var(--text); font-weight:700; font-size:12.5px; padding:9px 16px; border-radius:999px; cursor:pointer;">
+        <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Exportar
+      </button>
+      <button style="all:unset; display:flex; align-items:center; gap:7px; background:var(--blue); color:#fff; font-weight:700; font-size:12.5px; padding:9px 18px; border-radius:999px; box-shadow:0 6px 16px -6px rgba(59,111,224,.5); cursor:pointer;">
+        <svg class="icon" viewBox="0 0 24 24" style="stroke:#fff; width:15px;height:15px;"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo caso
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:16px 20px; margin-bottom:20px; display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end;">
+    <div style="display:flex; flex-direction:column; gap:5px;">
+      <label style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.3px;">Oficina</label>
+      <div style="border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; font-size:12.5px; font-weight:600; min-width:130px; background:var(--bg);">Todas</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:5px;">
+      <label style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.3px;">Estado carpeta</label>
+      <div style="border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; font-size:12.5px; font-weight:600; min-width:150px; background:var(--bg);">Todos</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:5px;">
+      <label style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.3px;">Decisión final</label>
+      <div style="border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; font-size:12.5px; font-weight:600; min-width:140px; background:var(--bg);">Todas</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:5px; flex:1; min-width:220px;">
+      <label style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.3px;">Buscar</label>
+      <div style="display:flex; align-items:center; gap:8px; border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; background:var(--bg);">
+        <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px; stroke:var(--text-muted);"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span style="color:var(--text-muted); font-size:12.5px;">RUT o nombre...</span>
+      </div>
+    </div>
+    <label style="display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:var(--red); padding-bottom:9px;">
+      <span style="width:16px; height:16px; border-radius:5px; border:1.5px solid var(--red); flex:none;"></span>
+      Atrasados (+15 días)
+    </label>
+    <button style="all:unset; background:var(--navy); color:#fff; font-weight:700; font-size:12.5px; padding:9px 20px; border-radius:999px; cursor:pointer; margin-bottom:0;">Filtrar</button>
+  </div>
+
+  <!-- Table -->
+  <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden;">
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px;"><span style="width:16px; height:16px; border:1.5px solid var(--border); border-radius:5px; display:inline-block;"></span></th>
+          <th>Citación</th>
+          <th>Nombre completo</th>
+          <th>RUT</th>
+          <th>Oficina</th>
+          <th>Subida carpeta</th>
+          <th>Sector</th>
+          <th>Estado carpeta</th>
+          <th>Decisión final</th>
+          <th>Idoneidad</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span style="width:16px; height:16px; border:1.5px solid var(--border); border-radius:5px; display:inline-block;"></span></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:600;">03 sept 2026</span>
+              <span class="chip" style="background:var(--red-soft); color:#a03d3c;">● +18 d</span>
+            </div>
+          </td>
+          <td style="font-weight:600;">María Fernanda Contreras Silva</td>
+          <td style="color:var(--text-muted);">12.845.203-6</td>
+          <td>Oficina Central</td>
+          <td style="color:var(--text-muted);">—</td>
+          <td>Archivo</td>
+          <td><span class="pill" style="background:var(--red-soft); color:#a03d3c;">No existe carpeta</span></td>
+          <td style="color:var(--text-muted);">Pendiente</td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px; stroke:var(--amber);"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr class="alt">
+          <td><span style="width:16px; height:16px; border:1.5px solid var(--blue); background:var(--blue); border-radius:5px; display:inline-block;"></span></td>
+          <td><span style="font-weight:600;">04 sept 2026</span></td>
+          <td style="font-weight:600;">Jorge Andrés Pizarro Muñoz</td>
+          <td style="color:var(--text-muted);">9.302.114-K</td>
+          <td>Placilla</td>
+          <td style="color:var(--text-muted);">05 sept 2026</td>
+          <td>Oficina 43</td>
+          <td><span class="pill" style="background:var(--green-soft); color:#1f7a4d;">Subida a Conaset</span></td>
+          <td style="color:var(--text-muted);">Aprobado</td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px; stroke:var(--green);"><path d="M20 6 9 17l-5-5"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr>
+          <td><span style="width:16px; height:16px; border:1.5px solid var(--border); border-radius:5px; display:inline-block;"></span></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:600;">06 sept 2026</span>
+              <span class="chip" style="background:var(--amber-soft); color:#8a600f;">● 12 d</span>
+            </div>
+          </td>
+          <td style="font-weight:600; display:flex; align-items:center; gap:6px;">
+            <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px; stroke:var(--red);"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+            Luis Alberto Vargas Ortega
+          </td>
+          <td style="color:var(--text-muted);">15.774.882-3</td>
+          <td>Laguna Verde</td>
+          <td style="color:var(--text-muted);">—</td>
+          <td>Archivo</td>
+          <td><span class="pill" style="background:var(--blue-soft); color:#2a4fa0;">Pendiente</span></td>
+          <td style="color:var(--text-muted);">—</td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px; stroke:var(--red);"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr class="alt">
+          <td><span style="width:16px; height:16px; border:1.5px solid var(--border); border-radius:5px; display:inline-block;"></span></td>
+          <td><span style="font-weight:600;">07 sept 2026</span></td>
+          <td style="font-weight:600;">Camila Ignacia Reyes Bravo</td>
+          <td style="color:var(--text-muted);">18.204.556-7</td>
+          <td>Oficina Central</td>
+          <td style="color:var(--text-muted);">08 sept 2026</td>
+          <td>Oficina 43</td>
+          <td><span class="pill" style="background:var(--green-soft); color:#1f7a4d;">Subida a Conaset</span></td>
+          <td style="color:var(--text-muted);">Aprobado</td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px; stroke:var(--green);"><path d="M20 6 9 17l-5-5"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr>
+          <td><span style="width:16px; height:16px; border:1.5px solid var(--border); border-radius:5px; display:inline-block;"></span></td>
+          <td><span style="font-weight:600;">09 sept 2026</span></td>
+          <td style="font-weight:600;">Pedro Pablo Sáez Fuentes</td>
+          <td style="color:var(--text-muted);">11.998.774-1</td>
+          <td>Placilla</td>
+          <td style="color:var(--text-muted);">—</td>
+          <td>Archivo</td>
+          <td><span class="pill" style="background:var(--blue-soft); color:#2a4fa0;">Pendiente</span></td>
+          <td style="color:var(--text-muted);">—</td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px; stroke:var(--amber);"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+    <span style="font-size:12px; color:var(--text-muted);">Mostrando 1–5 de 316 casos</span>
+    <div style="display:flex; gap:6px;">
+      <button style="all:unset; padding:7px 13px; border-radius:999px; border:1px solid var(--border); background:var(--surface); font-size:12px; font-weight:700; color:var(--text-muted); cursor:pointer;">← Anterior</button>
+      <button style="all:unset; padding:7px 13px; border-radius:999px; background:var(--navy); color:#fff; font-size:12px; font-weight:700; cursor:pointer;">1</button>
+      <button style="all:unset; padding:7px 13px; border-radius:999px; border:1px solid var(--border); background:var(--surface); font-size:12px; font-weight:700; cursor:pointer;">2</button>
+      <button style="all:unset; padding:7px 13px; border-radius:999px; border:1px solid var(--border); background:var(--surface); font-size:12px; font-weight:700; cursor:pointer;">3</button>
+      <button style="all:unset; padding:7px 13px; border-radius:999px; border:1px solid var(--border); background:var(--surface); font-size:12px; font-weight:700; color:var(--text); cursor:pointer;">Siguiente →</button>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

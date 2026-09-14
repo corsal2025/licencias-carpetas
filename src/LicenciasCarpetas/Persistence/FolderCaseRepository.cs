@@ -129,6 +129,17 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
             """;
         command.ExecuteNonQuery();
 
+        using var pragma = connection.CreateCommand();
+        pragma.CommandText = """
+            PRAGMA journal_mode = WAL;
+            PRAGMA synchronous = NORMAL;
+            PRAGMA busy_timeout = 5000;
+            CREATE INDEX IF NOT EXISTS IX_FolderCase_NeedsReview ON FolderCase (NeedsReview, DeletedAt);
+            CREATE INDEX IF NOT EXISTS IX_FolderCase_DeletedAt ON FolderCase (DeletedAt);
+            CREATE INDEX IF NOT EXISTS IX_FolderCase_Office_Date ON FolderCase (Office, DeletedAt, CitationDate);
+            """;
+        pragma.ExecuteNonQuery();
+
         AddColumnIfMissing(connection, "DeletedAt");
         AddColumnIfMissing(connection, "FullNameSort");
         AddColumnIfMissing(connection, "SectorPrintedAt");

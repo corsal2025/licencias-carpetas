@@ -61,7 +61,7 @@ builder.Services.AddSingleton(options);
 var databasePath = Path.IsPathRooted(options.SqliteDbPath)
     ? options.SqliteDbPath
     : Path.Combine(AppContext.BaseDirectory, options.SqliteDbPath);
-var connectionString = $"Data Source={databasePath}";
+var connectionString = $"Data Source={databasePath};Cache=Shared;";
 // Mismo mecanismo que el respaldo automático de arranque (más abajo) — expuesto como servicio para
 // que la pantalla de Usuarios pueda pedir un respaldo bajo demanda antes de vaciar Casos.
 builder.Services.AddSingleton(new DatabaseBackup(
@@ -107,6 +107,7 @@ cambioDomicilioOptions.SolicitarMatrizExcelPath = CambioDomicilioPathResolver
 builder.Services.AddSingleton(cambioDomicilioOptions);
 builder.Services.AddSingleton<ICambioDomicilioRequestRepository>(_ => new CambioDomicilioRequestRepository(connectionString));
 builder.Services.AddSingleton<IOutboundAddressChangeRequestRepository>(_ => new OutboundAddressChangeRequestRepository(connectionString));
+  builder.Services.AddSingleton<LicenciasCarpetas.Certificados.Data.ICertificadoRequestRepository>(_ => new LicenciasCarpetas.Certificados.Data.CertificadoRequestRepository(connectionString));
 builder.Services.AddSingleton<LicenciasCarpetas.CambioDomicilio.Solicitar.OutboundRequestSender>();
 builder.Services.AddSingleton<LicenciasCarpetas.CambioDomicilio.Data.IDiscardedEmailRepository>(
     _ => new LicenciasCarpetas.CambioDomicilio.Data.DiscardedEmailRepository(connectionString));
@@ -145,9 +146,9 @@ builder.Services
 builder.Services.AddAuthorization(authorizationOptions =>
 {
     authorizationOptions.AddPolicy("CambioDomicilioAccess",
-        policy => policy.RequireClaim("mod:cambio-domicilio", "true"));
+        policy => policy.RequireAssertion(ctx => ctx.User.IsInRole("Administrador") || ctx.User.IsInRole("Jefatura") || ctx.User.HasClaim("mod:cambio-domicilio", "true")));
     authorizationOptions.AddPolicy("F8Access",
-        policy => policy.RequireClaim("mod:f8-urgentes", "true"));
+        policy => policy.RequireAssertion(ctx => ctx.User.IsInRole("Administrador") || ctx.User.IsInRole("Jefatura") || ctx.User.HasClaim("mod:f8-urgentes", "true")));
 });
 builder.Services.AddRazorPages(razorOptions => razorOptions.RootDirectory = "/Dashboard/Pages");
 
@@ -407,6 +408,7 @@ static void EnsureSchemas(IServiceProvider services)
     services.GetRequiredService<IUrgentRequestRepository>().EnsureSchema();
     services.GetRequiredService<ICambioDomicilioRequestRepository>().EnsureSchema();
     services.GetRequiredService<IOutboundAddressChangeRequestRepository>().EnsureSchema();
+      services.GetRequiredService<LicenciasCarpetas.Certificados.Data.ICertificadoRequestRepository>().EnsureSchema();
     services.GetRequiredService<LicenciasCarpetas.CambioDomicilio.Data.IDiscardedEmailRepository>().EnsureSchema();
     var cdOptions = services.GetRequiredService<CambioDomicilioOptions>();
     if (!string.IsNullOrWhiteSpace(cdOptions.ComunaDirectoryCsvPath))

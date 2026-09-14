@@ -32,6 +32,9 @@ public sealed class CambioDomicilioOptions
     public string CertificateRequestEmailAddress { get; set; } = "javiera.sanchez@munivalpo.cl";
 
     public bool ToastNotificationsEnabled { get; set; } = true;
+
+    /// <summary>Modo pruebas y mejoras: si es true, no envía correos salientes a través de EWS ni SMTP.</summary>
+    public bool DisableOutgoingEmails { get; set; } = false;
 }
 
 public sealed class EwsOptions

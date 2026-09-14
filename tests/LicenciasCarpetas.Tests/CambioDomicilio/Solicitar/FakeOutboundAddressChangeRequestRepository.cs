@@ -9,6 +9,7 @@ public sealed class FakeOutboundAddressChangeRequestRepository : IOutboundAddres
     private readonly List<OutboundAddressChangeAttachment> _attachments = [];
     private long _nextRequestId = 1;
     private long _nextAttachmentId = 1;
+    private readonly HashSet<long> _deletedSourceCases = [];
 
     public void EnsureSchema() { }
 
@@ -32,6 +33,7 @@ public sealed class FakeOutboundAddressChangeRequestRepository : IOutboundAddres
         existing.Unit = request.Unit;
         existing.DestinationComuna = request.DestinationComuna;
         existing.WorkflowState = request.WorkflowState;
+        existing.UploadedAt = request.UploadedAt;
     }
 
     public OutboundAddressChangeRequest? FindById(long id) => _requests.FirstOrDefault(r => r.Id == id);
@@ -52,6 +54,14 @@ public sealed class FakeOutboundAddressChangeRequestRepository : IOutboundAddres
         return true;
     }
 
+    public bool MarkUploaded(long id, DateTimeOffset uploadedAt)
+    {
+        var request = FindById(id);
+        if (request is null) return false;
+        request.UploadedAt = uploadedAt;
+        return true;
+    }
+
     public void Delete(long id) => _requests.RemoveAll(r => r.Id == id);
 
     public long AddAttachment(OutboundAddressChangeAttachment attachment)
@@ -65,4 +75,10 @@ public sealed class FakeOutboundAddressChangeRequestRepository : IOutboundAddres
         _attachments.Where(a => a.RequestId == requestId).OrderBy(a => a.Id).ToList();
 
     public void DeleteAttachment(long attachmentId) => _attachments.RemoveAll(a => a.Id == attachmentId);
+
+    public void RecordDeletedSourceFolderCase(long sourceFolderCaseId) => _deletedSourceCases.Add(sourceFolderCaseId);
+
+    public bool IsSourceFolderCaseDeleted(long sourceFolderCaseId) => _deletedSourceCases.Contains(sourceFolderCaseId);
+
+    public void ClearDeletedSourceFolderCase(long sourceFolderCaseId) => _deletedSourceCases.Remove(sourceFolderCaseId);
 }

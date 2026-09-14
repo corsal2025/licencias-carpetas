@@ -13,7 +13,11 @@ public interface IOutboundAddressChangeRequestRepository
     IReadOnlyList<OutboundAddressChangeRequest> GetAll();
     IReadOnlyList<OutboundAddressChangeRequest> FindBySourceFolderCaseId(long folderCaseId);
     bool MarkSent(long id, DateTimeOffset sentAt, long sentByUserId);
+    bool MarkUploaded(long id, DateTimeOffset uploadedAt);
     void Delete(long id);
+    void RecordDeletedSourceFolderCase(long sourceFolderCaseId);
+    bool IsSourceFolderCaseDeleted(long sourceFolderCaseId);
+    void ClearDeletedSourceFolderCase(long sourceFolderCaseId);
 
     long AddAttachment(OutboundAddressChangeAttachment attachment);
     IReadOnlyList<OutboundAddressChangeAttachment> GetAttachments(long requestId);
@@ -43,7 +47,8 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
                     SentByUserId INTEGER NULL,
                     CreatedByUserId INTEGER NOT NULL,
                     SourceFolderCaseId INTEGER NULL,
-                    WorkflowState TEXT NULL
+                    WorkflowState TEXT NULL,
+                    UploadedAt TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS IX_OutboundAddressChangeRequest_Status ON OutboundAddressChangeRequest (Status);
 
@@ -56,6 +61,11 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
                     UploadedAt TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS IX_OutboundAddressChangeAttachment_RequestId ON OutboundAddressChangeAttachment (RequestId);
+
+                CREATE TABLE IF NOT EXISTS DeletedOutboundSourceCase (
+                    SourceFolderCaseId INTEGER PRIMARY KEY,
+                    DeletedAt TEXT NOT NULL
+                );
                 """;
             command.ExecuteNonQuery();
         }
@@ -65,6 +75,12 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         // SourceFolderCaseId column. SQLite has no ALTER COLUMN, so a NOT NULL → NULL change needs
         // the standard rebuild-and-swap; a missing nullable column, on its own, can just be added.
         MigrateLegacySchema(connection);
+
+        using (var fixSentAtCommand = connection.CreateCommand())
+        {
+            fixSentAtCommand.CommandText = "UPDATE OutboundAddressChangeRequest SET SentAt = CreatedAt WHERE (WorkflowState = 'CambioDomicilioSolicitado' OR Status = 'Enviada') AND SentAt IS NULL;";
+            fixSentAtCommand.ExecuteNonQuery();
+        }
     }
 
     /// <summary>Brings an existing (pre-fix) OutboundAddressChangeRequest table up to the current
@@ -75,6 +91,7 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         bool streetIsNotNull;
         bool hasSourceFolderCaseId;
         bool hasWorkflowState;
+        bool hasUploadedAt;
         using (var pragmaCommand = connection.CreateCommand())
         {
             pragmaCommand.CommandText = "PRAGMA table_info(OutboundAddressChangeRequest)";
@@ -82,6 +99,7 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
             streetIsNotNull = false;
             hasSourceFolderCaseId = false;
             hasWorkflowState = false;
+            hasUploadedAt = false;
             while (reader.Read())
             {
                 var columnName = reader.GetString(1);
@@ -96,6 +114,10 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
                 else if (string.Equals(columnName, "WorkflowState", StringComparison.OrdinalIgnoreCase))
                 {
                     hasWorkflowState = true;
+                }
+                else if (string.Equals(columnName, "UploadedAt", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasUploadedAt = true;
                 }
             }
         }
@@ -119,6 +141,13 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         {
             using var alterCommand = connection.CreateCommand();
             alterCommand.CommandText = "ALTER TABLE OutboundAddressChangeRequest ADD COLUMN WorkflowState TEXT NULL";
+            alterCommand.ExecuteNonQuery();
+        }
+
+        if (!hasUploadedAt)
+        {
+            using var alterCommand = connection.CreateCommand();
+            alterCommand.CommandText = "ALTER TABLE OutboundAddressChangeRequest ADD COLUMN UploadedAt TEXT NULL";
             alterCommand.ExecuteNonQuery();
         }
 
@@ -152,7 +181,8 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
                     SentByUserId INTEGER NULL,
                     CreatedByUserId INTEGER NOT NULL,
                     SourceFolderCaseId INTEGER NULL,
-                    WorkflowState TEXT NULL
+                    WorkflowState TEXT NULL,
+                    UploadedAt TEXT NULL
                 );
                 INSERT INTO OutboundAddressChangeRequest_new
                     (Id, FullName, Rut, Phone, Street, Number, Unit, DestinationComuna, Status, CreatedAt, SentAt, SentByUserId, CreatedByUserId)
@@ -174,9 +204,9 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         using var command = connection.CreateCommand();
         command.CommandText = """
             INSERT INTO OutboundAddressChangeRequest
-                (FullName, Rut, Phone, Street, Number, Unit, DestinationComuna, Status, CreatedAt, SentAt, SentByUserId, CreatedByUserId, SourceFolderCaseId, WorkflowState)
+                (FullName, Rut, Phone, Street, Number, Unit, DestinationComuna, Status, CreatedAt, SentAt, SentByUserId, CreatedByUserId, SourceFolderCaseId, WorkflowState, UploadedAt)
             VALUES
-                ($fullName, $rut, $phone, $street, $number, $unit, $destinationComuna, $status, $createdAt, $sentAt, $sentByUserId, $createdByUserId, $sourceFolderCaseId, $workflowState);
+                ($fullName, $rut, $phone, $street, $number, $unit, $destinationComuna, $status, $createdAt, $sentAt, $sentByUserId, $createdByUserId, $sourceFolderCaseId, $workflowState, $uploadedAt);
             SELECT last_insert_rowid();
             """;
         command.Parameters.AddWithValue("$fullName", request.FullName);
@@ -194,6 +224,7 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         command.Parameters.AddWithValue("$createdByUserId", request.CreatedByUserId);
         command.Parameters.AddWithValue("$sourceFolderCaseId", (object?)request.SourceFolderCaseId ?? DBNull.Value);
         command.Parameters.AddWithValue("$workflowState", (object?)request.WorkflowState?.ToString() ?? DBNull.Value);
+        command.Parameters.AddWithValue("$uploadedAt", (object?)request.UploadedAt?.ToString("O") ?? DBNull.Value);
 
         return (long)command.ExecuteScalar()!;
     }
@@ -205,7 +236,9 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         command.CommandText = """
             UPDATE OutboundAddressChangeRequest
             SET FullName = $fullName, Rut = $rut, Phone = $phone, Street = $street, Number = $number,
-                Unit = $unit, DestinationComuna = $destinationComuna, WorkflowState = $workflowState
+                Unit = $unit, DestinationComuna = $destinationComuna, Status = $status, CreatedAt = $createdAt,
+                SentAt = $sentAt, SentByUserId = $sentByUserId, WorkflowState = $workflowState,
+                UploadedAt = $uploadedAt
             WHERE Id = $id
             """;
         command.Parameters.AddWithValue("$fullName", request.FullName);
@@ -215,7 +248,12 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         command.Parameters.AddWithValue("$number", (object?)request.Number ?? DBNull.Value);
         command.Parameters.AddWithValue("$unit", (object?)request.Unit ?? DBNull.Value);
         command.Parameters.AddWithValue("$destinationComuna", request.DestinationComuna);
+        command.Parameters.AddWithValue("$status", request.Status.ToString());
+        command.Parameters.AddWithValue("$createdAt", request.CreatedAt.ToString("O"));
+        command.Parameters.AddWithValue("$sentAt", (object?)request.SentAt?.ToString("O") ?? DBNull.Value);
+        command.Parameters.AddWithValue("$sentByUserId", (object?)request.SentByUserId ?? DBNull.Value);
         command.Parameters.AddWithValue("$workflowState", (object?)request.WorkflowState?.ToString() ?? DBNull.Value);
+        command.Parameters.AddWithValue("$uploadedAt", (object?)request.UploadedAt?.ToString("O") ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", request.Id);
         command.ExecuteNonQuery();
     }
@@ -274,12 +312,61 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         return command.ExecuteNonQuery() > 0;
     }
 
+    public bool MarkUploaded(long id, DateTimeOffset uploadedAt)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE OutboundAddressChangeRequest
+            SET UploadedAt = $uploadedAt
+            WHERE Id = $id
+            """;
+        command.Parameters.AddWithValue("$uploadedAt", uploadedAt.ToString("O"));
+        command.Parameters.AddWithValue("$id", id);
+        return command.ExecuteNonQuery() > 0;
+    }
+
     public void Delete(long id)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM OutboundAddressChangeRequest WHERE Id = $id";
+        command.CommandText = """
+            DELETE FROM OutboundAddressChangeAttachment WHERE RequestId = $id;
+            DELETE FROM OutboundAddressChangeRequest WHERE Id = $id;
+            """;
         command.Parameters.AddWithValue("$id", id);
+        command.ExecuteNonQuery();
+    }
+
+    public void RecordDeletedSourceFolderCase(long sourceFolderCaseId)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO DeletedOutboundSourceCase (SourceFolderCaseId, DeletedAt)
+            VALUES ($id, $deletedAt)
+            ON CONFLICT (SourceFolderCaseId) DO UPDATE SET DeletedAt = $deletedAt;
+            """;
+        command.Parameters.AddWithValue("$id", sourceFolderCaseId);
+        command.Parameters.AddWithValue("$deletedAt", DateTimeOffset.UtcNow.ToString("O"));
+        command.ExecuteNonQuery();
+    }
+
+    public bool IsSourceFolderCaseDeleted(long sourceFolderCaseId)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT 1 FROM DeletedOutboundSourceCase WHERE SourceFolderCaseId = $id LIMIT 1";
+        command.Parameters.AddWithValue("$id", sourceFolderCaseId);
+        return command.ExecuteScalar() is not null;
+    }
+
+    public void ClearDeletedSourceFolderCase(long sourceFolderCaseId)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM DeletedOutboundSourceCase WHERE SourceFolderCaseId = $id";
+        command.Parameters.AddWithValue("$id", sourceFolderCaseId);
         command.ExecuteNonQuery();
     }
 
@@ -356,7 +443,10 @@ public sealed class OutboundAddressChangeRequestRepository(string connectionStri
         WorkflowState = !reader.IsDBNull(reader.GetOrdinal("WorkflowState"))
             && Enum.TryParse<FolderState>(reader.GetString(reader.GetOrdinal("WorkflowState")), out var workflowState)
                 ? workflowState
-                : null
+                : null,
+        UploadedAt = !reader.IsDBNull(reader.GetOrdinal("UploadedAt"))
+            ? DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("UploadedAt")))
+            : null
     };
 
     private static OutboundAddressChangeAttachment MapAttachment(SqliteDataReader reader) => new()

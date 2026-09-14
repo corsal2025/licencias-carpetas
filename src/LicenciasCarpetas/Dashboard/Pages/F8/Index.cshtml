@@ -191,21 +191,15 @@
                     <td class="text-cell">
                         @{
                             var currentEstadoActual = string.IsNullOrEmpty(request.EstadoActual) ? "PENDIENTE" : request.EstadoActual;
+                            var badgeClass = LicenciasCarpetas.Dashboard.Pages.F8.IndexModel.EstadoActualBadgeClass(request.EstadoActual);
                         }
-                        <select class="input-inline estado-actual-select @LicenciasCarpetas.Dashboard.Pages.F8.IndexModel.EstadoActualBadgeClass(request.EstadoActual)" form="estadoactual-@request.Id" name="estadoActual">
-                            @foreach (var option in LicenciasCarpetas.F8.Domain.EstadoCatalog.KnownEstadosActuales)
+                        <span class="badge-sla @badgeClass" style="font-weight:700; font-size:var(--font-xs); padding:4px 10px; border-radius:999px; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
+                            @currentEstadoActual
+                            @if (currentEstadoActual == "PENDIENTE")
                             {
-                                <option value="@option" selected="@(option == currentEstadoActual)">@option</option>
+                                <span class="pendiente-alert" title="Pendiente" style="font-size:12px;">⚠</span>
                             }
-                            @if (!LicenciasCarpetas.F8.Domain.EstadoCatalog.KnownEstadosActuales.Contains(currentEstadoActual))
-                            {
-                                <option value="@currentEstadoActual" selected>@currentEstadoActual</option>
-                            }
-                        </select>
-                        <span class="pendiente-alert" title="Pendiente" style="@(string.IsNullOrEmpty(request.EstadoActual) || request.EstadoActual == "PENDIENTE" ? "" : "display:none")">⚠</span>
-                        <form class="toggle-form" id="estadoactual-@request.Id" method="post" asp-page-handler="SetEstadoActual">
-                            <input type="hidden" name="id" value="@request.Id" />
-                        </form>
+                        </span>
                     </td>
                     <td class="text-cell">
                         <input class="input-inline autosave" form="codigof8-@request.Id" name="codigoF8" value="@request.CodigoF8" style="width:@(LicenciasCarpetas.Dashboard.Pages.F8.IndexModel.InputWidthCh(request.CodigoF8, "Código F8", 8, 40))ch" />
@@ -236,12 +230,9 @@
                                 <input type="hidden" name="id" value="@request.Id" />
                                 <button class="btn-primary" type="submit" title="Marcar subida">Subir</button>
                             </form>
-                        }
-                        @if (request.EstadoActual == "CREAR CERTIFICADO")
-                        {
-                            <form method="post" asp-page-handler="EnviarCorreoCertificado">
+                            <form method="post" asp-page-handler="EnviarCorreoCertificado" onsubmit="return confirm('¿Enviar correo para solicitar certificado de @request.NombreCompleto?');">
                                 <input type="hidden" name="id" value="@request.Id" />
-                                <button class="btn-sync" type="submit" title="Enviar correo a Matías solicitando el certificado">✉</button>
+                                <button class="btn-sync" type="submit" title="Crear / Solicitar Certificado">📜 Certificado</button>
                             </form>
                         }
                         <form method="post" asp-page-handler="DeleteCase" onsubmit="return confirm('¿Eliminar esta solicitud?');">

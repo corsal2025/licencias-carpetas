@@ -19,7 +19,9 @@ public enum FolderState
     SeEncuentraEnOficina43,
     NoExisteCarpeta,
     CrearOficio,
-    CrearCertificado
+    CrearCertificado,
+    PendienteF8,
+    PendienteCertificado
 }
 
 public static class FolderStateCatalog
@@ -39,7 +41,9 @@ public static class FolderStateCatalog
         [FolderState.SeEncuentraEnOficina43] = "SE ENCUENTRA EN OF. 43",
         [FolderState.NoExisteCarpeta] = "NO EXISTE CARPETA",
         [FolderState.CrearOficio] = "CREAR OFICIO",
-        [FolderState.CrearCertificado] = "CREAR CERTIFICADO"
+        [FolderState.CrearCertificado] = "CREAR CERTIFICADO",
+        [FolderState.PendienteF8] = "PENDIENTE F8",
+        [FolderState.PendienteCertificado] = "PENDIENTE CERTIFICADO"
     };
 
     /// <summary>Loose-normalized spellings found in the 2026 workbook, mapped to their canonical value.</summary>
@@ -66,7 +70,9 @@ public static class FolderStateCatalog
         [FolderState.SeEncuentraEnOficina43] = "#8E7CC3",
         [FolderState.NoExisteCarpeta] = "#FF0000",
         [FolderState.CrearOficio] = "#C27BA0",
-        [FolderState.CrearCertificado] = "#C27BA0"
+        [FolderState.CrearCertificado] = "#C27BA0",
+        [FolderState.PendienteF8] = "#E69138",
+        [FolderState.PendienteCertificado] = "#E69138"
     };
 
     /// <summary>
@@ -80,7 +86,8 @@ public static class FolderStateCatalog
         FolderState.SeEncuentraEnArchivos,
         FolderState.SeEncuentraEnOficina43,
         FolderState.CrearOficio,
-        FolderState.CambioDomicilio
+        FolderState.PendienteF8,
+        FolderState.PendienteCertificado
     ];
 
     public static IReadOnlyList<FolderState> All { get; } = [.. Displays.Keys];

@@ -3,7 +3,7 @@
 @using LicenciasCarpetas.CambioDomicilio.Domain
 @using LicenciasCarpetas.Domain
 @{
-    ViewData["Title"] = "Solicitar Cambios de Domicilio";
+    ViewData["Title"] = "Solicitudes de Cambio de Domicilio";
     ViewData["BodyClass"] = "viewport-locked";
     var total = Model.Requests.Count;
     var borradores = Model.Requests.Count(r => r.Status == OutboundRequestStatus.Borrador);
@@ -13,7 +13,7 @@
 <div class="card cd-filter-bar" style="padding:10px 16px; margin-bottom:12px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
     <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
         <span style="font-weight:700; font-size:var(--font-lg); color:var(--color-primary); display:flex; align-items:center; gap:6px;">
-            📤 Solicitudes de Cambio de Domicilio a otras Comunas
+            📦 Cambio de Domicilio — Solicitudes a otras Comunas
         </span>
         <span class="badge" style="background:var(--color-sidebar-active-bg); color:var(--color-primary); font-weight:600; padding:4px 8px; border-radius:6px; font-size:var(--font-sm);">
             @total total (@borradores pendientes / @enviadas enviadas)
@@ -26,25 +26,32 @@
     <p class="message-banner">@Model.Message</p>
 }
 
-<div class="card table-card">
-    <table class="cases cases-index cases-f8">
+<div class="card table-card" style="overflow-x:auto;">
+    <table class="cases cases-index cases-f8" style="width:100%; min-width:1150px; border-collapse:collapse;">
         <thead>
             <tr>
                 <th style="width:40px; text-align:center;">#</th>
-                <th class="name-cell">Nombre Completo</th>
-                <th class="rut-cell">RUT</th>
-                <th>Comuna Destino</th>
-                <th>Fecha Ingreso</th>
-                <th>Estado Carpeta</th>
-                <th style="text-align:center; min-width:110px;">Acción</th>
+                <th class="name-cell" style="min-width:170px;">Nombre Completo</th>
+                <th class="rut-cell" style="min-width:115px;">RUT</th>
+                <th style="min-width:120px; text-align:center;">Comuna Destino</th>
+                <th style="min-width:100px; text-align:center;">Fecha Ingreso</th>
+                <th style="min-width:105px; text-align:center;">Fecha Petición</th>
+                <th style="min-width:130px; text-align:center;">Días Restantes</th>
+                <th style="min-width:105px; text-align:center;">Fecha Subida</th>
+                <th style="min-width:145px; text-align:center;">Estado Carpeta</th>
+                <th style="min-width:210px; text-align:center;">Acción</th>
             </tr>
         </thead>
         <tbody>
         @if (Model.Requests.Count == 0)
         {
             <tr>
-                <td colspan="7" style="text-align:center; padding:32px; color:var(--color-text-muted);">
-                    No hay solicitudes registradas. Al marcar un caso como <strong>"CAMBIO DE DOMICILIO SOLICITADO"</strong> en la Agenda o sincronizar, aparecerán aquí automáticamente.
+                <td colspan="10" style="text-align:center; padding:56px 24px; font-weight:400;">
+                    <div style="font-size:32px; margin-bottom:10px;">📭</div>
+                    <div style="font-weight:700; font-size:var(--font-lg); color:var(--color-text); margin-bottom:4px;">Sin solicitudes por ahora</div>
+                    <div style="font-weight:400; font-size:var(--font-sm); color:var(--color-text-muted); max-width:420px; margin:0 auto;">
+                        Al marcar un caso como <strong style="color:var(--color-text);">"CAMBIO DE DOMICILIO"</strong> en la Agenda, aparecerá aquí automáticamente.
+                    </div>
                 </td>
             </tr>
         }
@@ -52,45 +59,155 @@
         @foreach (var item in Model.Requests)
         {
             var rowClass = FolderStateCatalog.CssClass(item.WorkflowState);
+            var daysLeft = Model.GetDaysRemaining(item);
             <tr class="@rowClass">
                 <td style="text-align:center; color:var(--color-text-muted); font-size:var(--font-xs);">@(index++)</td>
-                <td class="name-cell" style="font-weight:600;">@item.FullName</td>
-                <td class="rut-cell">
-                    <input type="text" class="input-inline rut-input" value="@item.Rut" readonly size="14" style="background:transparent; border:none; font-weight:600;" />
+                <td class="name-cell" style="font-weight:600; white-space:nowrap;">@item.FullName</td>
+                <td class="rut-cell" style="white-space:nowrap;">
+                    <input type="text" class="input-inline rut-input" value="@item.Rut" readonly size="13" style="background:transparent; border:none; font-weight:600;" />
                 </td>
-                <td style="font-weight:700; text-transform:uppercase; color:var(--color-primary);">@item.DestinationComuna</td>
-                <td>@item.CreatedAt.LocalDateTime.ToString("dd-MM-yyyy")</td>
-                <td>
-                    <form method="post" asp-page-handler="GuardarEstado" asp-route-id="@item.Id" style="margin:0;">
-                        <select name="workflowState" class="input-inline" style="font-size:var(--font-sm); padding:3px 6px;" onchange="this.form.submit()">
-                            <option value="">—</option>
-                            @foreach (var state in WorkflowStateCatalog.Options)
-                            {
-                                <option value="@state" selected="@(item.WorkflowState == state)">@WorkflowStateCatalog.Display(state)</option>
-                            }
-                        </select>
-                    </form>
+                <td style="font-weight:700; text-transform:uppercase; color:var(--color-primary); white-space:nowrap; text-align:center;">@item.DestinationComuna</td>
+                <td style="text-align:center; white-space:nowrap; font-family:var(--font-mono); font-size:var(--font-sm);">
+                    @item.CreatedAt.LocalDateTime.ToString("dd-MM-yyyy")
+                </td>
+                <td style="text-align:center; white-space:nowrap; font-family:var(--font-mono); font-size:var(--font-sm);">
+                    @(item.SentAt?.LocalDateTime.ToString("dd-MM-yyyy") ?? (item.WorkflowState == FolderState.CambioDomicilioSolicitado ? item.CreatedAt.LocalDateTime.ToString("dd-MM-yyyy") : "—"))
                 </td>
                 <td style="text-align:center; white-space:nowrap;">
-                  <div style="display:inline-flex; gap:6px; align-items:center; justify-content:center;">
-                    @if (item.Status == OutboundRequestStatus.Borrador)
+                    @if (item.UploadedAt.HasValue || item.WorkflowState == FolderState.CambioDomicilioSubidoAConaset)
                     {
-                        <form method="post" asp-page-handler="Solicitar" asp-route-id="@item.Id" style="display:inline;"
-                              onsubmit="return confirm('Esto mandará el correo formal de solicitud a la Municipalidad de ' + '@(item.DestinationComuna?.Replace("'", "\\'"))' + '. ¿Confirmar envío?');">
-                            <button type="submit" class="btn-primary" style="padding:3px 10px; font-size:var(--font-xs);">
-                                ✉️ Solicitar
-                            </button>
-                        </form>
+                        <span class="badge" style="background:#d1fae5; color:#065f46; font-weight:700; font-size:11px; padding:3px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:3px;">
+                            ✓ Subida
+                        </span>
+                    }
+                    else if ((item.SentAt.HasValue || item.WorkflowState == FolderState.CambioDomicilioSolicitado) && daysLeft.HasValue)
+                    {
+                        if (daysLeft.Value > 5)
+                        {
+                            <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:11px; padding:3px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:3px;" title="15 días hábiles legales">
+                                ⏳ @daysLeft.Value d hábiles
+                            </span>
+                        }
+                        else if (daysLeft.Value > 0)
+                        {
+                            <span class="badge" style="background:#fef3c7; color:#92400e; font-weight:700; font-size:11px; padding:3px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:3px;" title="Plazo próximo a vencer">
+                                ⚠️ @daysLeft.Value d hábiles
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background:#fee2e2; color:#991b1b; font-weight:700; font-size:11px; padding:3px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:3px;" title="Plazo vencido">
+                                🚨 Vencido (@daysLeft.Value d)
+                            </span>
+                        }
                     }
                     else
                     {
-                        <span class="badge badge-confirmed" style="font-size:var(--font-xs);" title="Enviada el @(item.SentAt?.LocalDateTime.ToString("dd-MM-yyyy HH:mm") ?? "—")">
-                            ✓ Enviada
-                        </span>
+                        <span style="color:var(--color-text-muted);">—</span>
+                    }
+                </td>
+                <td style="text-align:center; white-space:nowrap; font-family:var(--font-mono); font-size:var(--font-sm);">
+                    @(item.UploadedAt?.LocalDateTime.ToString("dd-MM-yyyy") ?? "—")
+                </td>
+                <td style="text-align:center; white-space:nowrap;">
+                    @if (item.WorkflowState is { } state)
+                    {
+                        if (state == FolderState.CambioDomicilioSubidoAConaset)
+                        {
+                            <span class="badge" style="background:#0284c7; color:#ffffff !important; font-weight:800; font-size:11px; padding:5px 12px; border-radius:6px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.3); display:inline-flex; align-items:center; gap:4px; text-transform:uppercase;">
+                                ✓ CAMBIO DE DOMICILIO SUBIDO A CONASET
+                            </span>
+                        }
+                        else if (state == FolderState.CambioDomicilioSolicitado)
+                        {
+                            <span class="badge" style="background:#1d4ed8; color:#ffffff !important; font-weight:800; font-size:11px; padding:5px 12px; border-radius:6px; letter-spacing:0.4px; box-shadow:0 1px 2px rgba(0,0,0,0.2); display:inline-flex; align-items:center; gap:4px; text-transform:uppercase;">
+                                ✉️ CARPETA SOLICITADA
+                            </span>
+                        }
+                        else if (state == FolderState.SubidaConF8 || state == FolderState.PendienteF8)
+                        {
+                            <span class="badge" style="background:#6366f1; color:#ffffff !important; font-weight:800; font-size:11px; padding:5px 12px; border-radius:6px; letter-spacing:0.4px; box-shadow:0 1px 2px rgba(0,0,0,0.2); display:inline-flex; align-items:center; gap:4px; text-transform:uppercase;">
+                                ⚡ SUBIR CON F8
+                            </span>
+                        }
+                        else if (state == FolderState.SubidaConOficio || state == FolderState.PendienteCertificado)
+                        {
+                            <span class="badge" style="background:#d97706; color:#ffffff !important; font-weight:800; font-size:11px; padding:5px 12px; border-radius:6px; letter-spacing:0.4px; box-shadow:0 1px 2px rgba(0,0,0,0.2); display:inline-flex; align-items:center; gap:4px; text-transform:uppercase;">
+                                📜 PEDIR CERTIFICADO
+                            </span>
+                        }
+                        else
+                        {
+                            var text = WorkflowStateCatalog.Display(state);
+                            <span class="badge" style="background:#0f172a; color:#ffffff !important; font-weight:700; font-size:11px; padding:5px 12px; border-radius:6px; display:inline-block; text-transform:uppercase;">
+                                @text
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <span style="color:var(--color-text-muted); font-weight:600;">—</span>
+                    }
+                </td>
+                <td style="text-align:center; white-space:nowrap;">
+                  @{
+                    var isSolicitada = item.SentAt.HasValue ||
+                                       item.Status == OutboundRequestStatus.Enviada ||
+                                       item.WorkflowState == FolderState.CambioDomicilioSolicitado ||
+                                       item.WorkflowState == FolderState.CambioDomicilioSubidoAConaset ||
+                                       item.WorkflowState == FolderState.PendienteF8 ||
+                                       item.WorkflowState == FolderState.PendienteCertificado;
+                  }
+                  <div style="display:inline-flex; gap:5px; align-items:center; justify-content:center; flex-wrap:nowrap;">
+                    <form method="post" asp-page-handler="Solicitar" asp-route-id="@item.Id" style="display:inline;"
+                          onsubmit="return confirm('¿Solicitar carpeta a la Municipalidad de ' + '@(item.DestinationComuna?.Replace("'", "\'"))' + '?');">
+                        <button type="submit" class="btn-cd-action solicitar @(isSolicitada ? "solicitada" : "")"
+                                style="@(isSolicitada ? "background:#16a34a !important;" : "")"
+                                title="@(isSolicitada ? $"Carpeta ya solicitada a {item.DestinationComuna}" : "Pedir carpeta a la otra comuna")">
+                            @(isSolicitada ? "✓ Solicitada" : "✉️ Solicitar")
+                        </button>
+                    </form>
+                    @if (!isSolicitada)
+                    {
+                        <button type="button" class="btn-cd-action subida disabled" disabled="disabled"
+                                style="opacity:0.35 !important; cursor:not-allowed !important;"
+                                title="Debe solicitar primero la carpeta a la otra comuna antes de registrar subida">
+                            ⬆️ Subida
+                        </button>
+                        <button type="button" class="btn-cd-action certificado disabled" disabled="disabled"
+                                style="opacity:0.35 !important; cursor:not-allowed !important;"
+                                title="Debe solicitar primero la carpeta a la otra comuna antes de derivar a Certificados">
+                            📜 Certificado
+                        </button>
+                        <button type="button" class="btn-cd-action f8 disabled" disabled="disabled"
+                                style="opacity:0.35 !important; cursor:not-allowed !important;"
+                                title="Debe solicitar primero la carpeta a la otra comuna antes de traspasar a F8">
+                            ⚡ F8
+                        </button>
+                    }
+                    else
+                    {
+                        <form method="post" asp-page-handler="Subida" asp-route-id="@item.Id" style="display:inline;"
+                              onsubmit="return confirm('¿Registrar fecha de subida de carpeta a Conaset para @(item.FullName?.Replace("'", "\'"))?');">
+                            <button type="submit" class="btn-cd-action subida" title="Registrar subida a Conaset">
+                                ⬆️ Subida
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="Certificado" asp-route-id="@item.Id" style="display:inline;">
+                            <button type="submit" class="btn-cd-action certificado" title="Marcar con Certificado">
+                                📜 Certificado
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="TransferToF8" asp-route-id="@item.Id" style="display:inline;"
+                              onsubmit="return confirm('¿Traspasar automáticamente los datos de @(item.FullName?.Replace("'", "\'")) a la sección F8 Urgentes?');">
+                            <button type="submit" class="btn-cd-action f8" title="Traspasar datos a F8 Urgentes">
+                                ⚡ F8
+                            </button>
+                        </form>
                     }
                     <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" style="display:inline;"
                           onsubmit="return confirm('¿Eliminar esta solicitud de cambio de domicilio?');">
-                        <button type="submit" class="btn-danger" style="padding:3px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" title="Eliminar solicitud">🗑️</button>
+                        <button type="submit" class="btn-cd-action delete" title="Eliminar solicitud">🗑️</button>
                     </form>
                   </div>
                 </td>

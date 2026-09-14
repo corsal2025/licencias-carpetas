@@ -1,73 +1,70 @@
-:root {
-    --color-primary: #0b2545;
-    --color-primary-dark: #07172c;
-    --color-primary-light: #133e63;
-    --color-accent: #1d4ed8;
-    --color-accent-hover: #1e40af;
-    --color-gold: #c59b27;
-    --color-gold-hover: #b45309;
-    --color-bg: #f1f5f9;
+﻿:root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', Consolas, monospace;
+
+    --color-primary: #0b3d68;
+    --color-primary-dark: #071e33;
+    --color-primary-light: #0284c7;
+    --color-accent: #0284c7;
+    --color-accent-hover: #0369a1;
+    --color-gold: #b45309;
+    --color-gold-hover: #92400e;
+    --color-bg: #f8fafc;
     --color-surface: #ffffff;
-    --color-border: #cbd5e1;
-    --color-border-subtle: #e2e8f0;
+    --color-border: #e2e8f0;
+    --color-border-subtle: #f1f5f9;
     --color-text: #0f172a;
     --color-text-muted: #64748b;
-    --color-sidebar-bg: #0b2545;
-    --color-sidebar-border: rgba(255, 255, 255, 0.12);
-    --color-sidebar-text: #e2e8f0;
-    --color-sidebar-text-muted: #94a3b8;
-    --color-sidebar-active-bg: #1d4ed8;
+    --color-sidebar-bg: #071e33;
+    --color-sidebar-border: rgba(255, 255, 255, 0.08);
+    --color-sidebar-text: #f1f5f9;
+    --color-sidebar-text-muted: #8ea8c3;
+    --color-sidebar-active-bg: #0284c7;
     --color-sidebar-active-text: #ffffff;
-    --color-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
-    --sidebar-width: 248px;
-    --color-pending: #d97706;
-    --color-pending-bg: #fffbeb;
+    --color-sidebar-hover-bg: rgba(255, 255, 255, 0.07);
+    --sidebar-width: 254px;
+    --color-pending: #b45309;
+    --color-pending-bg: #fef3c7;
     --color-pending-border: #fde68a;
-    --color-uploaded: #059669;
-    --color-uploaded-bg: #ecfdf5;
-    --color-uploaded-border: #a7f3d0;
-    --color-confirmed: #0d9488;
-    --color-confirmed-bg: #f0fdfa;
-    --color-review: #e11d48;
-    --color-review-bg: #fff1f2;
-    --color-review-border: #fecdd3;
+    --color-uploaded: #15803d;
+    --color-uploaded-bg: #dcfce7;
+    --color-uploaded-border: #bbf7d0;
+    --color-confirmed: #0369a1;
+    --color-confirmed-bg: #e0f2fe;
+    --color-review: #b91c1c;
+    --color-review-bg: #fee2e2;
+    --color-review-border: #fecaca;
     --color-selected-bg: #e0f2fe;
-    --radius: 8px;
-    --radius-sm: 6px;
-    --radius-lg: 12px;
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
     --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
-    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -4px rgba(15, 23, 42, 0.06);
 
     /* Type scale */
-    --font-xs: 0.65rem;
-    --font-sm: 0.7rem;
-    --font-base: 0.75rem;
-    --font-md: 0.8rem;
-    --font-lg: 0.9rem;
-    --font-xl: 1.1rem;
-    --font-2xl: 1.35rem;
+    --font-xs: 0.68rem;
+    --font-sm: 0.76rem;
+    --font-base: 0.82rem;
+    --font-md: 0.88rem;
+    --font-lg: 0.96rem;
+    --font-xl: 1.15rem;
+    --font-2xl: 1.4rem;
 }
 
 * { box-sizing: border-box; }
 
-/* Nothing on any page is meant to need page-level horizontal scroll — the cases table has its
-   own internal overflow-x:auto (.table-card) precisely so its scrollbar stays reachable without
-   scrolling the whole page first. Without this, a wide table with nothing else constraining it
-   makes <html> itself grow past the viewport width instead of clipping inside .table-card, so
-   the *page* scrolls right instead of the table, and scroll-preserve.js (which only restores the
-   table's own scrollLeft, not window.scrollX) can't bring it back — read by the operator as the
-   whole screen "jumping to the left" on every reload. */
 html {
     overflow-x: hidden;
 }
 
 body {
     margin: 0;
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
     background: var(--color-bg);
     color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
 }
 
 /* ── Sidebar (reemplaza al header horizontal) ────────────────────────────────────────────────
@@ -92,7 +89,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background: var(--color-sidebar-bg);
+    background: linear-gradient(180deg, var(--color-sidebar-bg) 0%, var(--color-primary-dark) 100%);
     border-right: 1px solid var(--color-sidebar-border);
     padding: 16px 14px;
     overflow-y: auto;
@@ -201,6 +198,17 @@ body {
     border-left: 2px solid rgba(255, 255, 255, 0.1);
 }
 
+.sidebar-icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .sidebar-link {
     display: flex;
     align-items: center;
@@ -229,10 +237,10 @@ body {
 .sidebar-link.active,
 .sidebar-link.active:link,
 .sidebar-link.active:visited {
-    background: #2563eb !important;
+    background: #0284c7 !important;
     color: #ffffff !important;
     font-weight: 600;
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45) !important;
 }
 
 .sidebar-search-btn {
@@ -430,18 +438,18 @@ a.btn-primary,
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: #1d4ed8 !important;
-    background-color: #1d4ed8 !important;
+    background: #3b6fe0 !important;
+    background-color: #3b6fe0 !important;
     color: #ffffff !important;
-    border: 1px solid #1e40af !important;
-    border-radius: 8px !important;
-    padding: 6px 14px !important;
+    border: 1px solid #3b6fe0 !important;
+    border-radius: 999px !important;
+    padding: 7px 16px !important;
     font-size: var(--font-sm) !important;
     font-weight: 700 !important;
     line-height: 1.2;
     cursor: pointer;
     text-decoration: none;
-    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2);
+    box-shadow: 0 4px 12px -4px rgba(59, 111, 224, 0.5);
     transition: background-color 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
     white-space: nowrap;
 }
@@ -452,11 +460,11 @@ a.btn-primary:hover,
 .nav-sync:hover,
 .btn-sync:hover,
 .cd-filter-bar button.nav-sync:hover {
-    background: #1e40af !important;
-    background-color: #1e40af !important;
+    background: #2f5bc4 !important;
+    background-color: #2f5bc4 !important;
     color: #ffffff !important;
-    border-color: #1e3a8a !important;
-    box-shadow: 0 4px 6px -1px rgba(29, 78, 216, 0.3);
+    border-color: #2f5bc4 !important;
+    box-shadow: 0 6px 16px -6px rgba(59, 111, 224, 0.6);
 }
 
 .btn-primary:active,
@@ -1000,6 +1008,17 @@ table.cases-index td select {
     text-align: center;
     width: auto;
     min-width: 0;
+    field-sizing: content;
+    box-sizing: border-box;
+}
+
+table.cases-index .input-comuna {
+    width: 170px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    margin: 0 auto !important;
+    display: block !important;
 }
 
 /* Each input is as wide as its own content (the size attribute is set per row in the page), and
@@ -1173,32 +1192,32 @@ table.cases-index .marked-checkbox {
 table.cases-index tbody tr.row-selected,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked),
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) {
-    background: #dbeafe !important;
+    background: var(--color-selected-bg) !important;
 }
 
 table.cases-index tbody tr.row-selected:hover,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover,
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover {
-    background: #bfdbfe !important;
+    background: #d3e0fa !important;
 }
 
 /* Same live-update reasoning as the markedValue rule above, for the Pendiente Carpeta checkbox. */
 table.cases-index tbody tr:has(input[name="pendienteCarpetaValue"]:checked) {
-    background: #fff3b0 !important;
+    background: #fde8b8 !important;
 }
 
 table.cases-index tbody tr:has(input[name="pendienteCarpetaValue"]:checked):hover {
-    background: #ffe98a !important;
+    background: #fbdb94 !important;
 }
 
 /* Confirmed (folder already uploaded + comuna already notified) is the most important
    status to spot at a glance, so it wins over both the zebra stripe and the "marked" tint. */
 table.cases-index tbody tr.row-confirmed {
-    background: #b8d9f0 !important;
+    background: #cfe0fb !important;
 }
 
 table.cases-index tbody tr.row-confirmed:hover {
-    background: #a0c8ea !important;
+    background: #b9d2f5 !important;
 }
 
 /* Needs-review (incomplete/unreliable extracted data) also needs to win over the zebra
@@ -1209,7 +1228,7 @@ table.cases-index tbody tr.row-needs-review {
 }
 
 table.cases-index tbody tr.row-needs-review:hover {
-    background: #f6d0d8 !important;
+    background: #f8d6d5 !important;
 }
 
 /* Pendiente Carpeta and F8 pending backgrounds are driven ONLY by the live :has() rules above/below
@@ -1220,11 +1239,11 @@ table.cases-index tbody tr.row-needs-review:hover {
    :has() alone is correct in both directions since it always reflects the checkbox's current
    state, checked or not. */
 table.cases-index tbody tr:has(input[name="folderNotFoundValue"]:checked) {
-    background: #8c8c8c !important;
+    background: #9aa1ad !important;
 }
 
 table.cases-index tbody tr:has(input[name="folderNotFoundValue"]:checked):hover {
-    background: #7c7c7c !important;
+    background: #838a97 !important;
 }
 
 /* Reserved padding-right applies to EVERY row in this column, checked or not — not just the ones
@@ -1440,8 +1459,8 @@ button.btn-outline-danger:hover { background: var(--color-review-bg); }
 
 .login-card {
     background: var(--color-surface);
-    border-radius: 10px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 50px -18px rgba(23, 59, 107, 0.35);
     padding: 32px 36px;
     width: 320px;
 }
@@ -1461,11 +1480,12 @@ button.btn-outline-danger:hover { background: var(--color-review-bg); }
 .login-card input {
     display: block;
     width: 100%;
-    padding: 9px 10px;
+    padding: 11px 12px;
     margin-bottom: 12px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
     font-size: var(--font-lg);
+    background: var(--color-bg);
 }
 
 .login-card .password-field {
@@ -1499,15 +1519,17 @@ button.btn-outline-danger:hover { background: var(--color-review-bg); }
 
 .login-card button {
     width: 100%;
-    padding: 9px;
-    background: var(--color-primary);
+    padding: 11px;
+    background: var(--color-accent);
     color: #fff;
     border: none;
-    border-radius: var(--radius);
+    border-radius: var(--radius-sm);
     font-size: var(--font-lg);
+    font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 6px 16px -6px rgba(59, 111, 224, 0.5);
 }
-.login-card button:hover { background: var(--color-primary-dark); }
+.login-card button:hover { background: var(--color-accent-hover); }
 
 .login-card .error {
     color: var(--color-review);
@@ -1665,7 +1687,7 @@ table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-citacion,
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-nombre,
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-rut {
-    background: #dbeafe !important;
+    background: var(--color-selected-bg) !important;
 }
 
 table.cases-index tbody tr.row-selected:hover td.col-sticky-marcar,
@@ -1680,7 +1702,7 @@ table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-citacion,
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-nombre,
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-rut {
-    background: #bfdbfe !important;
+    background: #d3e0fa !important;
 }
 
 table.cases-index tbody tr.row-needs-review td.col-sticky-marcar,
@@ -1694,21 +1716,21 @@ table.cases-index tbody tr.row-needs-review:hover td.col-sticky-marcar,
 table.cases-index tbody tr.row-needs-review:hover td.col-sticky-citacion,
 table.cases-index tbody tr.row-needs-review:hover td.col-sticky-nombre,
 table.cases-index tbody tr.row-needs-review:hover td.col-sticky-rut {
-    background: #f6d0d8 !important;
+    background: #f8d6d5 !important;
 }
 
 table.cases-index tbody tr.row-alertada td.col-sticky-marcar,
 table.cases-index tbody tr.row-alertada td.col-sticky-citacion,
 table.cases-index tbody tr.row-alertada td.col-sticky-nombre,
 table.cases-index tbody tr.row-alertada td.col-sticky-rut {
-    background: #fee2e2 !important;
+    background: var(--color-review-bg) !important;
 }
 
 table.cases-index tbody tr.row-revisar td.col-sticky-marcar,
 table.cases-index tbody tr.row-revisar td.col-sticky-citacion,
 table.cases-index tbody tr.row-revisar td.col-sticky-nombre,
 table.cases-index tbody tr.row-revisar td.col-sticky-rut {
-    background: #fef3c7 !important;
+    background: var(--color-pending-bg) !important;
 }
 
 /* ── Tablas anchas fuera de Casos (Estadísticas) ─────────────────────────────────────────────
@@ -1959,17 +1981,26 @@ table.cases-index tbody tr.estado-subidaconoficio td { background: #FFE599 !impo
 
 /* ── Feedback de Autoguardado Instantáneo ───────────────────────────────────── */
 table.cases-index tbody tr.fila-guardando td {
-    background-color: rgba(59, 130, 246, 0.18) !important;
-    transition: background-color 0.2s ease;
+    opacity: 0.88;
+    transition: opacity 0.2s ease;
 }
 table.cases-index tbody tr.fila-guardada-ok td {
-    background-color: rgba(34, 197, 94, 0.3) !important;
-    transition: background-color 0.3s ease;
+    box-shadow: inset 0 -2px 0 0 #16a34a, inset 0 2px 0 0 #16a34a;
+    transition: box-shadow 0.3s ease;
 }
 table.cases-index tbody tr.fila-sin-guardar td {
     border-bottom: 2px dashed #f59e0b;
 }
-table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td { background: #00FFFF !important; }
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td { 
+    background: #cffafe !important; 
+    color: #0c4a6e !important; 
+}
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td input,
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td .name-cell,
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td .rut-cell {
+    color: #0c4a6e !important;
+    font-weight: 700 !important;
+}
 table.cases-index tbody tr.estado-cambiodomiciliosubidoconcorreo td { background: #D0E0E3 !important; }
 table.cases-index tbody tr.estado-cambiodomiciliosolicitado td { background: #9FC5E8 !important; }
 table.cases-index tbody tr.estado-cambiodomicilio td { background: #3D85C6 !important; }
@@ -1989,13 +2020,13 @@ table.cases-index tbody tr:hover td {
 table.cases-index tbody tr.row-selected td,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked) td,
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td {
-    background: #dbeafe !important;
+    background: var(--color-selected-bg) !important;
 }
 
 table.cases-index tbody tr.row-selected:hover td,
 table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td,
 table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td {
-    background: #bfdbfe !important;
+    background: #d3e0fa !important;
 }
 
 table.cases-index tbody tr.row-needs-review td {
@@ -2432,15 +2463,15 @@ table.cases-index input:focus::placeholder {
    cada medio segundo — una animación @keyframes no sirve porque !important dentro de un keyframe
    se ignora, y sin !important pierde contra el fondo blanco fijo de los input/select. */
 body.idoneidad-flash table.cases-index tbody tr.row-alertada td {
-    background: #ff4d4d !important;
+    background: #e85c5c !important;
 }
 
 table.cases-index tbody tr.row-revisar td {
-    background: #fff3b0 !important;
+    background: #fde8b8 !important;
 }
 
 body.idoneidad-flash table.cases-index tbody tr.row-revisar td {
-    background: #ffe14d !important;
+    background: #f0b429 !important;
 }
 
 /* ── Utility font-size classes ───────────────────────────────────────────────────────────────
@@ -2599,24 +2630,24 @@ body.idoneidad-flash table.cases-index tbody tr.row-revisar td {
     padding: 1px 6px;
     border-radius: 10px;
     font-size: var(--font-xs);
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
     line-height: 1.2;
 }
 .badge-sla-overdue {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: 1px solid #fca5a5;
+    background: var(--color-review-bg);
+    color: var(--color-review);
+    border: 1px solid var(--color-review-border);
 }
 .badge-sla-warning {
-    background: #fef3c7;
-    color: #b45309;
-    border: 1px solid #fcd34d;
+    background: var(--color-pending-bg);
+    color: var(--color-pending);
+    border: 1px solid var(--color-pending-border);
 }
 .badge-sla-normal {
-    background: #dcfce7;
-    color: #15803d;
-    border: 1px solid #86efac;
+    background: var(--color-uploaded-bg);
+    color: var(--color-uploaded);
+    border: 1px solid var(--color-uploaded-border);
 }
 .btn-audit-log {
     background: #ffffff;
@@ -2864,3 +2895,193 @@ body.idoneidad-flash table.cases-index tbody tr.row-revisar td {
     border-left: 4px solid var(--color-primary) !important;
 }
 
+
+/* ── Modern Visual Identity Polish ────────────────────────────────────────────── */
+table.cases-index td.rut-cell,
+table.cases-index td.rut-cell .rut-input,
+.rut-cell {
+    font-family: var(--font-mono) !important;
+    font-weight: 600;
+}
+
+.card {
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+}
+
+.kpi-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.badge {
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.btn-primary, .btn-danger, .btn-secondary, .btn-action {
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+select, input[type="text"], input[type="search"], input[type="password"] {
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+}
+
+table.cases th {
+    background: #edf2f7;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+/* ── Screenshot-Matching Sidebar & Hub Card Fixes ───────────────────────── */
+.sidebar-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #8ea8c3;
+    padding: 14px 10px 6px;
+}
+
+.sidebar-emoji {
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+}
+
+.app-sidebar {
+    background: #071e33 !important;
+}
+
+.sidebar-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 9px 12px !important;
+    color: #8ea8c3 !important;
+    text-decoration: none !important;
+    border-radius: 8px !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    margin-bottom: 2px !important;
+    transition: all 0.15s ease !important;
+}
+
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+.sidebar-link.active,
+.sidebar-link.active:link,
+.sidebar-link.active:visited {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45) !important;
+}
+
+/* Fix Hub Cards bottom cutoff and spacing */
+.hub-card {
+    min-height: 160px !important;
+    padding: 20px 22px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+}
+
+.hub-card p {
+    margin-bottom: 12px !important;
+}
+
+.hub-grid {
+    margin-bottom: 40px !important;
+    padding-bottom: 20px !important;
+}
+
+/* Botones de acción unificados en tabla de Cambio de Domicilio / Solicitar */
+.btn-cd-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    height: 27px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    border: none !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    text-decoration: none !important;
+    line-height: 1 !important;
+    transition: opacity 0.15s ease, transform 0.1s ease !important;
+}
+
+.btn-cd-action:hover {
+    opacity: 0.9 !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-cd-action:active {
+    transform: translateY(0) !important;
+}
+
+.btn-cd-action.solicitar {
+    background: #2563eb !important;
+}
+
+.btn-cd-action.solicitar:hover {
+    background: #1d4ed8 !important;
+}
+
+.btn-cd-action.solicitar.solicitada {
+    background: #16a34a !important;
+}
+
+.btn-cd-action.solicitar.solicitada:hover {
+    background: #15803d !important;
+}
+
+.btn-cd-action:disabled,
+.btn-cd-action.disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    filter: grayscale(0.7) !important;
+}
+
+.btn-cd-action.subida {
+    background: #059669 !important;
+}
+
+.btn-cd-action.certificado {
+    background: #d97706 !important;
+}
+
+.btn-cd-action.f8 {
+    background: #6366f1 !important;
+}
+
+.btn-cd-action.delete {
+    background: transparent !important;
+    border: 1px solid #ef4444 !important;
+    color: #ef4444 !important;
+    padding: 0 7px !important;
+}
+
+.btn-cd-action.delete:hover {
+    background: #fef2f2 !important;
+}

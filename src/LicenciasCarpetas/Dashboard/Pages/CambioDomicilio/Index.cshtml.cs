@@ -1,3 +1,4 @@
+﻿using LicenciasCarpetas.Persistence;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +19,15 @@ public class IndexModel(
     AddressChangeRoutingService routingService,
     CambioDomicilioSyncService routerWorker,
     CambioDomicilioOptions options,
-    ILogger<IndexModel> logger) : PageModel
+    ILogger<IndexModel> logger,
+    IOutboundAddressChangeRequestRepository? outboundRequests = null,
+    IFolderCaseRepository? cases = null) : PageModel
 {
     public IReadOnlyList<PersonRequest> Cases { get; private set; } = [];
     public IReadOnlyList<ComunaRoutingEntry> ComunaOptions { get; private set; } = [];
     public int NeedsReviewCount { get; private set; }
     public int DiscardedCount { get; private set; }
+    public int OutboundCount { get; private set; }
     public string? StatusFilter { get; set; }
     public bool OnlyNeedsReview { get; set; }
     public string? SearchQuery { get; set; }
@@ -231,7 +235,21 @@ public class IndexModel(
     {
         // Tombstone the source email BEFORE deleting the row (need it while the row still
         // exists) so a future sync cycle never recreates this case from the same email.
-        var sourceMessageId = repository.FindById(id)?.SourceMessageId;
+        var request = repository.FindById(id);
+        var sourceMessageId = request?.SourceMessageId;
+
+        if (sourceMessageId is not null && sourceMessageId.StartsWith("gestion-") && long.TryParse(sourceMessageId["gestion-".Length..], out var caseId))
+        {
+            var folderCase = cases?.FindById(caseId);
+            if (folderCase is not null)
+            {
+                cases?.UpdateEditableFields(folderCase.Id, folderCase.FullName, folderCase.Rut, folderCase.CitationDate,
+                    folderCase.FolderUploadedDate, folderCase.LastFolderDate, folderCase.LastFolderComuna,
+                    folderState: null, folderCase.FinalDecision, folderCase.MoralIdoneity,
+                    folderCase.AttentionNote, folderCase.NeedsReview, cambioDomicilioComuna: null);
+            }
+        }
+
         repository.Delete(id);
         if (sourceMessageId is not null)
         {
@@ -372,11 +390,13 @@ public class IndexModel(
         return DeadlineCalculator.BusinessDaysRemaining(DateOnly.FromDateTime(DateTime.Today), deadline);
     }
 
+
     private void Load()
     {
         var everything = repository.GetAll();
         NeedsReviewCount = everything.Count(c => c.NeedsReview);
         DiscardedCount = discardedRepository.GetAll().Count;
+        OutboundCount = outboundRequests?.GetAll().Count ?? 0;
         ComunaOptions = routingService.LoadDirectory()
             .DistinctBy(c => c.Comuna, StringComparer.OrdinalIgnoreCase)
             .OrderBy(c => c.Comuna)
