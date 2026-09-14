@@ -13,7 +13,8 @@ namespace LicenciasCarpetas.Dashboard.Pages.F8;
 
 [Authorize(Policy = "F8Access")]
 public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender emailSender,
-    IFolderCaseRepository cases, F8Options? options = null) : PageModel
+    IFolderCaseRepository cases, F8Options? options = null,
+    LicenciasCarpetas.CambioDomicilio.Data.IOutboundAddressChangeRequestRepository? outboundRepo = null) : PageModel
 {
     /// <summary>Solo los valores de EstadoCatalog.KnownEstados que tienen un equivalente directo y
     /// no ambiguo en FolderState — "PENDIENTE", "CARPETA SUBIDA" y "DENEGADA" no tienen una
@@ -72,6 +73,44 @@ public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender
             "Certificados" => allMatching.Where(r => r.EstadoActual == EstadoActualCertificado).ToList(),
             _ => allMatching,
         };
+
+        // Auto-sincronizar Código F8 y Fecha penúltima desde Gestión de Licencias si están vacíos
+        foreach (var req in filtered)
+        {
+            if (string.IsNullOrWhiteSpace(req.CodigoF8) || req.FechaPenultimaCarpeta is null)
+            {
+                if (!string.IsNullOrWhiteSpace(req.Rut))
+                {
+                    var normalizedRut = RutValidator.NormalizeAndValidate(req.Rut) ?? req.Rut.Trim();
+                    var match = cases.QueryAll(new CaseFilter { Search = normalizedRut })
+                        .FirstOrDefault(c => (RutValidator.NormalizeAndValidate(c.Rut) ?? c.Rut) == normalizedRut);
+
+                    if (match is not null)
+                    {
+                        var changed = false;
+                        if (string.IsNullOrWhiteSpace(req.CodigoF8) && !string.IsNullOrWhiteSpace(match.CodigoF8))
+                        {
+                            req.CodigoF8 = match.CodigoF8;
+                            changed = true;
+                        }
+                        if (req.FechaPenultimaCarpeta is null && match.PenultimateFolderDate is not null)
+                        {
+                            req.FechaPenultimaCarpeta = match.PenultimateFolderDate;
+                            changed = true;
+                        }
+                        if (req.FechaUltimaCarpeta is null && match.LastFolderDate is not null)
+                        {
+                            req.FechaUltimaCarpeta = match.LastFolderDate;
+                            changed = true;
+                        }
+                        if (changed)
+                        {
+                            repository.Update(req);
+                        }
+                    }
+                }
+            }
+        }
 
         // Completed cases (SUBIDA A CONASET) drop to the bottom, everything still in progress
         // stays on top in the order it arrived — so newly loaded/pending cases are always the
@@ -186,6 +225,7 @@ public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender
                     repository.SetPendienteCarpeta(id, false);
                     request.PendienteCarpeta = false;
                 }
+                SyncSubidaToOutbound(request);
             }
             else if (normalized != EstadoActualSubida && request.FechaDeSubida is not null)
             {
@@ -223,7 +263,7 @@ public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender
         return RedirectToPage();
     }
 
-    public IActionResult OnPostMarkUploaded(long id)
+    public IActionResult OnPostMarkUploaded(long id, string? tab = null)
     {
         var request = repository.FindById(id);
         if (request is not null)
@@ -242,8 +282,9 @@ public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender
             {
                 repository.SetPendienteCarpeta(id, false);
             }
+            SyncSubidaToOutbound(request);
         }
-        return RedirectToPage();
+        return RedirectToPage(new { tab = tab ?? Tab ?? "Todos" });
     }
 
     public async Task<IActionResult> OnPostEnviarCorreoCertificado(long id)
@@ -455,6 +496,26 @@ public sealed class IndexModel(IUrgentRequestRepository repository, IEmailSender
             }
         }
         return RedirectToPage();
+    }
+
+    private void SyncSubidaToOutbound(UrgentRequest request)
+    {
+        if (outboundRepo is null || string.IsNullOrWhiteSpace(request.Rut))
+        {
+            return;
+        }
+
+        var normalizedRut = LicenciasCarpetas.Domain.RutValidator.NormalizeAndValidate(request.Rut) ?? request.Rut.Trim();
+        var matches = outboundRepo.GetAll().Where(r =>
+            (LicenciasCarpetas.Domain.RutValidator.NormalizeAndValidate(r.Rut) ?? r.Rut.Trim()) == normalizedRut
+            && r.WorkflowState != FolderState.CambioDomicilioSubidoAConaset).ToList();
+
+        foreach (var outbound in matches)
+        {
+            outbound.WorkflowState = FolderState.CambioDomicilioSubidoAConaset;
+            outbound.UploadedAt = DateTimeOffset.UtcNow;
+            outboundRepo.Update(outbound);
+        }
     }
 
 }

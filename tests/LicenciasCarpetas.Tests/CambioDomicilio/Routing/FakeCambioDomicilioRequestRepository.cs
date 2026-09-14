@@ -174,5 +174,7 @@ public sealed class FakeCambioDomicilioRequestRepository : ICambioDomicilioReque
 
     public bool IsSourceMessageDeleted(string sourceMessageId) => _deletedSourceMessages.Contains(sourceMessageId);
 
+    public void ClearDeletedSourceMessage(string sourceMessageId) => _deletedSourceMessages.Remove(sourceMessageId);
+
     public IReadOnlyList<PersonRequest> GetAll() => _requests;
 }

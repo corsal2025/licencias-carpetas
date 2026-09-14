@@ -1,10 +1,23 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] — Gestión de Licencias</title>
     <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'" />
+    <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "source": "list",
+          "urls": ["/Inicio", "/Index", "/CambioDomicilio/Index", "/F8/Index", "/Estadisticas"]
+        }
+      ]
+    }
+    </script>
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
     @* Cada módulo trae su propio hoja de estilos, cargada solo en sus páginas — comparten
        las mismas variables de color (mismo autor, misma paleta) así que no chocan si una
@@ -41,68 +54,90 @@
                 // deja entrar a un rol por URL directa, tampoco le muestra el link.
                 var puedeVerReportesYReferencia = User.IsInRole("Administrador") || User.IsInRole("Jefatura") || User.IsInRole("Coordinador");
                 var puedeImportar = User.IsInRole("Administrador") || User.IsInRole("Jefatura");
-                var puedeCambioDomicilio = User.HasClaim("mod:cambio-domicilio", "true");
-                var puedeF8 = User.HasClaim("mod:f8-urgentes", "true");
+                var puedeCambioDomicilio = User.IsInRole("Administrador") || User.IsInRole("Jefatura") || User.HasClaim("mod:cambio-domicilio", "true");
+                var puedeF8 = User.IsInRole("Administrador") || User.IsInRole("Jefatura") || User.HasClaim("mod:f8-urgentes", "true");
+                var puedeVerEstadisticasDelModuloActivo = enCambioDomicilio || enF8 || puedeVerReportesYReferencia;
             }
             <nav class="sidebar-nav">
-                <a asp-page="/Inicio" class="sidebar-link @(Context.Request.Path == "/Inicio" ? "active" : "")">🏠 Panel de Control</a>
-                <button type="button" class="sidebar-search-btn" onclick="openGlobalSearch()">
-                    <span class="search-label">🔍 Buscar</span>
+                <button type="button" class="sidebar-search-btn" onclick="openGlobalSearch()" style="margin-bottom: 8px;">
+                    <span class="search-label"><svg class="sidebar-icon" viewBox="0 0 24 24" style="width:14px;height:14px;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Buscar...</span>
                     <kbd>Ctrl+K</kbd>
                 </button>
 
-                <details open="@(enGestionLicencias || enCambioDomicilio || enF8 ? "open" : null)" class="sidebar-section sidebar-modules-collapsible">
-                    <summary class="sidebar-summary">📦 Módulos</summary>
-                    <div class="sidebar-modules-list">
-                        <a asp-page="/Index" class="sidebar-link @(enGestionLicencias ? "active" : "")">🪪 Gestión de Licencias</a>
-                        @* Cambio de Domicilio no es un link plano — tiene dos flujos (recibir pedidos
-                           de otras comunas / pedirle a otras comunas), así que el switcher de módulos
-                           muestra directamente sus dos entradas en vez de un solo link genérico. *@
-                        @if (puedeCambioDomicilio)
-                        {
-                            @* Certificado y Descartados viven ahora en la barra "Informes" de la propia
-                               pantalla de Enviar Cambio de Domicilio, junto a Informe Archivo/Oficina 43
-                               — ya no en el sidebar. *@
-                            <a asp-page="/CambioDomicilio/Index" class="sidebar-link @(enCambioDomicilio && !enCambioDomicilioSolicitar ? "active" : "")">📥 Enviar Cambio de Domicilio</a>
-                            <a asp-page="/CambioDomicilio/Solicitar/Index" class="sidebar-link @(enCambioDomicilioSolicitar ? "active" : "")">📤 Solicitar Cambios de Domicilio</a>
-                        }
-                        @if (puedeF8)
-                        {
-                            <a asp-page="/F8/Index" class="sidebar-link @(enF8 ? "active" : "")">🚨 F8 Urgentes</a>
-                        }
-                    </div>
-                </details>
+                <div class="sidebar-section-title">GENERAL</div>
+                <a asp-page="/Inicio" class="sidebar-link @(Context.Request.Path == "/Inicio" ? "active" : "")">
+                    <span class="sidebar-emoji">📊</span> <span>Panel de Control</span>
+                </a>
+                <a asp-page="/Index" class="sidebar-link @((Context.Request.Path == "/" || Context.Request.Path.StartsWithSegments("/Index")) ? "active" : "")">
+                    <span class="sidebar-emoji">🪪</span> <span>Gestión de Licencias</span>
+                </a>
 
-                @* Estadísticas y la libreta de Comunas (Gestión de Licencias) quedan afuera de
-                   "Módulos" — Estadísticas sigue al módulo activo (una sola entrada, no una por
-                   módulo) y Comunas es una consulta transversal, no algo específico de un flujo. *@
-                @{
-                    var puedeVerEstadisticasDelModuloActivo = enCambioDomicilio || enF8 || puedeVerReportesYReferencia;
+                <div class="sidebar-section-title">MÓDULOS ESPECIALES</div>
+                @if (puedeCambioDomicilio)
+                {
+                    <a asp-page="/CambioDomicilio/Index" class="sidebar-link @(enCambioDomicilio && !enCambioDomicilioSolicitar && Context.Request.Path.Value?.Contains("Estadisticas", StringComparison.OrdinalIgnoreCase) != true ? "active" : "")">
+                        <span class="sidebar-emoji">📥</span> <span>Enviar Cambios de Domicilio a Otras Comunas</span>
+                    </a>
+                    <a asp-page="/CambioDomicilio/Solicitar/Index" class="sidebar-link @(enCambioDomicilioSolicitar && Context.Request.Path.Value?.Contains("Estadisticas", StringComparison.OrdinalIgnoreCase) != true ? "active" : "")">
+                        <span class="sidebar-emoji">📤</span> <span>Solicitar Cambio de Domicilio a Otras Comunas</span>
+                    </a>
+                }
+                @if (puedeF8)
+                {
+                    <a asp-page="/F8/Index" class="sidebar-link @(enF8 && Context.Request.Path.Value?.Contains("Estadisticas", StringComparison.OrdinalIgnoreCase) != true ? "active" : "")">
+                        <span class="sidebar-emoji">⚡</span> <span>F8 Urgentes</span>
+                    </a>
+                }
+                @if (puedeCambioDomicilio || puedeF8)
+                {
+                    <a asp-page="/Certificados/Index" class="sidebar-link @(Context.Request.Path.Value?.StartsWith("/Certificados", StringComparison.OrdinalIgnoreCase) == true ? "active" : "")">
+                        <span class="sidebar-emoji">📜</span> <span>Carpetas para Certificados</span>
+                    </a>
                 }
                 @if (puedeVerEstadisticasDelModuloActivo)
                 {
-                    <a asp-page="@estadisticasPage" class="sidebar-link @(Context.Request.Path.Value?.Contains("Estadisticas", StringComparison.OrdinalIgnoreCase) == true ? "active" : "")">📈 Estadísticas</a>
+                    <a asp-page="@estadisticasPage" class="sidebar-link @(Context.Request.Path.Value?.Contains("Estadisticas", StringComparison.OrdinalIgnoreCase) == true ? "active" : "")">
+                        <span class="sidebar-emoji">📈</span> <span>Estadísticas</span>
+                    </a>
+                }
+
+                <div class="sidebar-section-title">ADMINISTRACIÓN</div>
+                @if (puedeImportar)
+                {
+                    <a asp-page="/Importar" class="sidebar-link @(Context.Request.Path == "/Importar" ? "active" : "")">
+                        <span class="sidebar-emoji">📥</span> <span>Importar Excel</span>
+                    </a>
+                }
+                @if (User.IsInRole("Administrador"))
+                {
+                    <a asp-page="/Usuarios" class="sidebar-link @(Context.Request.Path == "/Usuarios" ? "active" : "")">
+                        <span class="sidebar-emoji">👥</span> <span>Usuarios y Roles</span>
+                    </a>
                 }
                 @if (puedeVerReportesYReferencia)
                 {
-                    <a asp-page="/Comunas" class="sidebar-link @(Context.Request.Path == "/Comunas" ? "active" : "")">🏘️ Comunas</a>
+                    <a asp-page="/Comunas" class="sidebar-link @(Context.Request.Path == "/Comunas" ? "active" : "")">
+                        <span class="sidebar-emoji">🏛️</span> <span>Comunas</span>
+                    </a>
                 }
-                @if (puedeImportar)
+                @if (enGestionLicencias && puedeVerReportesYReferencia)
                 {
-                    <a asp-page="/Importar" class="sidebar-link @(Context.Request.Path == "/Importar" ? "active" : "")">📥 Importar Excel</a>
+                    <a asp-page="/Papelera" class="sidebar-link @(Context.Request.Path == "/Papelera" ? "active" : "")">
+                        <span class="sidebar-emoji">🗑️</span> <span>Papelera</span>
+                    </a>
                 }
             </nav>
             <div class="sidebar-footer">
                 @if (User.IsInRole("Administrador"))
                 {
-                    <a asp-page="/Usuarios" class="sidebar-link @(Context.Request.Path == "/Usuarios" ? "active" : "")">👥 Usuarios</a>
+                    <a asp-page="/Usuarios" class="sidebar-link @(Context.Request.Path == "/Usuarios" ? "active" : "")"><svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 11c1.9.5 3.3 2.2 3.3 4.3"/><circle cx="17" cy="6" r="2.4"/></svg> Usuarios</a>
                 }
                 @if (enGestionLicencias && puedeVerReportesYReferencia)
                 {
-                    <a asp-page="/Papelera" class="sidebar-link @(Context.Request.Path == "/Papelera" ? "active" : "")">🗑️ Papelera</a>
+                    <a asp-page="/Papelera" class="sidebar-link @(Context.Request.Path == "/Papelera" ? "active" : "")"><svg class="sidebar-icon" viewBox="0 0 24 24"><path d="M6 6v13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/><path d="M3 6h18"/><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/></svg> Papelera</a>
                 }
-                <a asp-page="/ChangePassword" class="sidebar-link @(Context.Request.Path == "/ChangePassword" ? "active" : "")">🔑 Cambiar contraseña</a>
-                <form asp-page="/Logout" method="post"><button type="submit" class="sidebar-link-logout">🚪 Salir</button></form>
+                <a asp-page="/ChangePassword" class="sidebar-link @(Context.Request.Path == "/ChangePassword" ? "active" : "")"><svg class="sidebar-icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Cambiar contraseña</a>
+                <form asp-page="/Logout" method="post"><button type="submit" class="sidebar-link-logout"><svg class="sidebar-icon" viewBox="0 0 24 24" style="stroke:#fca5a5;"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg> Salir</button></form>
             </div>
         </aside>
         <div class="app-content">
@@ -273,6 +308,43 @@
         });
     </script>
 
+    <script>
+        // Navegacion ultra-rapida y prefetch anticipado para eliminar lag entre secciones
+        (function() {
+            function prefetchUrl(url) {
+                if (!url || url.indexOf('#') !== -1 || url.indexOf('Export') !== -1) return;
+                var link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = url;
+                document.head.appendChild(link);
+            }
+
+            document.addEventListener('mouseover', function (e) {
+                var a = e.target.closest('a[href^="/"]');
+                if (!a || a.dataset.prefetched || a.getAttribute('target')) return;
+                a.dataset.prefetched = 'true';
+                prefetchUrl(a.href);
+            }, { passive: true });
+
+            document.addEventListener('touchstart', function (e) {
+                var a = e.target.closest('a[href^="/"]');
+                if (!a || a.dataset.prefetched || a.getAttribute('target')) return;
+                a.dataset.prefetched = 'true';
+                prefetchUrl(a.href);
+            }, { passive: true });
+
+            document.addEventListener('click', function (e) {
+                var link = e.target.closest('.sidebar-link, .cd-filter-bar a');
+                if (link && link.getAttribute('href') && !link.getAttribute('href').startsWith('#') && !link.getAttribute('target')) {
+                    var group = link.classList.contains('sidebar-link') ? '.sidebar-link.active' : '.cd-filter-bar a.active';
+                    document.querySelectorAll(group).forEach(function (el) {
+                        el.classList.remove('active');
+                    });
+                    link.classList.add('active');
+                }
+            });
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

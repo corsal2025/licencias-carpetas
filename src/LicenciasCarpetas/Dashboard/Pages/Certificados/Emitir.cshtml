@@ -1,0 +1,130 @@
+@page
+@model LicenciasCarpetas.Dashboard.Pages.Certificados.EmitirModel
+@{
+    ViewData["Title"] = "Certificado de Dirección";
+    Layout = "_Layout";
+    var item = Model.CaseItem!;
+}
+
+<style>
+    @@media print {
+        .sidebar, .top-header, .no-print {
+            display: none !important;
+        }
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        body {
+            background: #fff !important;
+            color: #000 !important;
+        }
+        .cert-container {
+            box-shadow: none !important;
+            border: 1px solid #000 !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+    }
+</style>
+
+<div class="no-print" style="margin-bottom:16px; display:flex; gap:12px; align-items:center; justify-content:space-between;">
+    <a asp-page="/Certificados/Index" class="btn-cd-action" style="text-decoration:none; padding:6px 14px; font-weight:700; font-size:13px; border-radius:6px; background:#f1f5f9; color:#334155;">
+        ← Volver a Carpetas para Certificados
+    </a>
+    <div style="display:flex; gap:10px;">
+        @if (item.FechaEmision is null)
+        {
+            <form method="post" asp-page-handler="ConfirmarEmision" asp-route-id="@item.Id" style="display:inline;">
+                <input type="hidden" name="folio" value="@Model.NumeroFolio" />
+                <button type="submit" class="btn-primary" style="padding:8px 16px; font-weight:700; border-radius:6px; font-size:13px; background:#16a34a; border-color:#15803d;">
+                    ✓ Confirmar y Registrar Emisión
+                </button>
+            </form>
+        }
+        <button type="button" onclick="window.print()" class="btn-primary" style="padding:8px 18px; font-weight:700; border-radius:6px; font-size:13px;">
+            🖨️ Imprimir Certificado
+        </button>
+    </div>
+</div>
+
+<div class="cert-container" style="max-width:800px; margin:0 auto; background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; padding:48px; box-shadow:0 4px 12px rgba(0,0,0,0.06); font-family:var(--font-sans); color:#1e293b;">
+    <!-- Encabezado Municipal -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0284c7; padding-bottom:20px; margin-bottom:30px;">
+        <div style="display:flex; align-items:center; gap:16px;">
+            <img src="/images/logo-municipalidad.png" alt="Municipalidad de Valparaíso" style="height:70px; object-fit:contain;" />
+            <div>
+                <div style="font-weight:800; font-size:15px; text-transform:uppercase; color:#0f172a; letter-spacing:0.5px;">Ilustre Municipalidad de Valparaíso</div>
+                <div style="font-weight:700; font-size:13px; color:#0284c7; text-transform:uppercase;">Dirección de Tránsito y Transporte Público</div>
+                <div style="font-size:12px; color:#64748b;">Departamento de Licencias de Conducir</div>
+            </div>
+        </div>
+        <div style="text-align:right; font-family:var(--font-mono);">
+            <div style="font-weight:800; font-size:14px; color:#0f172a;">FOLIO: @Model.NumeroFolio</div>
+            <div style="font-size:12px; color:#64748b; margin-top:4px;">Valparaíso, @Model.FechaHoy.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-CL"))</div>
+        </div>
+    </div>
+
+    <!-- Título Documento -->
+    <div style="text-align:center; margin:36px 0 32px 0;">
+        <h2 style="font-size:20px; font-weight:800; text-transform:uppercase; color:#0f172a; letter-spacing:1px; margin:0;">
+            CERTIFICADO DE DIRECCIÓN Y TRASLADO DE ANTECEDENTES
+        </h2>
+        <div style="font-size:13px; font-weight:600; color:#0284c7; margin-top:6px; text-transform:uppercase;">
+            Para Trámite de Licencia de Conducir — Decreto N.º 170 MTT
+        </div>
+    </div>
+
+    <!-- Cuerpo del Certificado -->
+    <div style="font-size:15px; line-height:1.8; text-align:justify; margin-bottom:32px;">
+        <p>
+            El <strong>Departamento de Licencias de Conducir</strong> de la Ilustre Municipalidad de Valparaíso, conforme a lo establecido en la normativa vigente sobre el otorgamiento y registro de licencias de conducir:
+        </p>
+
+        <p style="margin-top:20px;">
+            <strong>CERTIFICA QUE:</strong>
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:20px; margin:20px 0;">
+            <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                <tr>
+                    <td style="padding:6px 0; font-weight:700; width:35%;">Nombre del Contribuyente:</td>
+                    <td style="padding:6px 0; text-transform:uppercase;"><strong>@item.NombreCompleto</strong></td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-weight:700;">R.U.T.:</td>
+                    <td style="padding:6px 0; font-family:var(--font-mono); font-weight:700;">@item.Rut</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-weight:700;">Comuna de Origen / Trámite:</td>
+                    <td style="padding:6px 0; font-weight:700; text-transform:uppercase; color:#0284c7;">@item.Comuna</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-weight:700;">Fecha de Solicitud de Trámite:</td>
+                    <td style="padding:6px 0; font-family:var(--font-mono);">@item.FechaIngreso.ToString("dd-MM-yyyy")</td>
+                </tr>
+            </table>
+        </div>
+
+        <p>
+            El(la) contribuyente precedentemente individualizado(a) ha registrado solicitud formal de cambio de domicilio y traslado de su carpeta de antecedentes de conductor con destino a la comuna de <strong>@item.Comuna</strong>.
+        </p>
+        <p>
+            Se extiende el presente certificado a petición de la parte interesada para los fines de acreditar su trámite de licencia de conducir en la municipalidad requirente.
+        </p>
+    </div>
+
+    <!-- Firmas -->
+    <div style="margin-top:60px; display:flex; justify-content:space-between; align-items:flex-end;">
+        <div style="text-align:center; width:220px; border-top:1px solid #94a3b8; padding-top:10px;">
+            <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase;">Timbre Depto. Licencias</div>
+            <div style="font-size:11px; color:#64748b;">Valparaíso</div>
+        </div>
+
+        <div style="text-align:center; width:260px; border-top:1px solid #94a3b8; padding-top:10px;">
+            <div style="font-weight:700; font-size:12px; text-transform:uppercase; color:#0f172a;">Jefatura Depto. Licencias</div>
+            <div style="font-size:11px; color:#64748b;">Dirección de Tránsito y Transporte Público</div>
+            <div style="font-size:11px; color:#64748b;">I. Municipalidad de Valparaíso</div>
+        </div>
+    </div>
+</div>

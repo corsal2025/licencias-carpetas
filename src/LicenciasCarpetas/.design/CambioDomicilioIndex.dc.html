@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{
+      --navy:#173b6b; --navy-soft:#eaf1fb;
+      --bg:#f7f8fb; --surface:#ffffff;
+      --border:#e7e9f0; --border-soft:#f0f1f5;
+      --text:#1f2430; --text-muted:#7b8394;
+      --blue:#3b6fe0; --blue-soft:#e9f0ff;
+      --green:#2f9e6e; --green-soft:#e8f8f0;
+      --red:#e0605f; --red-soft:#fdeceb;
+      --amber:#d99a2b; --amber-soft:#fdf3e2;
+      --radius-lg:22px; --radius-md:16px; --radius-sm:12px;
+      --shadow:0 6px 20px -8px rgba(31,36,48,.10);
+    }
+    *{box-sizing:border-box;}
+    body{margin:0; font-family:"Segoe UI", system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--text);}
+    a{color:var(--blue); text-decoration:none;}
+    .icon{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+    table{border-collapse:collapse; width:100%;}
+    th{text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--text-muted); padding:12px 14px; background:#fafbfd; border-bottom:1px solid var(--border); white-space:nowrap;}
+    td{padding:11px 14px; font-size:13px; border-bottom:1px solid var(--border-soft); white-space:nowrap; vertical-align:middle;}
+    tr.alt td{background:#fafbfd;}
+    .pill{display:inline-flex; align-items:center; gap:5px; padding:4px 11px; border-radius:999px; font-size:11.5px; font-weight:700;}
+    .tab{display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:999px; font-size:12.5px; font-weight:700; color:var(--text-muted);}
+    .tab.active{background:var(--navy); color:#fff;}
+  </style>
+</helmet>
+
+<div style="width:1440px; min-height:900px; background:var(--bg); padding:32px 36px 44px;">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px;">
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+        <div style="width:34px; height:34px; border-radius:10px; background:var(--amber-soft); display:flex; align-items:center; justify-content:center;">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--amber); width:18px; height:18px;"><path d="M3 7h18M3 12h18M3 17h11"/><path d="m17 15 3 2-3 2"/></svg>
+        </div>
+        <h1 style="margin:0; font-size:22px; font-weight:800; color:var(--navy);">Cambio de Domicilio</h1>
+      </div>
+      <p style="margin:0 0 0 44px; font-size:13px; color:var(--text-muted);">Casos recibidos desde otras comunas para tramitar en Valparaíso</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button style="all:unset; display:flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--border); color:var(--text); font-weight:700; font-size:12.5px; padding:9px 16px; border-radius:999px; cursor:pointer;">
+        <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M9 12h.01M15 12h.01M9 16h6M4 20V6a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg>
+        Certificado
+      </button>
+      <button style="all:unset; display:flex; align-items:center; gap:7px; background:var(--navy); color:#fff; font-weight:700; font-size:12.5px; padding:9px 18px; border-radius:999px; box-shadow:0 6px 16px -6px rgba(23,59,107,.5); cursor:pointer;">
+        <svg class="icon" viewBox="0 0 24 24" style="stroke:#fff; width:15px;height:15px;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+        Sincronizar ahora
+      </button>
+    </div>
+  </div>
+
+  <div style="background:var(--surface); border-radius:999px; box-shadow:var(--shadow); padding:6px; display:inline-flex; gap:2px; margin-bottom:18px;">
+    <span class="tab active">Todos</span>
+    <span class="tab">Pendientes</span>
+    <span class="tab">Subidos</span>
+    <span class="tab">Confirmados</span>
+    <span class="tab">Requiere revisión <span style="background:var(--red); color:#fff; border-radius:999px; padding:1px 7px; font-size:10.5px;">2</span></span>
+    <span class="tab">Descartados <span style="background:var(--text-muted); color:#fff; border-radius:999px; padding:1px 7px; font-size:10.5px;">6</span></span>
+  </div>
+
+  <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:14px 18px; margin-bottom:18px; display:flex; align-items:center; gap:10px;">
+    <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px; stroke:var(--text-muted);"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <span style="color:var(--text-muted); font-size:13px; flex:1;">Buscar por RUT o nombre...</span>
+    <button style="all:unset; background:var(--blue); color:#fff; font-weight:700; font-size:12px; padding:7px 16px; border-radius:999px; cursor:pointer;">Buscar</button>
+  </div>
+
+  <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden;">
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>RUT</th>
+          <th>Nombre completo</th>
+          <th>Comuna de origen</th>
+          <th>Fecha recepción</th>
+          <th>Estado</th>
+          <th>Comentario</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--text-muted);">13.220.775-4</td>
+          <td style="font-weight:600;">Daniela Alejandra Núñez Rojas</td>
+          <td>Santiago</td>
+          <td style="color:var(--text-muted);">01 sept 2026</td>
+          <td><span class="pill" style="background:var(--blue-soft); color:#2a4fa0;">Pendiente</span></td>
+          <td style="color:var(--text-muted);">—</td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr class="alt">
+          <td style="color:var(--text-muted);">16.774.220-1</td>
+          <td style="font-weight:600;">Sebastián Ignacio Torres Vidal</td>
+          <td>Rancagua</td>
+          <td style="color:var(--text-muted);">02 sept 2026</td>
+          <td><span class="pill" style="background:var(--green-soft); color:#1f7a4d;">Subido</span></td>
+          <td style="color:var(--text-muted);">—</td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr>
+          <td style="color:var(--text-muted);">9.884.221-7</td>
+          <td style="font-weight:600; display:flex; align-items:center; gap:6px;">
+            <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px; stroke:var(--red);"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+            Fernanda Isidora Campos Díaz
+          </td>
+          <td>Concepción</td>
+          <td style="color:var(--text-muted);">03 sept 2026</td>
+          <td><span class="pill" style="background:var(--red-soft); color:#a03d3c;">Requiere revisión</span></td>
+          <td style="color:var(--text-muted); font-style:italic;">RUT ilegible en correo</td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr class="alt">
+          <td style="color:var(--text-muted);">20.115.667-9</td>
+          <td style="font-weight:600;">Matías Nicolás Fuentes Cárcamo</td>
+          <td>La Serena</td>
+          <td style="color:var(--text-muted);">04 sept 2026</td>
+          <td><span class="pill" style="background:var(--navy-soft); color:var(--navy);">Confirmado</span></td>
+          <td style="color:var(--text-muted);">—</td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

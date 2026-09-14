@@ -108,8 +108,32 @@ public sealed class EwsEmailReader(IEwsClient client, ILogger<EwsEmailReader> lo
         if (resolved is not null)
         {
             folderCache[folderDisplayName] = resolved;
+            return resolved;
         }
 
-        return resolved;
+        var fallbacks = new List<string>();
+        if (folderDisplayName.Equals("CARP. PARA PEDIR", StringComparison.OrdinalIgnoreCase))
+        {
+            fallbacks.AddRange(["Cambio de domicilio", "Cambio de Domicilio", "Cambios de domicilio", "CAMBIO DE DOMICILIO"]);
+        }
+        else if (folderDisplayName.Contains("domicilio", StringComparison.OrdinalIgnoreCase))
+        {
+            fallbacks.AddRange(["CARP. PARA PEDIR", "Cambio de domicilio", "Cambio de Domicilio"]);
+        }
+
+        foreach (var fallback in fallbacks)
+        {
+            if (fallback.Equals(folderDisplayName, StringComparison.OrdinalIgnoreCase)) continue;
+            var fallbackResp = await client.SendAsync(EwsMessages.BuildFindFolderRequest(fallback), cancellationToken);
+            var fallbackResolved = EwsResponseParser.ParseFindFolderResponse(fallbackResp);
+            if (fallbackResolved is not null)
+            {
+                logger.LogInformation("Carpeta '{Original}' resuelta con alias '{Alias}'", folderDisplayName, fallback);
+                folderCache[folderDisplayName] = fallbackResolved;
+                return fallbackResolved;
+            }
+        }
+
+        return null;
     }
 }

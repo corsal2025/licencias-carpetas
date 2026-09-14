@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{
+      --navy:#0b2545; --navy-dark:#07172c; --navy-light:#12335c;
+      --blue:#2563eb; --blue-soft:#eef4ff;
+      --gold:#c59b27;
+      --bg:#f4f6f9; --surface:#ffffff;
+      --border:#e4e8ee; --border-soft:#eef1f5;
+      --text:#101828; --text-muted:#65748b;
+      --green:#15803d; --green-soft:#eafaf0;
+      --red:#dc2626; --red-soft:#fef2f2;
+      --amber:#b45309; --amber-soft:#fff8e8;
+      --radius-lg:18px; --radius-md:14px; --radius-sm:10px;
+      --shadow-card:0 1px 2px rgba(16,24,40,.04), 0 8px 24px -12px rgba(16,24,40,.10);
+      --shadow-card-hover:0 2px 4px rgba(16,24,40,.06), 0 16px 32px -12px rgba(16,24,40,.16);
+    }
+    *{box-sizing:border-box;}
+    body{margin:0; font-family:"Segoe UI", system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--text);}
+    a{color:var(--blue); text-decoration:none;} a:hover{color:var(--navy);}
+    .icon{width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+  </style>
+</helmet>
+
+<div style="display:flex; width:1440px; min-height:960px; background:var(--navy);">
+
+  <!-- SIDEBAR -->
+  <aside style="flex:0 0 260px; width:260px; min-height:960px; background:linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%); padding:22px 16px; display:flex; flex-direction:column; gap:6px;">
+
+    <div style="display:flex; align-items:center; gap:12px; padding:0 6px 20px; border-bottom:1px solid rgba(255,255,255,.10); margin-bottom:14px;">
+      <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg,var(--gold),#8a6d1a); display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:16px; letter-spacing:.5px; flex:none;">MV</div>
+      <div style="min-width:0;">
+        <div style="color:#fff; font-weight:700; font-size:14.5px; line-height:1.25;">Gestión de Licencias</div>
+        <div style="color:rgba(255,255,255,.55); font-size:11px; text-transform:uppercase; letter-spacing:.6px; margin-top:2px;">Municipalidad de Valparaíso</div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm); color:#fff; font-weight:600; font-size:13.5px; background:rgba(255,255,255,.06);">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>
+      Panel de Control
+    </div>
+
+    <button style="all:unset; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); color:rgba(255,255,255,.75); font-size:13px; font-weight:600; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.08); margin:8px 0 4px; cursor:pointer;">
+      <span style="display:flex; align-items:center; gap:9px;">
+        <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        Buscar
+      </span>
+      <kbd style="font:inherit; font-size:10.5px; background:rgba(255,255,255,.12); padding:2px 6px; border-radius:5px; color:#fff;">Ctrl K</kbd>
+    </button>
+
+    <div style="color:rgba(255,255,255,.4); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; padding:14px 12px 6px;">Módulos</div>
+
+    <a style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); color:#fff; font-weight:700; font-size:13.5px; background:var(--blue); box-shadow:0 4px 10px rgba(37,99,235,.35);">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="12" r="2"/><path d="M14 10h4M14 14h4"/></svg>
+      Gestión de Licencias
+    </a>
+    <a style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); color:rgba(255,255,255,.72); font-weight:600; font-size:13.5px;">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h11"/><path d="m17 15 3 2-3 2"/></svg>
+      Cambio de Domicilio
+    </a>
+    <a style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); color:rgba(255,255,255,.72); font-weight:600; font-size:13.5px;">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 3 3 21h18Z"/><path d="M12 9v5"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
+      F8 Urgentes
+    </a>
+
+    <div style="color:rgba(255,255,255,.4); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; padding:14px 12px 6px;">Referencia</div>
+    <a style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); color:rgba(255,255,255,.72); font-weight:600; font-size:13.5px;">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 20V6a2 2 0 0 1 2-2h9l5 5v11"/><path d="M15 4v5h5"/><path d="M9 13h6M9 17h6"/></svg>
+      Estadísticas
+    </a>
+    <a style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); color:rgba(255,255,255,.72); font-weight:600; font-size:13.5px;">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-6h6v6"/></svg>
+      Comunas
+    </a>
+    <a style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); color:rgba(255,255,255,.72); font-weight:600; font-size:13.5px;">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+      Importar Excel
+    </a>
+
+    <div style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(255,255,255,.10); display:flex; flex-direction:column; gap:2px;">
+      <a style="display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--radius-sm); color:rgba(255,255,255,.6); font-weight:600; font-size:13px;">
+        <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;"><circle cx="9" cy="7" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 11c1.9.5 3.3 2.2 3.3 4.3"/></svg>
+        Usuarios
+      </a>
+      <a style="display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--radius-sm); color:rgba(255,255,255,.6); font-weight:600; font-size:13px;">
+        <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/><path d="M6 6v13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>
+        Papelera
+      </a>
+      <button style="all:unset; display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--radius-sm); color:#fca5a5; font-weight:700; font-size:13px; cursor:pointer;">
+        <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px; stroke:#fca5a5;"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Salir
+      </button>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main style="flex:1; background:var(--bg); padding:34px 40px 48px; min-width:0;">
+
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:26px;">
+      <div>
+        <h1 style="margin:0 0 6px; font-size:26px; font-weight:800; color:var(--navy); letter-spacing:-.3px;">Panel de Control Ejecutivo</h1>
+        <p style="margin:0; font-size:14px; color:var(--text-muted);">Resumen operativo y métricas en tiempo real &nbsp;·&nbsp; <strong style="color:var(--text);">Septiembre 2026</strong></p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button style="all:unset; display:flex; align-items:center; gap:8px; background:var(--blue); color:#fff; font-weight:700; font-size:13.5px; padding:10px 18px; border-radius:var(--radius-sm); box-shadow:0 4px 12px rgba(37,99,235,.28); cursor:pointer;">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:#fff; width:16px; height:16px;"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="12" r="2"/></svg>
+          Ver Casos
+        </button>
+        <button style="all:unset; display:flex; align-items:center; gap:8px; background:var(--surface); color:var(--text); font-weight:700; font-size:13.5px; padding:10px 16px; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer;">
+          <svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M4 20V6a2 2 0 0 1 2-2h9l5 5v11"/><path d="M9 13h6M9 17h6"/></svg>
+          Estadísticas Detalladas
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; background:var(--red-soft); border:1px solid #fecaca; border-radius:var(--radius-md); padding:16px 20px; margin-bottom:24px; box-shadow:var(--shadow-card);">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:38px; height:38px; border-radius:11px; background:#fee2e2; display:flex; align-items:center; justify-content:center; flex:none;">
+          <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:var(--red); fill:none; stroke-width:2;"><path d="M12 3 2 20h20Z"/><path d="M12 9v5"/><circle cx="12" cy="17" r=".7" fill="var(--red)"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:800; color:#991b1b; font-size:14.5px;">Atención: hay 7 casos con más de 15 días desde la citación</div>
+          <div style="color:#b91c1c; font-size:12.5px; margin-top:2px;">Trámites fuera del plazo esperado que requieren resolución inmediata.</div>
+        </div>
+      </div>
+      <button style="all:unset; color:#fff; background:var(--red); font-weight:700; font-size:12.5px; padding:9px 16px; border-radius:var(--radius-sm); cursor:pointer; white-space:nowrap;">Ver casos atrasados →</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:18px; margin-bottom:26px;">
+      <div style="background:var(--surface); border-radius:var(--radius-md); box-shadow:var(--shadow-card); padding:20px 22px; border-top:3px solid var(--navy);">
+        <div style="color:var(--text-muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Agenda Mes (Sept.)</div>
+        <div style="font-size:32px; font-weight:800; color:var(--navy); margin:8px 0 4px; letter-spacing:-.5px;">248</div>
+        <div style="font-size:12.5px; color:var(--text-muted);">Atendidos: <strong style="color:var(--text);">231</strong> <span style="background:var(--blue-soft); color:var(--blue); font-weight:700; font-size:11px; padding:2px 8px; border-radius:999px; margin-left:4px;">93%</span></div>
+      </div>
+      <div style="background:var(--surface); border-radius:var(--radius-md); box-shadow:var(--shadow-card); padding:20px 22px; border-top:3px solid var(--green);">
+        <div style="color:var(--text-muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Subidas a Conaset</div>
+        <div style="font-size:32px; font-weight:800; color:var(--green); margin:8px 0 4px; letter-spacing:-.5px;">196</div>
+        <div style="font-size:12.5px; color:var(--text-muted);">Escaneadas: <strong style="color:var(--text);">210</strong></div>
+      </div>
+      <div style="background:var(--surface); border-radius:var(--radius-md); box-shadow:var(--shadow-card); padding:20px 22px; border-top:3px solid var(--red);">
+        <div style="color:var(--text-muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Alertas SLA (+15 días)</div>
+        <div style="font-size:32px; font-weight:800; color:var(--red); margin:8px 0 4px; letter-spacing:-.5px;">7</div>
+        <a style="font-size:12.5px; font-weight:700; color:var(--red);">Filtrar en Casos →</a>
+      </div>
+      <div style="background:var(--surface); border-radius:var(--radius-md); box-shadow:var(--shadow-card); padding:20px 22px; border-top:3px solid var(--amber);">
+        <div style="color:var(--text-muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">En Otra Comuna</div>
+        <div style="font-size:32px; font-weight:800; color:var(--amber); margin:8px 0 4px; letter-spacing:-.5px;">14</div>
+        <a style="font-size:12.5px; font-weight:700; color:var(--amber);">Ver solicitudes pendientes →</a>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px;">
+      <div style="background:var(--surface); border-radius:var(--radius-md); box-shadow:var(--shadow-card); padding:22px 24px;">
+        <h3 style="margin:0 0 16px; font-size:14.5px; font-weight:800; color:var(--text);">Distribución de Estados</h3>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span style="font-weight:700;">Subida a Conaset</span><span style="color:var(--text-muted);">196 (62%)</span></div>
+            <div style="background:var(--border-soft); border-radius:6px; height:9px; overflow:hidden;"><div style="background:var(--green); width:62%; height:100%; border-radius:6px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span style="font-weight:700;">Pendiente</span><span style="color:var(--text-muted);">88 (28%)</span></div>
+            <div style="background:var(--border-soft); border-radius:6px; height:9px; overflow:hidden;"><div style="background:var(--blue); width:28%; height:100%; border-radius:6px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px;"><span style="font-weight:700;">No existe carpeta</span><span style="color:var(--text-muted);">32 (10%)</span></div>
+            <div style="background:var(--border-soft); border-radius:6px; height:9px; overflow:hidden;"><div style="background:var(--red); width:10%; height:100%; border-radius:6px;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--surface); border-radius:var(--radius-md); box-shadow:var(--shadow-card); padding:22px 24px;">
+        <h3 style="margin:0 0 16px; font-size:14.5px; font-weight:800; color:var(--text);">Carga Operativa por Oficina</h3>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="background:var(--bg); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:11px 14px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><strong style="font-size:12.5px;">Oficina Central</strong><span style="font-size:11px; font-weight:700; background:var(--blue-soft); color:var(--blue); padding:2px 8px; border-radius:999px;">118/130</span></div>
+            <div style="background:var(--border-soft); border-radius:6px; height:8px; overflow:hidden;"><div style="background:var(--navy); width:90%; height:100%;"></div></div>
+          </div>
+          <div style="background:var(--bg); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:11px 14px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><strong style="font-size:12.5px;">Placilla</strong><span style="font-size:11px; font-weight:700; background:var(--blue-soft); color:var(--blue); padding:2px 8px; border-radius:999px;">76/90</span></div>
+            <div style="background:var(--border-soft); border-radius:6px; height:8px; overflow:hidden;"><div style="background:var(--navy); width:63%; height:100%;"></div></div>
+          </div>
+          <div style="background:var(--bg); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:11px 14px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><strong style="font-size:12.5px;">Laguna Verde</strong><span style="font-size:11px; font-weight:700; background:var(--blue-soft); color:var(--blue); padding:2px 8px; border-radius:999px;">37/48</span></div>
+            <div style="background:var(--border-soft); border-radius:6px; height:8px; overflow:hidden;"><div style="background:var(--navy); width:34%; height:100%;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin:0 0 14px; font-size:14.5px; font-weight:800; color:var(--text);">Módulos Integrados</h3>
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:18px;">
+      <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:24px; display:flex; flex-direction:column; gap:10px;">
+        <div style="width:44px; height:44px; border-radius:12px; background:var(--blue-soft); display:flex; align-items:center; justify-content:center;">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--blue); width:22px; height:22px;"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="12" r="2"/><path d="M14 10h4M14 14h4"/></svg>
+        </div>
+        <h2 style="margin:2px 0 0; font-size:15.5px; font-weight:800;">Gestión de Licencias</h2>
+        <div style="font-size:30px; font-weight:800; color:var(--navy);">1.842</div>
+        <p style="margin:0; font-size:12.5px; color:var(--text-muted);">casos totales en sistema</p>
+        <a style="margin-top:auto; font-weight:700; font-size:12.5px;">Acceder al módulo →</a>
+      </div>
+      <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:24px; display:flex; flex-direction:column; gap:10px;">
+        <div style="width:44px; height:44px; border-radius:12px; background:var(--amber-soft); display:flex; align-items:center; justify-content:center;">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--amber); width:22px; height:22px;"><path d="M3 7h18M3 12h18M3 17h11"/><path d="m17 15 3 2-3 2"/></svg>
+        </div>
+        <h2 style="margin:2px 0 0; font-size:15.5px; font-weight:800;">Cambio de Domicilio</h2>
+        <div style="font-size:30px; font-weight:800; color:var(--navy);">23</div>
+        <p style="margin:0; font-size:12.5px; color:var(--text-muted);">solicitudes pendientes</p>
+        <a style="margin-top:auto; font-weight:700; font-size:12.5px;">Acceder al módulo →</a>
+      </div>
+      <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:24px; display:flex; flex-direction:column; gap:10px;">
+        <div style="width:44px; height:44px; border-radius:12px; background:var(--red-soft); display:flex; align-items:center; justify-content:center;">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--red); width:22px; height:22px;"><path d="M12 3 3 21h18Z"/><path d="M12 9v5"/><circle cx="12" cy="17" r=".6" fill="var(--red)"/></svg>
+        </div>
+        <h2 style="margin:2px 0 0; font-size:15.5px; font-weight:800;">F8 Urgentes</h2>
+        <div style="font-size:30px; font-weight:800; color:var(--navy);">9</div>
+        <p style="margin:0; font-size:12.5px; color:var(--text-muted);">solicitudes en proceso</p>
+        <a style="margin-top:auto; font-weight:700; font-size:12.5px;">Acceder al módulo →</a>
+      </div>
+    </div>
+
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

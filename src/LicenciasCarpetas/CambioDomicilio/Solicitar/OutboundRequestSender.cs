@@ -32,7 +32,8 @@ public sealed class OutboundRequestSender(
     IOutboundAddressChangeRequestRepository repository,
     IComunaContactRepository comunaContactRepository,
     IMailSender mailSender,
-    TimeSpan? interactiveSendTimeout = null)
+    TimeSpan? interactiveSendTimeout = null,
+    CambioDomicilioOptions? options = null)
 {
     /// <summary>El envío es siempre interactivo — el operador espera en la pantalla. EwsClient
     /// reintenta hasta 4 veces con 100 s de timeout cada una, así que un EWS caído dejaría la
@@ -58,6 +59,16 @@ public sealed class OutboundRequestSender(
 
         var subject = $"Solicitud de cambio de domicilio — {request.FullName} ({request.Rut})";
         var body = BuildBody(request);
+
+        // Modo pruebas y mejoras: omitir el envío real por EWS/SMTP
+        if (options?.DisableOutgoingEmails == true)
+        {
+            Console.WriteLine($"[MODO PRUEBA] Solicitud #{request.Id} a '{request.DestinationComuna}' registrada (envío de correos desactivado).");
+            var sentTest = repository.MarkSent(request.Id, DateTimeOffset.UtcNow, userId);
+            return new OutboundSendResult(
+                sentTest ? OutboundSendOutcome.Sent : OutboundSendOutcome.AlreadySent,
+                request.DestinationComuna);
+        }
 
         using var sendCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         sendCts.CancelAfter(_sendTimeout);

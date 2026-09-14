@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using LicenciasCarpetas.CambioDomicilio.Data;
 using LicenciasCarpetas.CambioDomicilio.Solicitar;
 using LicenciasCarpetas.Configuration;
@@ -176,11 +176,51 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         var fullName = TextNormalizer.DisplayUpper(nombre);
         var needsReview = fullName is null || normalizedRut is null || citationDate is null;
 
+        var parsedComuna = string.IsNullOrWhiteSpace(comuna) ? null : comuna.Trim().ToUpperInvariant();
+        var effectiveComuna = parsedComuna;
+        if (effectiveComuna is null && existing.CambioDomicilioComuna is not null)
+        {
+            if (!Request.HasFormContentType || !Request.Form.ContainsKey("comuna") ||
+                estado == FolderState.CambioDomicilio ||
+                estado == FolderState.CambioDomicilioSolicitado ||
+                estado == FolderState.CambioDomicilioSubidoAConaset)
+            {
+                effectiveComuna = existing.CambioDomicilioComuna;
+            }
+        }
+        effectiveComuna ??= outboundRequests.FindBySourceFolderCaseId(id).FirstOrDefault()?.DestinationComuna;
+
         cases.UpdateEditableFields(id, fullName, normalizedRut ?? rut?.Trim(), citationDate, uploadedDate,
             lastFolderDate, lastFolderComuna, estado, decision, idoneidad,
             string.IsNullOrWhiteSpace(atencion) ? null : atencion.Trim(), needsReview,
             editedBy: User?.Identity?.Name,
-            cambioDomicilioComuna: string.IsNullOrWhiteSpace(comuna) ? null : comuna.Trim().ToUpperInvariant());
+            cambioDomicilioComuna: effectiveComuna);
+
+        if (estado == FolderState.CambioDomicilio || estado == FolderState.CambioDomicilioSolicitado || estado == FolderState.CambioDomicilioSubidoAConaset)
+        {
+            outboundRequests.ClearDeletedSourceFolderCase(id);
+            var existingOutbound = outboundRequests.FindBySourceFolderCaseId(id).FirstOrDefault();
+            if (existingOutbound is null)
+            {
+                var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier) is { } uid && long.TryParse(uid, out var u) ? u : 1L;
+                outboundRequests.Insert(new OutboundAddressChangeRequest
+                {
+                    FullName = fullName ?? string.Empty,
+                    Rut = normalizedRut ?? rut?.Trim() ?? string.Empty,
+                    DestinationComuna = effectiveComuna ?? string.Empty,
+                    CreatedByUserId = userId,
+                    SourceFolderCaseId = id,
+                    Status = OutboundRequestStatus.Borrador,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    WorkflowState = estado
+                });
+            }
+            else if (!string.IsNullOrWhiteSpace(effectiveComuna) && existingOutbound.DestinationComuna != effectiveComuna)
+            {
+                existingOutbound.DestinationComuna = effectiveComuna;
+                outboundRequests.Update(existingOutbound);
+            }
+        }
 
         var serializedLicencias = licenciasSerializadas is not null
             ? (string.IsNullOrWhiteSpace(licenciasSerializadas) ? null : licenciasSerializadas.Trim())
@@ -201,12 +241,8 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         // El chequeo+insert/update va bajo el semáforo: sin él, dos filas con el mismo RUT (ver
         // DuplicateRuts más arriba) guardadas casi al mismo tiempo podían pasar las dos el
         // FindByRut antes de que la primera terminara de insertar.
-        if (estado == FolderState.NoExisteCarpeta && normalizedRut is not null)
+        if (normalizedRut is not null)
         {
-            // UrgentRequest.Rut se guarda SIN puntos (F8.Domain.Rut.ToString()) en todos los demás
-            // caminos que lo crean (edición manual, importación de la matriz) — guardarlo acá con
-            // puntos (el formato de Casos) haría que esta fila nunca se encuentre por RUT desde F8
-            // ni se detecte como duplicada de una ya existente por matriz.
             var f8Rut = LicenciasCarpetas.F8.Domain.Rut.TryParse(normalizedRut, out var parsedF8Rut)
                 ? parsedF8Rut.ToString()
                 : normalizedRut;
@@ -215,7 +251,30 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
             try
             {
                 var existingUrgentRequest = urgentRequests.FindByRut(f8Rut);
-                if (existingUrgentRequest is null)
+                if (existingUrgentRequest is not null)
+                {
+                    var changed = false;
+                    if (!string.IsNullOrWhiteSpace(codigoF8) && existingUrgentRequest.CodigoF8 != codigoF8)
+                    {
+                        existingUrgentRequest.CodigoF8 = codigoF8;
+                        changed = true;
+                    }
+                    if (penultimaDate is not null && existingUrgentRequest.FechaPenultimaCarpeta != penultimaDate)
+                    {
+                        existingUrgentRequest.FechaPenultimaCarpeta = penultimaDate;
+                        changed = true;
+                    }
+                    if (lastFolderDate is not null && existingUrgentRequest.FechaUltimaCarpeta != lastFolderDate)
+                    {
+                        existingUrgentRequest.FechaUltimaCarpeta = lastFolderDate;
+                        changed = true;
+                    }
+                    if (changed)
+                    {
+                        urgentRequests.Update(existingUrgentRequest);
+                    }
+                }
+                else if (estado == FolderState.NoExisteCarpeta)
                 {
                     urgentRequests.Insert(new UrgentRequest
                     {
@@ -228,18 +287,9 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
                         FechaPenultimaCarpeta = penultimaDate,
                         Estado = FolderStateCatalog.Display(estado.Value),
                         Origin = "Casos",
-                        // Mismo criterio que needsReview de más abajo (nombre o RUT o fecha de
-                        // citación faltantes) — sin esto una fila incompleta se creaba en F8 sin
-                        // el resaltado row-needs-review que el operador usa para detectarlas.
                         NeedsReview = needsReview,
                         CreatedAt = DateTimeOffset.UtcNow
                     });
-                }
-                else if (existingUrgentRequest.CodigoF8 != codigoF8 || existingUrgentRequest.FechaPenultimaCarpeta != penultimaDate)
-                {
-                    existingUrgentRequest.CodigoF8 = codigoF8;
-                    existingUrgentRequest.FechaPenultimaCarpeta = penultimaDate;
-                    urgentRequests.Update(existingUrgentRequest);
                 }
             }
             finally
@@ -268,10 +318,11 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
             }
         }
 
-        // Elegir "CAMBIO DE DOMICILIO SOLICITADO" en Casos crea/sincroniza automáticamente la fila
-        // en el módulo "Solicitar Cambios de Domicilio" (OutboundAddressChangeRequest), de modo que
+        // Elegir "CAMBIO DE DOMICILIO" en Casos crea/sincroniza automáticamente la fila
+        // en el módulo "Cambio de Domicilio" (OutboundAddressChangeRequest), de modo que
         // los datos de la persona (Nombre, RUT, Comuna) aparezcan inmediatamente en esa lista de trabajo.
-        if (estado == FolderState.CambioDomicilioSolicitado && normalizedRut is not null)
+        var effectiveCdRut = normalizedRut ?? existing.Rut ?? (string.IsNullOrWhiteSpace(rut) ? null : rut.Trim());
+        if ((estado == FolderState.CambioDomicilioSolicitado || estado == FolderState.CambioDomicilio) && !string.IsNullOrWhiteSpace(effectiveCdRut))
         {
             var existingOutboundList = outboundRequests.FindBySourceFolderCaseId(id);
             var existingOutbound = existingOutboundList.FirstOrDefault();
@@ -283,7 +334,7 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
                 outboundRequests.Insert(new OutboundAddressChangeRequest
                 {
                     FullName = fullName ?? existing.FullName ?? string.Empty,
-                    Rut = normalizedRut,
+                    Rut = effectiveCdRut,
                     DestinationComuna = destComuna,
                     CreatedByUserId = userId,
                     SourceFolderCaseId = id,
@@ -304,9 +355,9 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
                     existingOutbound.FullName = fullName;
                     changed = true;
                 }
-                if (existingOutbound.Rut != normalizedRut)
+                if (existingOutbound.Rut != effectiveCdRut)
                 {
-                    existingOutbound.Rut = normalizedRut;
+                    existingOutbound.Rut = effectiveCdRut;
                     changed = true;
                 }
                 if (changed)
@@ -434,7 +485,7 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         // persiste al mismo tiempo, para que un solo clic en "Solicitar" alcance sin pasar antes
         // por "Guardar".
         var effectiveState = Enum.TryParse<FolderState>(estado, out var parsedState) ? parsedState : folderCase.FolderState;
-        if (effectiveState != FolderState.CambioDomicilioSolicitado)
+        if (effectiveState != FolderState.CambioDomicilioSolicitado && effectiveState != FolderState.CambioDomicilio)
         {
             return RedirectWithMessage("El caso no está marcado como 'Cambio de domicilio solicitado'.", isError: true);
         }
@@ -467,6 +518,7 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         }
 
         var userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var now = DateTimeOffset.UtcNow;
         var request = existingOutboundList.FirstOrDefault(r => r.Status == OutboundRequestStatus.Borrador);
         if (request is null)
         {
@@ -476,7 +528,9 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
                 Rut = folderCase.Rut,
                 DestinationComuna = folderCase.CambioDomicilioComuna,
                 CreatedByUserId = userId,
-                SourceFolderCaseId = folderCase.Id
+                SourceFolderCaseId = folderCase.Id,
+                SentAt = now,
+                WorkflowState = FolderState.CambioDomicilioSolicitado
             });
             request = outboundRequests.FindById(requestId)!;
         }
@@ -486,6 +540,8 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
             request.Rut = folderCase.Rut;
             request.DestinationComuna = folderCase.CambioDomicilioComuna;
             request.CreatedByUserId = userId;
+            request.SentAt ??= now;
+            request.WorkflowState = FolderState.CambioDomicilioSolicitado;
             outboundRequests.Update(request);
         }
 

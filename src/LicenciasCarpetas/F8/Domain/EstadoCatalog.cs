@@ -28,7 +28,6 @@ public static class EstadoCatalog
     public static readonly IReadOnlyCollection<string> KnownEstadosActuales = new[]
     {
         "PENDIENTE",
-        "CREAR CERTIFICADO",
         "SUBIDA A CONASET",
     };
 

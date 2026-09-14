@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model LicenciasCarpetas.Dashboard.Pages.IndexModel
 @{
     ViewData["Title"] = "Casos";
@@ -7,7 +7,7 @@
     ViewData["BodyClass"] = "viewport-locked";
     // El botón "Solicitar" manda un correo real a otra comuna — mismo permiso de módulo que el
     // resto de Cambio de Domicilio, aunque esta pantalla en sí quede abierta a todos los roles.
-    var puedeCambioDomicilio = User.HasClaim("mod:cambio-domicilio", "true");
+    var puedeCambioDomicilio = User.IsInRole("Administrador") || User.IsInRole("Jefatura") || User.HasClaim("mod:cambio-domicilio", "true");
 }
 
 @if (Model.Message is not null)
@@ -297,7 +297,7 @@
                 <th title="Fecha de la carpeta anterior a la última. No influye en el sector">Fecha penúltima<br />carpeta</th>
                 <th title="Clases que el contribuyente viene a obtener. Se pueden marcar varias">Tipo de licencia</th>
                 <th><a asp-page="/Index" asp-all-route-data="@Model.SortRouteValues(CaseSort.FolderState)" class="sort-link"><span>Estado carpeta</span>@Model.SortIndicator(CaseSort.FolderState)</a></th>
-                <th>Comuna</th>
+                <th style="text-align:center; min-width:180px; width:180px;">Comuna</th>
                 <th>Idoneidad</th>
                 <th><a asp-page="/Index" asp-all-route-data="@Model.SortRouteValues(CaseSort.FinalDecision)" class="sort-link"><span>Decisión final</span>@Model.SortIndicator(CaseSort.FinalDecision)</a></th>
                 <th title="Número de folio de la licencia. Texto libre">Folio de licencia</th>
@@ -354,14 +354,6 @@
                     <div style="display:flex; align-items:center; gap:4px;">
                         <input type="text" name="citacion" form="case-form-@item.Id" class="input-inline" size="13"
                                value="@LicenciasCarpetas.Dashboard.Pages.IndexModel.FormatDate(item.CitationDate)" placeholder="dd/mes/aaaa" />
-                        @if (item.AgingAlert == CaseAgingAlert.Overdue)
-                        {
-                            <span class="badge-sla badge-sla-overdue" title="Trámite pendiente con @item.DaysSinceCitation días transcurridos">🔴 +@item.DaysSinceCitation d</span>
-                        }
-                        else if (item.AgingAlert == CaseAgingAlert.Warning)
-                        {
-                            <span class="badge-sla badge-sla-warning" title="Trámite pendiente con @item.DaysSinceCitation días transcurridos">🟡 @item.DaysSinceCitation d</span>
-                        }
                     </div>
                 </td>
                 <td class="name-cell col-sticky-nombre">
@@ -449,8 +441,8 @@
                         }
                     </select>
                 </td>
-                <td>
-                    <input type="text" name="comuna" id="comuna-@item.Id" form="case-form-@item.Id" class="input-inline" style="width:110px; text-transform:uppercase;"
+                <td style="text-align:center; vertical-align:middle; width:180px;">
+                    <input type="text" name="comuna" id="comuna-@item.Id" form="case-form-@item.Id" class="input-inline input-comuna" style="text-transform:uppercase; text-align:center; margin:0 auto;"
                            list="comuna-opciones" autocomplete="off"
                            value="@item.CambioDomicilioComuna" placeholder="ej: VALPARAÍSO" oninput="this.value = this.value.toUpperCase();" />
                 </td>
@@ -489,19 +481,7 @@
                           onsubmit="return confirm('¿Enviar este caso a la papelera?');" style="display:inline;">
                         <button type="submit" class="btn-danger" style="padding:4px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" title="Eliminar caso">🗑️</button>
                     </form>
-                    @if (puedeCambioDomicilio)
-                    {
-                        <form method="post" asp-page-handler="SolicitarCambioDomicilio" class="solicitar-form"
-                              style="display:@(item.FolderState == FolderState.CambioDomicilioSolicitado ? "inline" : "none");"
-                              data-solicitar-comuna-id="comuna-@item.Id" data-solicitar-estado-id="estado-@item.Id"
-                              data-solicitar-fullname="@item.FullName"
-                              onsubmit="return prepararSolicitar(this);">
-                            <input type="hidden" name="id" value="@item.Id" />
-                            <input type="hidden" name="comuna" />
-                            <input type="hidden" name="estado" />
-                            <button type="submit" class="btn-primary" title="Crear la solicitud y enviar el correo a la comuna">Solicitar</button>
-                        </form>
-                    }
+
                 </td>
             </tr>
         }
@@ -667,37 +647,7 @@
     // El color de la fila lo pinta el servidor al cargar, según el estado guardado. Al elegir otra
     // opción, el color tiene que cambiar en el acto: esperar a guardar deja la fila mostrando el
     // color del estado anterior, que es exactamente lo que el operador usa para leer la agenda.
-    // El campo Comuna vive en el form de "Guardar" de cada fila, no en el de "Solicitar" —
-    // sin esto, tipear la comuna y apretar Solicitar sin guardar antes mandaba el valor viejo (o
-    // vacío) que había en la base, y la solicitud no se creaba. Copia el valor actual del input
-    // al hidden del form de Solicitar justo antes de enviarlo, para que un solo clic alcance.
-    function prepararSolicitar(form) {
-        var comunaId = form.dataset.solicitarComunaId;
-        var comunaInput = comunaId ? document.getElementById(comunaId) : null;
-        var comunaHidden = form.querySelector('input[name="comuna"]');
-        if (comunaHidden) {
-            comunaHidden.value = comunaInput ? comunaInput.value : '';
-        }
-        var estadoId = form.dataset.solicitarEstadoId;
-        var estadoSelect = estadoId ? document.getElementById(estadoId) : null;
-        var estadoHidden = form.querySelector('input[name="estado"]');
-        if (estadoHidden) {
-            estadoHidden.value = estadoSelect ? estadoSelect.value : '';
-        }
-        var fullName = form.dataset.solicitarFullname || '';
-        return confirm('Esto crea una solicitud de Cambio de Domicilio para ' + fullName + ' y manda el correo a la comuna de inmediato. ¿Confirmar?');
-    }
 
-    // El botón "Solicitar" tiene que aparecer apenas se elige "Cambio de domicilio solicitado" en
-    // el desplegable, no recién después de Guardar y recargar la página — si no, elegir la opción
-    // no muestra nada y parece que el sistema no hizo nada.
-    function toggleSolicitarForm(select) {
-        var row = select.closest('tr');
-        if (!row) return;
-        var form = row.querySelector('.solicitar-form');
-        if (!form) return;
-        form.style.display = select.value === 'CambioDomicilioSolicitado' ? 'inline' : 'none';
-    }
 
     function repaintRow(select) {
         var row = select.closest('tr');
@@ -714,7 +664,6 @@
 
         var isUpload = uploadStates.indexOf(select.value) !== -1;
         fillUploadDateIfMissing(row, isUpload);
-        toggleSolicitarForm(select);
         markUnsaved(select);
         autoSaveCaseRow(select);
     }
@@ -1380,6 +1329,14 @@
         var formData = new FormData(form);
 
         if (row) {
+            // Asegurar recolección de todos los inputs de la fila (incluyendo comuna, estado, etc. fuera del form físico)
+            var rowInputs = row.querySelectorAll('input:not([type=checkbox]), select, textarea');
+            rowInputs.forEach(function (el) {
+                if (el.name && el.name !== '__RequestVerificationToken') {
+                    formData.set(el.name, el.value);
+                }
+            });
+
             // Asegurar recolección de todos los inputs asociados a este formulario por ID
             var licenceInputs = row.querySelectorAll('input[name="licencias"]');
             if (licenceInputs.length > 0) {

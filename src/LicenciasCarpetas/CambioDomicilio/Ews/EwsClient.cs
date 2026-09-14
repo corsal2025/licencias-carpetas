@@ -73,7 +73,7 @@ public sealed class EwsClient : IEwsClient, IDisposable
                 var xml = await response.Content.ReadAsStringAsync(cancellationToken);
                 return XDocument.Parse(xml);
             }
-            catch (HttpRequestException ex) when (attempt < maxAttempts)
+            catch (HttpRequestException ex) when (attempt < maxAttempts && ex.StatusCode != System.Net.HttpStatusCode.Unauthorized)
             {
                 logger.LogWarning(ex,
                     "EWS network error (attempt {Attempt}/{MaxAttempts}), retrying in {Delay}s",

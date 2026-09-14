@@ -52,9 +52,9 @@ public class CambioDomicilioAccessTests : IClassFixture<CambioDomicilioWebAppFac
         var deniedBody = await (await denied.GetAsync("/Inicio")).Content.ReadAsStringAsync();
         var allowedBody = await (await allowed.GetAsync("/Inicio")).Content.ReadAsStringAsync();
 
-        Assert.DoesNotContain("Enviar Cambio de Domicilio", deniedBody);
+        Assert.DoesNotContain("Enviar Cambios de Domicilio a Otras Comunas", deniedBody);
         Assert.DoesNotContain("Solicitar Cambios de Domicilio", deniedBody);
-        Assert.Contains("Enviar Cambio de Domicilio", allowedBody); // sanity: the entry IS there when authorized
+        Assert.Contains("Enviar Cambios de Domicilio a Otras Comunas", allowedBody); // sanity: the entry IS there when authorized
     }
 
     /// <summary>Same shape as an F8-only operator: authenticated, but without the

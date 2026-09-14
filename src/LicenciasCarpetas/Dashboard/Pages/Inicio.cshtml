@@ -1,9 +1,11 @@
-@page
+﻿@page
 @model LicenciasCarpetas.Dashboard.Pages.InicioModel
 @{
     ViewData["Title"] = "Panel de Control Ejecutivo";
     var monthName = SpanishDate.MonthName(Model.CurrentMonth);
 }
+
+<div class="inicio-wrapper" style="padding-bottom: 70px;">
 
 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
     <div>
@@ -18,12 +20,12 @@
 
 @if (Model.OverdueCasesCount > 0)
 {
-    <div class="card" style="background:#fef2f2; border:1px solid #fca5a5; padding:12px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+    <div class="card" style="background:var(--color-review-bg); border:1px solid var(--color-review-border); padding:12px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
         <div style="display:flex; align-items:center; gap:12px;">
             <span style="font-size:24px;">🚨</span>
             <div>
-                <strong style="color:#991b1b; font-size:var(--font-lg);">Atención: Hay @Model.OverdueCasesCount caso(s) con más de 15 días desde la citación</strong>
-                <div style="color:#b91c1c; font-size:var(--font-sm);">Trámites pendientes fuera del plazo esperado que requieren resolución inmediata.</div>
+                <strong style="color:var(--color-review); font-size:var(--font-lg);">Atención: Hay @Model.OverdueCasesCount caso(s) con más de 15 días desde la citación</strong>
+                <div style="color:var(--color-review); font-size:var(--font-sm);">Trámites pendientes fuera del plazo esperado que requieren resolución inmediata.</div>
             </div>
         </div>
         <a asp-page="/Index" asp-route-overdue="true" class="btn-danger" style="text-decoration:none; padding:6px 14px; font-weight:600;">Ver casos atrasados →</a>
@@ -31,8 +33,11 @@
 }
 
 <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
-    <div class="card kpi-card" style="border-top:4px solid var(--color-primary);">
-        <div style="color:var(--color-text-muted); font-size:var(--font-sm); font-weight:600; text-transform:uppercase;">Agenda Mes (@monthName)</div>
+    <div class="card kpi-card" style="border-left: 4px solid var(--color-primary-light); padding: 16px 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="color:var(--color-text-muted); font-size:var(--font-sm); font-weight:700; text-transform:uppercase; letter-spacing: 0.5px;">Agenda Mes (@monthName)</span>
+            <span class="badge-sla badge-sla-normal" style="background: var(--color-confirmed-bg); color: var(--color-confirmed);">Mes Actual</span>
+        </div>
         <div style="font-size:var(--font-2xl); font-weight:800; color:var(--color-primary); margin:6px 0;">@(Model.MonthStats?.ScheduledTotal ?? 0)</div>
         <div class="text-sm" style="color:var(--color-text-muted);">
             Atendidos: <strong>@(Model.MonthStats?.AttendedTotal ?? 0)</strong>
@@ -43,27 +48,36 @@
         </div>
     </div>
 
-    <div class="card kpi-card" style="border-top:4px solid #15803d;">
-        <div style="color:var(--color-text-muted); font-size:var(--font-sm); font-weight:600; text-transform:uppercase;">Subidas a Conaset</div>
+    <div class="card kpi-card" style="border-left: 4px solid #15803d; padding: 16px 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="color:var(--color-text-muted); font-size:var(--font-sm); font-weight:700; text-transform:uppercase; letter-spacing: 0.5px;">Subidas a Conaset</span>
+            <span class="badge-sla badge-sla-normal">Conaset</span>
+        </div>
         <div style="font-size:var(--font-2xl); font-weight:800; color:#15803d; margin:6px 0;">@(Model.MonthStats?.UploadedTotal ?? 0)</div>
         <div class="text-sm" style="color:var(--color-text-muted);">
             Escaneadas: <strong>@(Model.MonthStats?.ScannedTotal ?? 0)</strong>
         </div>
     </div>
 
-    <div class="card kpi-card" style="border-top:4px solid #dc2626;">
-        <div style="color:var(--color-text-muted); font-size:var(--font-sm); font-weight:600; text-transform:uppercase;">Alertas SLA (+15 días)</div>
-        <div style="font-size:var(--font-2xl); font-weight:800; color:#dc2626; margin:6px 0;">@Model.OverdueCasesCount</div>
+    <div class="card kpi-card" style="border-left: 4px solid #b91c1c; padding: 16px 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="color:var(--color-text-muted); font-size:var(--font-sm); font-weight:700; text-transform:uppercase; letter-spacing: 0.5px;">Alertas SLA (+15 días)</span>
+            <span class="badge-sla badge-sla-overdue">Atención</span>
+        </div>
+        <div style="font-size:var(--font-2xl); font-weight:800; color:#b91c1c; margin:6px 0;">@Model.OverdueCasesCount</div>
         <div class="text-sm" style="color:var(--color-text-muted);">
-            <a asp-page="/Index" asp-route-overdue="true" style="color:#dc2626; font-weight:600; text-decoration:none;">Filtrar en Casos →</a>
+            <a asp-page="/Index" asp-route-overdue="true" style="color:#b91c1c; font-weight:600; text-decoration:none;">Filtrar en Casos →</a>
         </div>
     </div>
 
-    <div class="card kpi-card" style="border-top:4px solid #d97706;">
-        <div style="color:var(--color-text-muted); font-size:var(--font-sm); font-weight:600; text-transform:uppercase;">En Otra Comuna</div>
-        <div style="font-size:var(--font-2xl); font-weight:800; color:#d97706; margin:6px 0;">@Model.OtherComunaCount</div>
+    <div class="card kpi-card" style="border-left: 4px solid #b45309; padding: 16px 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="color:var(--color-text-muted); font-size:var(--font-sm); font-weight:700; text-transform:uppercase; letter-spacing: 0.5px;">En Otra Comuna</span>
+            <span class="badge-sla badge-sla-warning">Pendientes</span>
+        </div>
+        <div style="font-size:var(--font-2xl); font-weight:800; color:#b45309; margin:6px 0;">@Model.OtherComunaCount</div>
         <div class="text-sm" style="color:var(--color-text-muted);">
-            <a asp-page="/Index" asp-route-otherComuna="true" style="color:#d97706; font-weight:600; text-decoration:none;">Ver solicitudes pendientes →</a>
+            <a asp-page="/Index" asp-route-otherComuna="true" style="color:#b45309; font-weight:600; text-decoration:none;">Ver solicitudes pendientes →</a>
         </div>
     </div>
 </div>
@@ -88,7 +102,7 @@
                     var pct = (double)st.Count / totalStateCases * 100;
                     var displayName = FolderStateCatalog.Display(st.State!.Value);
                     var isSuccess = st.State.Value.ToString().Contains("Subida");
-                    var barColor = isSuccess ? "#15803d" : (st.State.Value == FolderState.NoExisteCarpeta ? "#dc2626" : "#2563eb");
+                    var barColor = isSuccess ? "#2f9e6e" : (st.State.Value == FolderState.NoExisteCarpeta ? "#e0605f" : "#3b6fe0");
                     <div>
                         <div style="display:flex; justify-content:space-between; font-size:var(--font-sm); margin-bottom:3px;">
                             <span style="font-weight:600;">@displayName</span>
@@ -160,4 +174,4 @@
         </div>
     }
 </div>
-
+</div> <!-- Fin de inicio-wrapper -->

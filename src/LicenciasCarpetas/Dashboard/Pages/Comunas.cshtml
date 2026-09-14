@@ -6,14 +6,16 @@
 
 <div class="card" style="padding:14px 20px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
     <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:22px;">🏛️</span>
+        <div style="width:34px; height:34px; border-radius:10px; background:var(--color-selected-bg); display:flex; align-items:center; justify-content:center; flex:none;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:var(--color-primary); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;"><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-6h6v6"/></svg>
+        </div>
         <div>
-            <h2 style="margin:0; font-size:var(--font-lg); font-weight:700; color:#0f172a;">Directorio Oficial de Comunas</h2>
-            <span style="font-size:var(--font-xs); color:#64748b; font-weight:600;">Direcciones de Tránsito y departamentos de licencias de todo Chile</span>
+            <h2 style="margin:0; font-size:var(--font-lg); font-weight:700; color:var(--color-text);">Directorio Oficial de Comunas</h2>
+            <span style="font-size:var(--font-xs); color:var(--color-text-muted); font-weight:600;">Direcciones de Tránsito y departamentos de licencias de todo Chile</span>
         </div>
     </div>
     <div style="display:flex; align-items:center; gap:8px;">
-        <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:var(--font-sm); padding:6px 12px; border-radius:999px;">
+        <span class="badge" style="background:var(--color-selected-bg); color:var(--color-accent); font-weight:700; font-size:var(--font-sm); padding:6px 12px; border-radius:999px;">
             @Model.Contacts.Count comunas registradas
         </span>
     </div>
@@ -24,49 +26,49 @@
     <p class="message-banner" style="margin-bottom:14px;">@Model.Message</p>
 }
 
-<div class="card" style="padding:14px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; background:#ffffff;">
+<div class="card" style="padding:14px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
     <form method="get" style="display:flex; gap:8px; align-items:flex-end; flex:1; min-width:280px;">
         <div style="flex:1;">
-            <label class="form-label" for="search" style="font-weight:700; color:#1e293b; font-size:var(--font-xs); margin-bottom:4px;">Buscar comuna o correo</label>
-            <input type="text" name="search" id="search" value="@Model.Search" placeholder="ej: Valparaíso, Las Condes, Quilpué..." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-weight:600;" />
+            <label class="form-label" for="search" style="font-weight:700; color:var(--color-text); font-size:var(--font-xs); margin-bottom:4px;">Buscar comuna o correo</label>
+            <input type="text" name="search" id="search" value="@Model.Search" placeholder="ej: Valparaíso, Las Condes, Quilpué..." style="width:100%; border:1.5px solid var(--color-border); border-radius:var(--radius-sm); padding:8px 12px; font-weight:600; background:var(--color-bg);" />
         </div>
-        <button type="submit" class="btn-primary" style="padding:6px 14px; font-weight:700; border-radius:6px;">Buscar</button>
+        <button type="submit" class="btn-primary" style="padding:8px 16px; font-weight:700;">Buscar</button>
         @if (!string.IsNullOrEmpty(Model.Search))
         {
-            <a asp-page="/Comunas" class="nav-pill" style="padding:6px 12px; font-weight:600; border-radius:6px;">Limpiar</a>
+            <a asp-page="/Comunas" class="nav-pill" style="padding:8px 14px; font-weight:600;">Limpiar</a>
         }
     </form>
 
-    <div style="width:1px; height:36px; background:#e2e8f0;"></div>
+    <div style="width:1px; height:36px; background:var(--color-border);"></div>
 
     <form method="post" asp-page-handler="Add" style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
         <div>
-            <label class="form-label" style="font-weight:700; color:#1e293b; font-size:var(--font-xs); margin-bottom:4px;">Nueva Comuna</label>
-            <input type="text" name="comuna" required placeholder="ej: PAPUDO" style="border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-weight:600; text-transform:uppercase;" />
+            <label class="form-label" style="font-weight:700; color:var(--color-text); font-size:var(--font-xs); margin-bottom:4px;">Nueva Comuna</label>
+            <input type="text" name="comuna" required placeholder="ej: PAPUDO" style="border:1.5px solid var(--color-border); border-radius:var(--radius-sm); padding:8px 12px; font-weight:600; text-transform:uppercase; background:var(--color-bg);" />
         </div>
         <div>
-            <label class="form-label" style="font-weight:700; color:#1e293b; font-size:var(--font-xs); margin-bottom:4px;">Correo Municipal</label>
-            <input type="text" name="correo" required placeholder="ej: licencias@munipapudo.cl" style="border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px;" />
+            <label class="form-label" style="font-weight:700; color:var(--color-text); font-size:var(--font-xs); margin-bottom:4px;">Correo Municipal</label>
+            <input type="text" name="correo" required placeholder="ej: licencias@munipapudo.cl" style="border:1.5px solid var(--color-border); border-radius:var(--radius-sm); padding:8px 12px; background:var(--color-bg);" />
         </div>
-        <button type="submit" class="btn-primary" style="padding:6px 14px; font-weight:700; border-radius:6px; background:#16a34a;">+ Agregar</button>
+        <button type="submit" class="btn-primary" style="padding:8px 16px; font-weight:700; background:var(--color-uploaded) !important; border-color:var(--color-uploaded) !important;">+ Agregar</button>
     </form>
 </div>
 
-<div class="card table-card" style="border:1px solid #e2e8f0; border-radius:8px; box-shadow:var(--shadow-sm); overflow:hidden;">
+<div class="card table-card" style="overflow:hidden;">
     <form id="edit-anti-forgery-form" method="post" style="display:none;"></form>
     <table class="cases" style="width:100%; border-collapse:collapse;">
         <thead>
-            <tr style="background:#e2e8f0; color:#0f172a;">
-                <th style="text-align:left; padding:10px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:35%;">Comuna</th>
-                <th style="text-align:left; padding:10px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:45%;">Correo Electrónico de Contacto</th>
-                <th style="text-align:center; padding:10px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:20%;">Acciones</th>
+            <tr style="background:#fafbfd; color:var(--color-text);">
+                <th style="text-align:left; padding:12px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:35%; color:var(--color-text-muted);">Comuna</th>
+                <th style="text-align:left; padding:12px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:45%; color:var(--color-text-muted);">Correo Electrónico de Contacto</th>
+                <th style="text-align:center; padding:12px 16px; font-weight:700; text-transform:uppercase; font-size:var(--font-xs); letter-spacing:0.5px; width:20%; color:var(--color-text-muted);">Acciones</th>
             </tr>
         </thead>
         <tbody>
         @if (Model.Contacts.Count == 0)
         {
             <tr>
-                <td colspan="3" style="text-align:center; padding:32px; color:#64748b; font-weight:600;">
+                <td colspan="3" style="text-align:center; padding:32px; color:var(--color-text-muted); font-weight:600;">
                     No se encontraron comunas que coincidan con la búsqueda "@Model.Search".
                 </td>
             </tr>
@@ -76,32 +78,32 @@
             var idx = 0;
             @foreach (var contact in Model.Contacts)
             {
-                var bg = idx % 2 == 1 ? "background:#f8fafc;" : "background:#ffffff;";
+                var bg = idx % 2 == 1 ? "background:#fafbfd;" : "background:#ffffff;";
                 idx++;
-                <tr id="row-@contact.Id" style="@bg border-bottom:1px solid #e2e8f0;">
-                    <td class="text-cell" style="padding:8px 16px;">
-                        <span id="view-comuna-@contact.Id" style="text-transform:uppercase; font-weight:700; color:#0f172a;">📍 @contact.Comuna</span>
-                        <input type="text" id="edit-comuna-@contact.Id" value="@contact.Comuna" style="display:none; width:100%; border:1px solid #3b82f6; border-radius:4px; padding:4px 8px; font-weight:700; text-transform:uppercase; background:#ffffff;" />
+                <tr id="row-@contact.Id" style="@bg border-bottom:1px solid var(--color-border-subtle);">
+                    <td class="text-cell" style="padding:10px 16px;">
+                        <span id="view-comuna-@contact.Id" style="text-transform:uppercase; font-weight:700; color:var(--color-text);">📍 @contact.Comuna</span>
+                        <input type="text" id="edit-comuna-@contact.Id" value="@contact.Comuna" style="display:none; width:100%; border:1.5px solid var(--color-accent); border-radius:var(--radius-sm); padding:4px 8px; font-weight:700; text-transform:uppercase; background:#ffffff;" />
                     </td>
-                    <td class="text-cell" style="padding:8px 16px;">
+                    <td class="text-cell" style="padding:10px 16px;">
                         <span id="view-email-@contact.Id">
-                            <a href="mailto:@contact.Email" style="color:#2563eb; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                            <a href="mailto:@contact.Email" style="color:var(--color-accent); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
                                 ✉️ @contact.Email
                             </a>
                         </span>
-                        <input type="email" id="edit-email-@contact.Id" value="@contact.Email" style="display:none; width:100%; border:1px solid #3b82f6; border-radius:4px; padding:4px 8px; font-weight:600; background:#ffffff;" />
+                        <input type="email" id="edit-email-@contact.Id" value="@contact.Email" style="display:none; width:100%; border:1.5px solid var(--color-accent); border-radius:var(--radius-sm); padding:4px 8px; font-weight:600; background:#ffffff;" />
                     </td>
-                    <td style="text-align:center; padding:8px 16px; white-space:nowrap;">
+                    <td style="text-align:center; padding:10px 16px; white-space:nowrap;">
                         <div id="view-actions-@contact.Id" style="display:inline-flex; gap:6px; align-items:center; justify-content:center;">
-                            <button type="button" class="btn-outline" style="padding:4px 10px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" onclick="startEditComuna(@contact.Id)">✏️ Editar</button>
+                            <button type="button" class="btn-outline" style="padding:5px 12px; border-radius:999px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" onclick="startEditComuna(@contact.Id)">✏️ Editar</button>
                             <form method="post" asp-page-handler="Delete" asp-route-search="@Model.Search"
                                   onsubmit="return confirm('¿Eliminar el contacto de @contact.Comuna?');" style="display:inline;">
                                 <input type="hidden" name="id" value="@contact.Id" />
-                                <button type="submit" class="btn-danger" style="padding:4px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" title="Eliminar contacto">✕ Quitar</button>
+                                <button type="submit" class="btn-danger" style="padding:5px 10px; border-radius:999px; font-size:var(--font-xs); font-weight:700; cursor:pointer;" title="Eliminar contacto">✕ Quitar</button>
                             </form>
                         </div>
                         <div id="edit-actions-@contact.Id" style="display:none; gap:6px; align-items:center; justify-content:center;">
-                            <button type="button" class="btn-primary" style="padding:4px 10px; border-radius:4px; font-size:var(--font-xs); font-weight:700; background:#16a34a; cursor:pointer;" onclick="saveEditComuna(@contact.Id)">💾 Guardar</button>
+                            <button type="button" class="btn-primary" style="padding:5px 12px; border-radius:999px; font-size:var(--font-xs); font-weight:700; background:var(--color-uploaded) !important; border-color:var(--color-uploaded) !important; cursor:pointer;" onclick="saveEditComuna(@contact.Id)">💾 Guardar</button>
                             <button type="button" class="nav-pill" style="padding:4px 8px; border-radius:4px; font-size:var(--font-xs); font-weight:600; cursor:pointer;" onclick="cancelEditComuna(@contact.Id)">✕ Cancelar</button>
                         </div>
                     </td>

@@ -12,7 +12,8 @@ public class ComunaSeedValidationTests(ITestOutputHelper output)
     [Fact]
     public void VerifyAllRealComunasLoaded()
     {
-        var csvPath = @"C:\Users\raul.salazar\Desktop\1.-licencias-carpetas\data\comunas.csv";
+        var repoRootCsv = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "data", "comunas.csv"));
+        var csvPath = File.Exists(repoRootCsv) ? repoRootCsv : Path.Combine(AppContext.BaseDirectory, "seed", "comunas.csv");
         Assert.True(File.Exists(csvPath), "data/comunas.csv debe existir");
 
         var dir = new ComunaDirectory();

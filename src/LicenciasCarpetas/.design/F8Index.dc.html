@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{
+      --navy:#173b6b; --navy-soft:#eaf1fb;
+      --bg:#f7f8fb; --surface:#ffffff;
+      --border:#e7e9f0; --border-soft:#f0f1f5;
+      --text:#1f2430; --text-muted:#7b8394;
+      --blue:#3b6fe0; --blue-soft:#e9f0ff;
+      --green:#2f9e6e; --green-soft:#e8f8f0;
+      --red:#e0605f; --red-soft:#fdeceb;
+      --amber:#d99a2b; --amber-soft:#fdf3e2;
+      --radius-lg:22px; --radius-md:16px; --radius-sm:12px;
+      --shadow:0 6px 20px -8px rgba(31,36,48,.10);
+    }
+    *{box-sizing:border-box;}
+    body{margin:0; font-family:"Segoe UI", system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--text);}
+    a{color:var(--blue); text-decoration:none;}
+    .icon{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none;}
+    table{border-collapse:collapse; width:100%;}
+    th{text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--text-muted); padding:12px 14px; background:#fafbfd; border-bottom:1px solid var(--border); white-space:nowrap;}
+    td{padding:11px 14px; font-size:13px; border-bottom:1px solid var(--border-soft); white-space:nowrap; vertical-align:middle;}
+    tr.alt td{background:#fafbfd;}
+    .pill{display:inline-flex; align-items:center; gap:5px; padding:4px 11px; border-radius:999px; font-size:11.5px; font-weight:700;}
+    .tab{display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:999px; font-size:12.5px; font-weight:700; color:var(--text-muted);}
+    .tab.active{background:var(--navy); color:#fff;}
+  </style>
+</helmet>
+
+<div style="width:1440px; min-height:900px; background:var(--bg); padding:32px 36px 44px;">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px;">
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+        <div style="width:34px; height:34px; border-radius:10px; background:var(--red-soft); display:flex; align-items:center; justify-content:center;">
+          <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--red); width:18px; height:18px;"><path d="M12 3 3 21h18Z"/><path d="M12 9v5"/><circle cx="12" cy="17" r=".6" fill="var(--red)"/></svg>
+        </div>
+        <h1 style="margin:0; font-size:22px; font-weight:800; color:var(--navy);">F8 Urgentes</h1>
+      </div>
+      <p style="margin:0 0 0 44px; font-size:13px; color:var(--text-muted);">Solicitudes de transferencia con tramitación urgente</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button style="all:unset; display:flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--border); color:var(--text); font-weight:700; font-size:12.5px; padding:9px 16px; border-radius:999px; cursor:pointer;">
+        <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;"><path d="M4 20V6a2 2 0 0 1 2-2h9l5 5v11"/><path d="M9 13h6M9 17h6"/></svg>
+        Informe Archivo
+      </button>
+      <button style="all:unset; display:flex; align-items:center; gap:7px; background:var(--navy); color:#fff; font-weight:700; font-size:12.5px; padding:9px 18px; border-radius:999px; box-shadow:0 6px 16px -6px rgba(23,59,107,.5); cursor:pointer;">
+        <svg class="icon" viewBox="0 0 24 24" style="stroke:#fff; width:15px;height:15px;"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+        Sincronizar ahora
+      </button>
+    </div>
+  </div>
+
+  <div style="background:var(--surface); border-radius:999px; box-shadow:var(--shadow); padding:6px; display:inline-flex; gap:2px; margin-bottom:18px;">
+    <span class="tab active">Todos</span>
+    <span class="tab">Pendientes</span>
+    <span class="tab">Subidas</span>
+    <span class="tab">Solicitud de certificado</span>
+    <span class="tab">Requiere revisión <span style="background:var(--red); color:#fff; border-radius:999px; padding:1px 7px; font-size:10.5px;">4</span></span>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:12px; background:var(--amber-soft); border-radius:var(--radius-md); padding:13px 18px; margin-bottom:18px;">
+    <svg class="icon" viewBox="0 0 24 24" style="width:18px; height:18px; stroke:#8a600f;"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+    <span style="font-size:12.5px; font-weight:600; color:#8a600f;">Recuerda imprimir las penúltimas carpetas de agosto 2026.</span>
+    <a style="margin-left:auto; font-size:12px; font-weight:700; color:#8a600f;">Ir a impresión mensual →</a>
+  </div>
+
+  <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:14px 18px; margin-bottom:18px; display:flex; align-items:center; gap:10px;">
+    <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px; stroke:var(--text-muted);"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <span style="color:var(--text-muted); font-size:13px; flex:1;">Buscar por RUT o nombre...</span>
+    <button style="all:unset; background:var(--blue); color:#fff; font-weight:700; font-size:12px; padding:7px 16px; border-radius:999px; cursor:pointer;">Buscar</button>
+  </div>
+
+  <div style="background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden;">
+    <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>RUT</th>
+          <th>Nombre completo</th>
+          <th>Código F8</th>
+          <th>Fecha ingreso</th>
+          <th>Comuna destino</th>
+          <th>Estado</th>
+          <th>Revisión</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--text-muted);">14.220.556-8</td>
+          <td style="font-weight:600;">Andrea Paz Muñoz Lira</td>
+          <td>F8-2026-0412</td>
+          <td style="color:var(--text-muted);">02 sept 2026</td>
+          <td>Viña del Mar</td>
+          <td><span class="pill" style="background:var(--blue-soft); color:#2a4fa0;">Pendiente</span></td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--green);"><path d="M20 6 9 17l-5-5"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr class="alt">
+          <td style="color:var(--text-muted);">17.884.221-0</td>
+          <td style="font-weight:600;">Roberto Ignacio Aránguiz Peña</td>
+          <td>F8-2026-0413</td>
+          <td style="color:var(--text-muted);">03 sept 2026</td>
+          <td>Quilpué</td>
+          <td><span class="pill" style="background:var(--green-soft); color:#1f7a4d;">Subido</span></td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--green);"><path d="M20 6 9 17l-5-5"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr>
+          <td style="color:var(--text-muted);">10.556.442-5</td>
+          <td style="font-weight:600; display:flex; align-items:center; gap:6px;">
+            <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px; stroke:var(--red);"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+            Carla Beatriz Soto Herrera
+          </td>
+          <td style="color:var(--text-muted);">—</td>
+          <td style="color:var(--text-muted);">04 sept 2026</td>
+          <td>Concón</td>
+          <td><span class="pill" style="background:var(--red-soft); color:#a03d3c;">Requiere revisión</span></td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--red);"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+        <tr class="alt">
+          <td style="color:var(--text-muted);">19.003.117-2</td>
+          <td style="font-weight:600;">Felipe Andrés Bahamonde Ríos</td>
+          <td>F8-2026-0415</td>
+          <td style="color:var(--text-muted);">04 sept 2026</td>
+          <td>Villa Alemana</td>
+          <td><span class="pill" style="background:var(--blue-soft); color:#2a4fa0;">Pendiente</span></td>
+          <td><svg class="icon" viewBox="0 0 24 24" style="stroke:var(--green);"><path d="M20 6 9 17l-5-5"/></svg></td>
+          <td><a style="font-weight:700; font-size:12px;">Ver →</a></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

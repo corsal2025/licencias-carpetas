@@ -82,7 +82,8 @@ public class IndexModelTests
         IndexModel Model,
         FakeOutboundAddressChangeRequestRepository Repository,
         FakeComunaContactRepository ComunaContacts,
-        RecordingEmailSender EmailSender);
+        RecordingEmailSender EmailSender,
+        FakeUrgentRequestRepositoryForCasos UrgentRequests);
 
     private static Fixture BuildModel(SqliteTestDatabase db, CambioDomicilioOptions? options = null,
         IMailSender? mailSender = null, TimeSpan? sendTimeout = null)
@@ -98,13 +99,14 @@ public class IndexModelTests
                 [new Claim(ClaimTypes.NameIdentifier, UserId.ToString())], "Test"))
         };
 
-        var model = new IndexModel(repository, sender, db.Cases, options ?? new CambioDomicilioOptions())
+        var urgentRequests = new FakeUrgentRequestRepositoryForCasos();
+        var model = new IndexModel(repository, sender, db.Cases, options ?? new CambioDomicilioOptions(), urgentRequests)
         {
             PageContext = new PageContext(new ActionContext(httpContext, new RouteData(), new PageActionDescriptor())),
             TempData = new TempDataDictionary(httpContext, new InMemoryTempDataProvider())
         };
 
-        return new Fixture(model, repository, comunaContacts, emailSender);
+        return new Fixture(model, repository, comunaContacts, emailSender, urgentRequests);
     }
 
     private static long SeedDraft(FakeOutboundAddressChangeRequestRepository repository, string? comuna = "Quillota") =>
@@ -398,4 +400,251 @@ public class IndexModelTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void OnPostSubida_SetsUploadedAtAndStateSubidaAConaset()
+    {
+        using var db = new SqliteTestDatabase();
+        var fixture = BuildModel(db);
+        var caseId = db.Cases.Insert(new FolderCase
+        {
+            FullName = "GUSTAVO PEÑA CASTRO",
+            Rut = "18.785.387-7",
+            Office = Office.AvenidaArgentina,
+            FolderState = FolderState.CambioDomicilio
+        });
+        var id = fixture.Repository.Insert(new OutboundAddressChangeRequest
+        {
+            FullName = "GUSTAVO PEÑA CASTRO",
+            Rut = "18.785.387-7",
+            DestinationComuna = "Quillota",
+            CreatedByUserId = UserId,
+            SourceFolderCaseId = caseId,
+            Status = OutboundRequestStatus.Enviada,
+            SentAt = DateTimeOffset.UtcNow,
+            WorkflowState = FolderState.CambioDomicilioSolicitado
+        });
+
+        var result = fixture.Model.OnPostSubida(id);
+
+        Assert.IsType<RedirectToPageResult>(result);
+        var req = fixture.Repository.FindById(id)!;
+        Assert.NotNull(req.UploadedAt);
+        Assert.Equal(FolderState.CambioDomicilioSubidoAConaset, req.WorkflowState);
+
+        var updatedCase = db.Cases.FindById(caseId)!;
+        Assert.Equal(FolderState.CambioDomicilioSubidoAConaset, updatedCase.FolderState);
+        Assert.Equal(DateOnly.FromDateTime(DateTime.Today), updatedCase.FolderUploadedDate);
+    }
+
+    [Fact]
+    public void OnPostCertificado_SetsStateSubidaConOficio()
+    {
+        using var db = new SqliteTestDatabase();
+        var fixture = BuildModel(db);
+        var caseId = db.Cases.Insert(new FolderCase
+        {
+            FullName = "GUSTAVO PEÑA CASTRO",
+            Rut = "18.785.387-7",
+            Office = Office.AvenidaArgentina,
+            FolderState = FolderState.CambioDomicilio
+        });
+        var id = fixture.Repository.Insert(new OutboundAddressChangeRequest
+        {
+            FullName = "GUSTAVO PEÑA CASTRO",
+            Rut = "18.785.387-7",
+            DestinationComuna = "Quillota",
+            CreatedByUserId = UserId,
+            SourceFolderCaseId = caseId,
+            Status = OutboundRequestStatus.Enviada,
+            SentAt = DateTimeOffset.UtcNow,
+            WorkflowState = FolderState.CambioDomicilioSolicitado
+        });
+
+        var result = fixture.Model.OnPostCertificado(id);
+
+        Assert.IsType<RedirectToPageResult>(result);
+        var req = fixture.Repository.FindById(id)!;
+        Assert.Equal(FolderState.PendienteCertificado, req.WorkflowState);
+
+        // OnGet/SyncFromFolderCases must not revert the workflow state back
+        fixture.Model.OnGet();
+        var reqAfterGet = fixture.Repository.FindById(id)!;
+        Assert.Equal(FolderState.PendienteCertificado, reqAfterGet.WorkflowState);
+
+        // Certificado NO sincroniza con Gestión de Licencias — Carpetas para Certificados
+        // será la sección responsable de confirmar y actualizar FolderCase.
+        var updatedCase = db.Cases.FindById(caseId)!;
+        Assert.Equal(FolderState.CambioDomicilio, updatedCase.FolderState);
+    }
+
+    [Fact]
+    public void OnPostTransferToF8_TransfersDataToUrgentRequests()
+    {
+        using var db = new SqliteTestDatabase();
+        var fixture = BuildModel(db);
+        var caseId = db.Cases.Insert(new FolderCase
+        {
+            FullName = "GUSTAVO PEÑA CASTRO",
+            Rut = "18.785.387-7",
+            Office = Office.AvenidaArgentina,
+            FolderState = FolderState.CambioDomicilio
+        });
+        var id = fixture.Repository.Insert(new OutboundAddressChangeRequest
+        {
+            FullName = "GUSTAVO PEÑA CASTRO",
+            Rut = "18.785.387-7",
+            DestinationComuna = "Quillota",
+            CreatedByUserId = UserId,
+            SourceFolderCaseId = caseId,
+            Status = OutboundRequestStatus.Enviada,
+            SentAt = DateTimeOffset.UtcNow,
+            WorkflowState = FolderState.CambioDomicilioSolicitado
+        });
+
+        var result = fixture.Model.OnPostTransferToF8(id);
+
+        Assert.IsType<RedirectToPageResult>(result);
+        var req = fixture.Repository.FindById(id)!;
+        Assert.Equal(FolderState.PendienteF8, req.WorkflowState);
+
+        // OnGet/SyncFromFolderCases must not revert the workflow state back
+        fixture.Model.OnGet();
+        var reqAfterGet = fixture.Repository.FindById(id)!;
+        Assert.Equal(FolderState.PendienteF8, reqAfterGet.WorkflowState);
+
+        var urgent = fixture.UrgentRequests.GetAll().FirstOrDefault();
+        Assert.NotNull(urgent);
+        Assert.Equal("GUSTAVO PEÑA CASTRO", urgent.NombreCompleto);
+        Assert.Equal("CambioDomicilio", urgent.Origin);
+
+        // F8 NO sincroniza con Gestión de Licencias — F8 Urgentes
+        // será la sección responsable de confirmar y actualizar FolderCase.
+        var updatedCase = db.Cases.FindById(caseId)!;
+        Assert.Equal(FolderState.CambioDomicilio, updatedCase.FolderState);
+    }
+
+    [Fact]
+    public void GetDaysRemaining_Returns15BusinessDaysAndNullWhenUploaded()
+    {
+        using var db = new SqliteTestDatabase();
+        var fixture = BuildModel(db);
+        var req = new OutboundAddressChangeRequest
+        {
+            FullName = "GUSTAVO PEÑA CASTRO",
+            Rut = "18.785.387-7",
+            DestinationComuna = "Quillota",
+            CreatedByUserId = UserId,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var remaining = fixture.Model.GetDaysRemaining(req);
+        Assert.NotNull(remaining);
+        Assert.Equal(15, remaining.Value);
+
+        req.UploadedAt = DateTimeOffset.UtcNow;
+        Assert.Null(fixture.Model.GetDaysRemaining(req));
+    }
+    private sealed class TestF8EmailSender : LicenciasCarpetas.F8.Services.IEmailSender
+    {
+        public Task SendAsync(string to, string subject, string body,
+            IReadOnlyList<LicenciasCarpetas.F8.Services.EmailAttachment>? attachments = null, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
+
+    [Fact]
+    public void F8Completion_SetsOutboundRequestToSubida_WithoutTouchingFolderCase()
+    {
+        using var db = new SqliteTestDatabase();
+        var fixture = BuildModel(db);
+        var caseId = db.Cases.Insert(new FolderCase
+        {
+            FullName = "JUAN CARLOS PEREZ",
+            Rut = "18.785.387-7",
+            Office = Office.AvenidaArgentina,
+            FolderState = FolderState.CambioDomicilio
+        });
+        var outId = fixture.Repository.Insert(new OutboundAddressChangeRequest
+        {
+            FullName = "JUAN CARLOS PEREZ",
+            Rut = "18.785.387-7",
+            DestinationComuna = "Quillota",
+            CreatedByUserId = UserId,
+            SourceFolderCaseId = caseId,
+            WorkflowState = FolderState.PendienteF8
+        });
+
+        var f8Id = fixture.UrgentRequests.Insert(new LicenciasCarpetas.F8.Domain.UrgentRequest
+        {
+            NombreCompleto = "JUAN CARLOS PEREZ",
+            Rut = "18785387-7",
+            Origin = "CambioDomicilio"
+        });
+
+        var f8Model = new LicenciasCarpetas.Dashboard.Pages.F8.IndexModel(
+            fixture.UrgentRequests,
+            new TestF8EmailSender(),
+            db.Cases,
+            outboundRepo: fixture.Repository);
+
+        f8Model.OnPostMarkUploaded(f8Id);
+
+        var updatedOut = fixture.Repository.FindById(outId)!;
+        Assert.Equal(FolderState.CambioDomicilioSubidoAConaset, updatedOut.WorkflowState);
+        Assert.NotNull(updatedOut.UploadedAt);
+
+        // Does NOT touch FolderCase in Gestion de Licencias
+        var updatedCase = db.Cases.FindById(caseId)!;
+        Assert.Equal(FolderState.CambioDomicilio, updatedCase.FolderState);
+    }
+
+    [Fact]
+    public void CertificadoEmission_SetsOutboundRequestToSubida_WithoutTouchingFolderCase()
+    {
+        using var db = new SqliteTestDatabase();
+        var fixture = BuildModel(db);
+        var caseId = db.Cases.Insert(new FolderCase
+        {
+            FullName = "MARIA LOPEZ",
+            Rut = "15.345.678-9",
+            Office = Office.AvenidaArgentina,
+            FolderState = FolderState.CambioDomicilio
+        });
+        var outId = fixture.Repository.Insert(new OutboundAddressChangeRequest
+        {
+            FullName = "MARIA LOPEZ",
+            Rut = "15.345.678-9",
+            DestinationComuna = "Viña del Mar",
+            CreatedByUserId = UserId,
+            SourceFolderCaseId = caseId,
+            WorkflowState = FolderState.PendienteCertificado
+        });
+
+        var certRepo = new LicenciasCarpetas.Certificados.Data.CertificadoRequestRepository(db.ConnectionString);
+        certRepo.EnsureSchema();
+
+        var certId = certRepo.Insert(new LicenciasCarpetas.Certificados.Domain.CertificadoRequest
+        {
+            NombreCompleto = "MARIA LOPEZ",
+            Rut = "15.345.678-9",
+            Origin = "Solicitar",
+            SourceId = outId,
+            Estado = "Pendiente"
+        });
+
+        var emitirModel = new LicenciasCarpetas.Dashboard.Pages.Certificados.EmitirModel(
+            certRepo,
+            fixture.Repository);
+
+        emitirModel.OnPostConfirmarEmision(certId, "FOLIO-123", "CALLE VALPO 123");
+
+        var updatedOut = fixture.Repository.FindById(outId)!;
+        Assert.Equal(FolderState.CambioDomicilioSubidoAConaset, updatedOut.WorkflowState);
+        Assert.NotNull(updatedOut.UploadedAt);
+
+        // Does NOT touch FolderCase in Gestion de Licencias
+        var updatedCase = db.Cases.FindById(caseId)!;
+        Assert.Equal(FolderState.CambioDomicilio, updatedCase.FolderState);
+    }
+
 }
