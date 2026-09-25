@@ -17,6 +17,7 @@ rules:
   proposal:
     - Include rollback plan for database schema changes
     - Consider impact on existing workbooks and SQLite migrations
+    - Todo cambio SDD que altere arquitectura, módulos, modelo o despliegue MUST actualizar docs/arquitectura.html (VERSION + CHANGELOG)
   specs:
     - Use Given/When/Then for scenarios
     - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)

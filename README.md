@@ -247,3 +247,13 @@ Falta solo cargar `CambioDomicilio:Ews:Username` y `Password`, que **no viajan e
 o en variables de entorno. Runbook en [`deploy/README.md`](deploy/README.md) § "Correo institucional (EWS)".
 Funcionamiento completo de principio a fin, con diagramas de flujo: [`docs/cambio-domicilio-informe.md`](docs/cambio-domicilio-informe.md)
 (versión imprimible: `docs/cambio-domicilio-informe.html`).
+
+## Arquitectura
+
+Diagrama vivo, versionado en el repo y sin conexión a internet: [`docs/arquitectura.html`](docs/arquitectura.html).
+Cubre capas, ciclo de vida de una carpeta, modelo de datos y despliegue. Toda propuesta SDD que
+cambie arquitectura, módulos, modelo o despliegue debe actualizarlo (ver `openspec/config.yaml`).
+
+## Créditos
+
+Desarrollado por **Raúl Salazar**. Ver [`AUTHORS.md`](AUTHORS.md).
