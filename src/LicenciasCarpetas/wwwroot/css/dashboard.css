@@ -3085,3 +3085,12 @@ table.cases th {
 .btn-cd-action.delete:hover {
     background: #fef2f2 !important;
 }
+
+/* Pie de autoría */
+.app-footer, .login-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #6b7280;
+  padding: 1rem 0;
+  margin-top: 2rem;
+}
