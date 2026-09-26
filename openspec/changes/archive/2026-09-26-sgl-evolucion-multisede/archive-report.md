@@ -11,3 +11,8 @@ Los cambios recomendados por esta exploración quedaron aplicados y archivados:
   permite servir la misma app+SQLite desde un servidor.
 - **PII en texto plano** (RUT, nombre, correo, celular) en SQLite y en los respaldos.
 - **Dependencia de EWS/Exchange on-prem** para Cambio de Domicilio.
+
+## Decisiones posteriores (2026-09-26)
+- Servidor municipal: **se mantiene SQLite**, servido desde el servidor con Docker/TrueNAS.
+- PII: **respaldos cifrados** (AES-256-GCM, `Carpetas:BackupEncryptionKey`, `--decrypt-backup`).
+- EWS: **se mantiene**; indicador de estado y verificación manual en el Panel de Control.

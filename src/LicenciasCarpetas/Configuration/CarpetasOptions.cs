@@ -26,4 +26,8 @@ public sealed class CarpetasOptions
     /// <summary>Optional secondary or offsite backup directory (e.g. UNC share \\server\backups or external drive).
     /// If configured and reachable, verified backups are copied here automatically.</summary>
     public string? SecondaryBackupDirectory { get; set; }
+
+    /// <summary>Frase para cifrar los respaldos (datos personales). Va en appsettings.Local.json, nunca
+    /// en git. Sin ella no se puede restaurar un respaldo cifrado: guardarla también fuera del equipo.</summary>
+    public string? BackupEncryptionKey { get; set; }
 }
