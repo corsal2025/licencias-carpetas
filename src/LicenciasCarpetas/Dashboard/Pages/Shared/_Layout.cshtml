@@ -72,6 +72,10 @@
                     <span class="sidebar-emoji">🪪</span> <span>Gestión de Licencias</span>
                 </a>
 
+                <a asp-page="/Persona" class="sidebar-link @(Context.Request.Path.StartsWithSegments("/Persona") ? "active" : "")">
+                    <span class="sidebar-emoji">🧾</span> <span>Ficha de Persona</span>
+                </a>
+
                 <div class="sidebar-section-title">MÓDULOS ESPECIALES</div>
                 @if (puedeCambioDomicilio)
                 {
@@ -149,6 +153,9 @@
     </div>
 
     <script src="~/js/scroll-preserve.js" asp-append-version="true"></script>
+
+    @* "Ver ficha" desde la búsqueda global: POST con antiforgery para que el RUT no quede en la URL. *@
+    <form id="persona-form" method="post" asp-page="/Persona" style="display:none;"><input type="hidden" name="rut" /></form>
 
     <!-- Global Search Modal (Ctrl+K) -->
     <div id="global-search-backdrop" class="global-search-backdrop" onclick="if (event.target === this) closeGlobalSearch();">
@@ -243,7 +250,8 @@
                     currentModule = item.module;
                     html += '<div class="global-search-group">' + escapeHtml(currentModule) + '</div>';
                 }
-                html += '<a href="' + item.url + '" class="global-search-item">';
+                html += '<div style="display:flex; align-items:stretch;">';
+                html += '<a href="' + item.url + '" class="global-search-item" style="flex:1;">';
                 html += '  <div>';
                 html += '    <div style="font-weight:600;">' + escapeHtml(item.title) + (item.rut ? ' <span style="font-weight:normal; color:var(--color-text-muted);">(' + escapeHtml(item.rut) + ')</span>' : '') + '</div>';
                 if (item.detail) {
@@ -254,8 +262,19 @@
                     html += '  <span class="badge-sla badge-sla-normal" style="font-size:var(--font-xs);">' + escapeHtml(item.status) + '</span>';
                 }
                 html += '</a>';
+                if (item.rut) {
+                    html += '<button type="button" class="nav-pill" style="margin:4px; cursor:pointer;" title="Ver todo lo registrado para este RUT" data-rut="' + escapeHtml(item.rut) + '" onclick="openPersonFile(this.dataset.rut)">🧾 Ficha</button>';
+                }
+                html += '</div>';
             });
             container.innerHTML = html;
+        }
+
+        function openPersonFile(rut) {
+            var form = document.getElementById('persona-form');
+            if (!form) return;
+            form.querySelector('input[name="rut"]').value = rut;
+            form.submit();
         }
 
         function escapeHtml(str) {

@@ -79,6 +79,7 @@ builder.Services.AddSingleton<IExcelWorkbookImporter, ExcelWorkbookImporter>();
 builder.Services.AddSingleton<IExcelCaseExporter, ExcelCaseExporter>();
 builder.Services.AddSingleton<StatisticsService>();
 builder.Services.AddSingleton<IGlobalSearchService>(_ => new GlobalSearchService(connectionString));
+builder.Services.AddSingleton<IPersonFileQuery>(_ => new PersonFileQuery(connectionString));
 
 // Módulo F8 Urgentes: vive en la misma carpetas.db (tabla propia, UrgentRequest) y detrás del
 // mismo login — ya no es una app aparte. Solo trae sus propias rutas de Excel de config.
