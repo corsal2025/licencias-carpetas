@@ -32,7 +32,7 @@ Una tabla inexistente (módulo sin inicializar) MUST tratarse como lista vacía.
 - THEN no aparece en la ficha
 
 ### Requirement: Alcance por sede
-`IPersonFileQuery` MUST recibir un `PersonFileScope`. Con `AllowedOffices` nulo se consultan todas las sedes; con una lista, solo los casos (y su auditoría) de esas sedes.
+`IPersonFileQuery` MUST recibir un `OfficeScope`. Con `AllowedOffices` nulo se consultan todas las sedes; con una lista, solo los casos (y su auditoría) de esas sedes.
 
 #### Scenario: Alcance restringido
 - GIVEN casos del RUT en Placilla y Av. Argentina

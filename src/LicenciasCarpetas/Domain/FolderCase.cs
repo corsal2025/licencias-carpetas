@@ -176,16 +176,24 @@ public sealed class FolderCase
     {
         get
         {
-            if (IsUploaded || FolderState is Domain.FolderState.NoExisteCarpeta || FolderState is Domain.FolderState.PrimeraLicencia)
-            {
-                return CaseAgingAlert.None;
-            }
-
-            var days = DaysSinceCitation;
-            if (days is null) return CaseAgingAlert.None;
-            if (days >= 15) return CaseAgingAlert.Overdue;
-            if (days >= 7) return CaseAgingAlert.Warning;
-            return CaseAgingAlert.Normal;
+            return AgingFor(FolderState, CitationDate, DateOnly.FromDateTime(DateTime.Today));
         }
+    }
+
+    /// <summary>The SLA rule behind <see cref="AgingAlert"/>, with "today" passed in so reports
+    /// (and their tests) can evaluate it for any date.</summary>
+    public static CaseAgingAlert AgingFor(FolderState? state, DateOnly? citationDate, DateOnly today)
+    {
+        var probe = new FolderCase { FolderState = state };
+        if (probe.IsUploaded || state is Domain.FolderState.NoExisteCarpeta || state is Domain.FolderState.PrimeraLicencia)
+        {
+            return CaseAgingAlert.None;
+        }
+
+        if (citationDate is not { } date) return CaseAgingAlert.None;
+        var days = Math.Max(0, today.DayNumber - date.DayNumber);
+        if (days >= 15) return CaseAgingAlert.Overdue;
+        if (days >= 7) return CaseAgingAlert.Warning;
+        return CaseAgingAlert.Normal;
     }
 }
