@@ -114,7 +114,13 @@ La ruta por defecto del Excel se configura en `Carpetas:DefaultWorkbookPath` (ve
   Las carpetas ya subidas a Conaset bajan al final de la lista, ordenadas por fecha de subida: son
   trabajo terminado y dejan arriba lo pendiente.
 - `/Papelera`: casos eliminados, con restauración. Nada se borra de verdad hasta confirmarlo ahí.
-- `/Usuarios`: crear cuentas, cambiarle la contraseña a quien la olvidó, eliminar usuarios.
+- `/Usuarios`: crear cuentas, cambiarle la contraseña a quien la olvidó, eliminar usuarios, y
+  asignar **rol, módulos y sedes**. Incluye el historial de cambios de permisos.
+- `/Persona` **Ficha de persona**: se escribe un RUT (con o sin puntos/guion) y se ve en una sola
+  página, en solo lectura, todo lo registrado para esa persona: sus casos de todas las sedes, el
+  historial de cambios, F8, Cambio de Domicilio (recibidos y solicitados) y Certificados. El RUT
+  viaja por POST y nunca queda en la URL. También se abre con el botón **🧾 Ficha** de la búsqueda
+  global (Ctrl+K).
 - `/Sector/Archivo` y `/Sector/Oficina43`: **documento imprimible** para pedir carpetas físicas, con
   escudo municipal, destino, período, quién solicita, total, filas numeradas y firmas. Filtrable por
   día o mes de citación. Muestra nombre, RUT y fecha de última carpeta, con el mes escrito
@@ -126,6 +132,12 @@ La ruta por defecto del Excel se configura en `Carpetas:DefaultWorkbookPath` (ve
   gráficos de barras**: atención por oficina, licencias por clase (profesionales destacadas) y
   estados de carpeta, cada barra con el mismo color que esa fila tiene en Casos. Los gráficos son
   CSS puro, sin librerías: un equipo sin internet no puede quedarse con la pantalla en blanco.
+- `/Estadisticas/Comparativo` **Comparativo por sede**: Av. Argentina, Placilla y Merc. Puerto
+  lado a lado para un mes, semestre o año: otorgados, denegados, en curso y sin decisión; desglose por
+  estado; días citación→decisión (promedio y mediana, con el N usado); backlog por antigüedad
+  (🟢 <7 días, 🟡 7–14, 🔴 ≥15); tendencia mensual e indicadores de calidad de datos. Exporta a
+  Excel (hojas Resumen, Estados y Tendencia). La fecha de decisión sale del historial de cambios, así
+  que los casos importados del libro (nunca editados acá) se informan como "decididos sin fecha".
 - `/Sector/Archivo` y `/Sector/Oficina43`: listado imprimible (imprimir del navegador → PDF) de las
   carpetas a retirar. Por defecto muestra solo los casos marcados; hay un enlace para ver todo el sector.
 - `/Comunas`: directorio de correos por municipio.
@@ -134,7 +146,24 @@ La ruta por defecto del Excel se configura en `Carpetas:DefaultWorkbookPath` (ve
 - `/Setup`: creación de la primera cuenta. Solo aparece mientras no existe ninguna; después se
   cierra y las cuentas se crean desde `/Usuarios`, ya con sesión iniciada.
 
-## Cuentas y contraseñas
+## Cuentas, roles y sedes
+
+| Rol | Sedes | Pantallas |
+| --- | --- | --- |
+| Administrador | Todas | Todo, incluida Usuarios (único que asigna roles y sedes) |
+| Jefatura | Todas | Todo menos Usuarios |
+| Coordinador | Las asignadas | Casos, estadísticas, sector, comunas, papelera; sin Importar |
+| Administrativo | Las asignadas | Casos; F8 y Cambio de Domicilio según se le habilite |
+
+- La restricción por sede se aplica **en el servidor**: listados, conteos, exportación, papelera,
+  sector, estadísticas, comparativo, ficha de persona y búsqueda global solo muestran casos de las
+  sedes del usuario, y cualquier caso de otra sede pedido por URL responde 404.
+- F8, Cambio de Domicilio, Certificados e Importar no tienen sede y no se filtran.
+- Un cambio de rol, módulos o sedes se aplica en la **siguiente acción** del usuario afectado, sin que
+  tenga que volver a entrar, y queda registrado en el historial de permisos.
+- Al actualizar desde una versión anterior, todos los usuarios existentes reciben las tres sedes: nadie
+  pierde acceso.
+
 
 La primera cuenta se crea sola en pantalla al abrir una instalación nueva. Las siguientes, desde
 `/Usuarios`. Mínimo 8 caracteres, y el nombre de usuario no distingue mayúsculas ni espacios
@@ -157,6 +186,18 @@ alcance este puerto.
 Cada arranque copia la base a `data/backups/` **antes** de aplicar migraciones, y conserva las 10
 copias más recientes (`Carpetas:BackupsToKeep`). Un fallo al respaldar nunca impide arrancar.
 
+**Cifrado de respaldos (recomendado):** con `Carpetas:BackupEncryptionKey` en
+`appsettings.Local.json`, cada copia se verifica y se guarda solo cifrada (`.db.enc`, AES-256-GCM);
+la copia en claro se borra. Así un respaldo copiado a un pendrive o carpeta compartida no expone RUT,
+nombres, correos ni celulares. Para restaurar:
+
+```powershell
+.\LicenciasCarpetas.exe --decrypt-backup data\backups\carpetas-20260926-0900.db.enc restaurada.db
+```
+
+Si se pierde la frase, los respaldos cifrados **no se pueden recuperar**: guardarla también fuera
+del equipo. Los respaldos anteriores a activar el cifrado siguen en claro hasta que rotan.
+
 Las copias quedan junto a la base, en el mismo disco: sirven contra un borrado accidental o una
 migración fallida, **no** contra la falla del disco. Para eso hay que copiar `data/` a otro medio.
 
@@ -166,12 +207,14 @@ migración fallida, **no** contra la falla del disco. Para eso hay que copiar `d
 dotnet test -c Release
 ```
 
-267 pruebas: catálogos y variantes de escritura, validación de RUT, lectura de celdas (fecha real,
+Más de 600 pruebas: catálogos y variantes de escritura, validación de RUT, lectura de celdas (fecha real,
 serial de Excel, texto tipeado), mapeo de filas, deduplicación al reimportar, detección de hojas por
 contenido, filtros, orden (incluido el de nombres con tilde y el hundimiento de lo ya subido),
 paginación, papelera, asistencia, clases de licencia, colores por estado, RUT repetidos, informes de
 sector por período, estadísticas, saneado del libro, exportación completa, autenticación (bloqueo por
-intentos fallidos, mayúsculas en el usuario, restablecimiento) y respaldos.
+intentos fallidos, mayúsculas en el usuario, restablecimiento), respaldos, ficha de persona, KPI por
+sede y roles por sede (filtro en cada pantalla, 404 fuera de sede, sesión rehecha al cambiar permisos
+y una prueba de arquitectura que impide que una pantalla use el repositorio de casos sin filtro).
 
 ### CI
 
@@ -206,6 +249,11 @@ Excel y acceso directo en el Escritorio):
 Runbook completo, actualización, reimportación y respaldos en [`deploy/README.md`](deploy/README.md).
 No lleva Tarea Programada: a diferencia de `outlook-comuna-router`, esta aplicación no corre en
 segundo plano, se abre cuando el operador la necesita.
+
+
+**Base de datos:** se mantiene SQLite también en un servidor municipal (decisión 2026-09-26). Para 3
+sedes y unas decenas de miles de casos alcanza; el servidor corre la misma app con Docker/TrueNAS
+(`TRUENAS_DEPLOY.md`). La base debe quedar en disco local del servidor, no en una carpeta de red.
 
 ## Detalles de implementación que conviene conocer
 
@@ -247,6 +295,11 @@ Falta solo cargar `CambioDomicilio:Ews:Username` y `Password`, que **no viajan e
 o en variables de entorno. Runbook en [`deploy/README.md`](deploy/README.md) § "Correo institucional (EWS)".
 Funcionamiento completo de principio a fin, con diagramas de flujo: [`docs/cambio-domicilio-informe.md`](docs/cambio-domicilio-informe.md)
 (versión imprimible: `docs/cambio-domicilio-informe.html`).
+
+
+El Panel de Control muestra el estado del correo institucional (🟢 conectado, 🔴 sin conexión,
+⚪ sin configurar o sin verificar) con un botón **Verificar correo**, que lista la carpeta de entrada
+con un tope de 15 segundos. Para el detalle técnico del error está `--test-ews`.
 
 ## Arquitectura
 

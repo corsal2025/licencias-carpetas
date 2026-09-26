@@ -58,6 +58,11 @@ public sealed class UserRepository(string connectionString) : IUserRepository
         AddColumnIfMissing(connection, "CanAccessCambioDomicilio", "INTEGER NOT NULL DEFAULT 0");
         AddColumnIfMissing(connection, "CanAccessF8Urgentes", "INTEGER NOT NULL DEFAULT 0");
         AddColumnIfMissing(connection, "EmailFooter", "TEXT NULL");
+        AddColumnIfMissing(connection, "SecurityStamp", "TEXT NULL");
+
+        using var stamp = connection.CreateCommand();
+        stamp.CommandText = "UPDATE DashboardUser SET SecurityStamp = lower(hex(randomblob(16))) WHERE SecurityStamp IS NULL";
+        stamp.ExecuteNonQuery();
     }
 
     private static void AddColumnIfMissing(SqliteConnection connection, string column, string definition)
@@ -109,8 +114,8 @@ public sealed class UserRepository(string connectionString) : IUserRepository
         using var command = connection.CreateCommand();
         command.CommandText = """
             INSERT INTO DashboardUser (Username, PasswordHash, PasswordSalt, Iterations, FailedLoginAttempts,
-                LockedUntil, CreatedAt, Role, CanAccessCambioDomicilio, CanAccessF8Urgentes)
-            VALUES ($username, $hash, $salt, $iterations, 0, NULL, $createdAt, $role, $cambio, $f8)
+                LockedUntil, CreatedAt, Role, CanAccessCambioDomicilio, CanAccessF8Urgentes, SecurityStamp)
+            VALUES ($username, $hash, $salt, $iterations, 0, NULL, $createdAt, $role, $cambio, $f8, lower(hex(randomblob(16))))
             """;
         command.Parameters.AddWithValue("$username", user.Username);
         command.Parameters.AddWithValue("$hash", user.PasswordHash);
@@ -171,10 +176,28 @@ public sealed class UserRepository(string connectionString) : IUserRepository
     public void Delete(string username)
     {
         using var connection = Open();
+        using var transaction = connection.BeginTransaction();
+        using (var check = connection.CreateCommand())
+        {
+            check.Transaction = transaction;
+            check.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'UserOffice'";
+            if (check.ExecuteScalar() is not null)
+            {
+                // SQLite no aplica FKs sin PRAGMA foreign_keys: las sedes del usuario se borran a mano.
+                using var offices = connection.CreateCommand();
+                offices.Transaction = transaction;
+                offices.CommandText = "DELETE FROM UserOffice WHERE UserId IN (SELECT Id FROM DashboardUser WHERE Username = $username)";
+                offices.Parameters.AddWithValue("$username", username);
+                offices.ExecuteNonQuery();
+            }
+        }
+
         using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = "DELETE FROM DashboardUser WHERE Username = $username";
         command.Parameters.AddWithValue("$username", username);
         command.ExecuteNonQuery();
+        transaction.Commit();
     }
 
     public void RecordFailedLogin(long id, int attempts, DateTimeOffset? lockedUntil)
@@ -259,7 +282,8 @@ public sealed class UserRepository(string connectionString) : IUserRepository
             : UserRole.Administrador,
         CanAccessCambioDomicilio = reader.GetInt32(reader.GetOrdinal("CanAccessCambioDomicilio")) == 1,
         CanAccessF8Urgentes = reader.GetInt32(reader.GetOrdinal("CanAccessF8Urgentes")) == 1,
-        EmailFooter = reader.IsDBNull(reader.GetOrdinal("EmailFooter")) ? null : reader.GetString(reader.GetOrdinal("EmailFooter"))
+        EmailFooter = reader.IsDBNull(reader.GetOrdinal("EmailFooter")) ? null : reader.GetString(reader.GetOrdinal("EmailFooter")),
+        SecurityStamp = reader.IsDBNull(reader.GetOrdinal("SecurityStamp")) ? null : reader.GetString(reader.GetOrdinal("SecurityStamp"))
     };
 
     public void UpdateEmailFooter(long id, string? footer)

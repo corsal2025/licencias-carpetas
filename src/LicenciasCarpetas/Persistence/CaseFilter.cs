@@ -23,6 +23,10 @@ public sealed record CaseFilter
 {
     public Office? Office { get; init; }
 
+    /// <summary>Offices the signed-in user may see (per-office roles). Null = every office; an empty
+    /// collection = none. Combined with <see cref="Office"/>, never widened by it.</summary>
+    public IReadOnlyCollection<Office>? AllowedOffices { get; init; }
+
     /// <summary>Citation month (1-12), paired with <see cref="Year"/> when both are set.</summary>
     public int? Month { get; init; }
 

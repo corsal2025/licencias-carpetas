@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace LicenciasCarpetas.Dashboard.Pages;
 
 [Authorize(Roles = "Administrador,Jefatura,Coordinador")]
-public class SectorModel(IFolderCaseRepository cases) : PageModel
+public class SectorModel(IScopedCaseRepository cases) : PageModel
 {
     public IReadOnlyList<FolderCase> Cases { get; private set; } = [];
 

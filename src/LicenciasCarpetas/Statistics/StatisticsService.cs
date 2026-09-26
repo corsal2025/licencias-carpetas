@@ -54,9 +54,12 @@ public sealed record MonthlyStatistics(
 /// </summary>
 public sealed class StatisticsService(IFolderCaseRepository cases, IDailyCounterRepository counters)
 {
-    public MonthlyStatistics ForMonth(int year, int month)
+    /// <summary><paramref name="scope"/> limits the case-derived figures to the user's offices; the
+    /// manual scanned/uploaded counters are department-wide and are not split by office.</summary>
+    public MonthlyStatistics ForMonth(int year, int month, OfficeScope? scope = null)
     {
-        var attendance = cases.DailyAttendance(year, month);
+        var allowed = scope?.AllowedOffices;
+        var attendance = cases.DailyAttendance(year, month, allowed);
         var monthCounters = counters.ForMonth(year, month).ToDictionary(counter => counter.Date);
 
         var dates = attendance
@@ -81,18 +84,18 @@ public sealed class StatisticsService(IFolderCaseRepository cases, IDailyCounter
             year,
             month,
             days,
-            cases.FolderStateBreakdown(year, month, office: null),
-            cases.FinalDecisionBreakdown(year, month, office: null),
-            cases.LicenceClassBreakdown(year, month, office: null));
+            cases.FolderStateBreakdown(year, month, office: null, allowed),
+            cases.FinalDecisionBreakdown(year, month, office: null, allowed),
+            cases.LicenceClassBreakdown(year, month, office: null, allowed));
     }
 
-    public MonthlyUserStatistics UserStatsForMonth(int year, int month)
+    public MonthlyUserStatistics UserStatsForMonth(int year, int month, OfficeScope? scope = null)
     {
         var daysInMonth = DateTime.DaysInMonth(year, month);
         var start = new DateTimeOffset(new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc));
         var end = new DateTimeOffset(new DateTime(year, month, daysInMonth, 23, 59, 59, DateTimeKind.Utc));
 
-        var logs = cases.GetAuditLogsForPeriod(start, end);
+        var logs = cases.GetAuditLogsForPeriod(start, end, scope?.AllowedOffices);
 
         var scatterPoints = new List<UserActivityScatterPoint>();
         var userActions = new Dictionary<string, List<CaseAuditEntry>>(StringComparer.OrdinalIgnoreCase);

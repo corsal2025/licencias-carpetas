@@ -27,7 +27,7 @@
             <label class="form-label" for="office">Oficina</label>
             <select name="office" id="office" onchange="this.form.submit()">
                 <option value="">Todas</option>
-                @foreach (var office in Enum.GetValues<Office>())
+                @foreach (var office in Model.AllowedOffices)
                 {
                     <option value="@office" selected="@(Model.Office == office)">@OfficeCatalog.Display(office)</option>
                 }
@@ -139,7 +139,7 @@
         <div>
             <label class="form-label">Oficina</label>
             <select name="office">
-                @foreach (var office in Enum.GetValues<Office>())
+                @foreach (var office in Model.AllowedOffices)
                 {
                     <option value="@office">@OfficeCatalog.Display(office)</option>
                 }
