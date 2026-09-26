@@ -12,7 +12,7 @@ namespace LicenciasCarpetas.Dashboard.Pages;
 /// del navegador ni los logs de un proxy.
 /// </summary>
 [Authorize]
-public class PersonaModel(IPersonFileQuery query) : PageModel
+public class PersonaModel(IPersonFileQuery query, OfficeScope scope) : PageModel
 {
     internal const string RutKey = "PersonaRut";
 
@@ -29,7 +29,7 @@ public class PersonaModel(IPersonFileQuery query) : PageModel
         Error = TempData["PersonaError"] as string;
         if (TempData.Peek(RutKey) is string rut)
         {
-            File = query.Load(rut, OfficeScope.All);
+            File = query.Load(rut, scope);
         }
     }
 

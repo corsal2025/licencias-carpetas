@@ -16,7 +16,7 @@ using UrgentRequest = LicenciasCarpetas.F8.Domain.UrgentRequest;
 namespace LicenciasCarpetas.Dashboard.Pages;
 
 [Authorize]
-public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter, CarpetasOptions options,
+public class IndexModel(IScopedCaseRepository cases, IExcelCaseExporter exporter, CarpetasOptions options,
     IOutboundAddressChangeRequestRepository outboundRequests, OutboundRequestSender sender,
     IUrgentRequestRepository urgentRequests, IComunaContactRepository comunaContacts) : PageModel
 {
@@ -89,6 +89,9 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
 
     public string? Message { get; set; }
     public bool MessageIsError { get; set; }
+
+    /// <summary>Sedes que este usuario puede ver y elegir (roles por sede).</summary>
+    public IReadOnlyList<Office> AllowedOffices => cases.Scope.Offices;
 
     public void OnGet()
     {
@@ -395,6 +398,11 @@ public class IndexModel(IFolderCaseRepository cases, IExcelCaseExporter exporter
         if (fullName is null)
         {
             return RedirectWithMessage("Falta el nombre completo — no se agregó el caso.", isError: true);
+        }
+
+        if (!cases.Scope.Allows(office))
+        {
+            return RedirectWithMessage($"No tiene acceso a la sede {OfficeCatalog.Display(office)} — no se agregó el caso.", isError: true);
         }
 
         var citationDate = ParseDate(citacion);

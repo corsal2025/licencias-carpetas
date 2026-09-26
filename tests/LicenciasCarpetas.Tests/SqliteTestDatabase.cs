@@ -25,6 +25,10 @@ public sealed class SqliteTestDatabase : IDisposable
     public DailyCounterRepository Counters { get; }
     public ComunaContactRepository Contacts { get; }
 
+    /// <summary>The cases as a screen sees them: through the per-request office scope.</summary>
+    public ScopedCaseRepository ScopedCases(LicenciasCarpetas.Domain.OfficeScope? scope = null)
+        => new(Cases, scope ?? LicenciasCarpetas.Domain.OfficeScope.All);
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();

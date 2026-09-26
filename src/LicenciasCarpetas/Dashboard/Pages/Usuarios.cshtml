@@ -1,5 +1,6 @@
 @page
 @using LicenciasCarpetas.Dashboard.Auth
+@using LicenciasCarpetas.Domain
 @model LicenciasCarpetas.Dashboard.Pages.UsuariosModel
 @{
     ViewData["Title"] = "Usuarios";
@@ -47,6 +48,15 @@
                 <input type="checkbox" name="moduloF8" value="true" /> F8 Urgentes
             </label>
         </div>
+        <div class="sedes-restringidas">
+            <label class="form-label">Sedes (Coordinador y Administrativo)</label>
+            @foreach (var office in Enum.GetValues<Office>())
+            {
+                <label class="text-md" style="display:flex; gap:4px; align-items:center;">
+                    <input type="checkbox" name="sedes" value="@office" /> @OfficeCatalog.Display(office)
+                </label>
+            }
+        </div>
         <button type="submit" class="btn-primary" style="padding:8px 16px;">Crear</button>
     </form>
 </div>
@@ -85,7 +95,7 @@
 <div class="card table-card" style="max-width:960px;">
     <table class="cases">
         <thead>
-            <tr><th>Usuario</th><th>Rol</th><th>Cambio de Domicilio</th><th>F8 Urgentes</th><th>Acción</th></tr>
+            <tr><th>Usuario</th><th>Rol</th><th>Cambio de Domicilio</th><th>F8 Urgentes</th><th>Sedes</th><th>Acción</th></tr>
         </thead>
         <tbody>
         @foreach (var user in Model.Users)
@@ -117,6 +127,22 @@
                     <input type="checkbox" name="moduloF8" form="@formId" value="true"
                            checked="@user.CanAccessF8Urgentes" class="modulo-checkbox"
                            disabled="@(user.Role != UserRole.Administrativo)" />
+                </td>
+                <td>
+                    @{ var sedesUsuario = Model.OfficesByUser.GetValueOrDefault(user.Id) ?? []; }
+                    @foreach (var office in Enum.GetValues<Office>())
+                    {
+                        <label class="text-md" style="display:flex; gap:4px; align-items:center; white-space:nowrap;">
+                            <input type="checkbox" name="sedes" form="@formId" value="@office" class="sede-checkbox"
+                                   checked="@sedesUsuario.Contains(office)"
+                                   disabled="@(esUnoMismo || OfficeScopeClaims.IsUnrestrictedRole(user.Role))" />
+                            @OfficeCatalog.Display(office)
+                        </label>
+                    }
+                    @if (OfficeScopeClaims.IsUnrestrictedRole(user.Role))
+                    {
+                        <small class="sede-todas" style="color:var(--color-text-muted);">Ve todas por su rol</small>
+                    }
                 </td>
                 <td>
                     @if (!esUnoMismo)
@@ -185,6 +211,27 @@
     </form>
 </div>
 
+<div class="card table-card" style="max-width:960px; margin-top:16px;">
+    <h2 class="text-xl" style="margin:12px 16px 4px;">Historial de permisos</h2>
+    <p class="text-md" style="margin:0 16px 8px;">Cada cambio de rol, módulos o sedes. Se aplica en la siguiente acción del usuario, sin que tenga que volver a entrar.</p>
+    <table class="cases">
+        <thead><tr><th>Fecha</th><th>Quién</th><th>A quién</th><th>Qué</th><th>Antes</th><th>Después</th></tr></thead>
+        <tbody>
+        @foreach (var entry in Model.PermissionLog)
+        {
+            <tr>
+                <td>@entry.ChangedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")</td>
+                <td>@entry.ChangedBy</td>
+                <td>@entry.TargetUsername</td>
+                <td>@entry.Field</td>
+                <td>@(entry.Before ?? "—")</td>
+                <td>@(entry.After ?? "—")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
 @section Scripts {
 <script>
     document.getElementById('reveal-passwords').addEventListener('change', function () {
@@ -196,9 +243,12 @@
     // incondicional, así que marcarlos ahí no cambiaría nada y solo confundiría.
     var crearRol = document.querySelector('.usuario-form .rol-select');
     var crearModulos = document.querySelector('.modulos-administrativo');
+    var crearSedes = document.querySelector('.sedes-restringidas');
     function actualizarModulosCreacion() {
         var esAdministrativo = crearRol.value === 'Administrativo';
         crearModulos.style.display = esAdministrativo ? '' : 'none';
+        // Administrador y Jefatura ven todas las sedes por su rol.
+        crearSedes.style.display = (crearRol.value === 'Administrativo' || crearRol.value === 'Coordinador') ? '' : 'none';
     }
     if (crearRol) {
         crearRol.addEventListener('change', actualizarModulosCreacion);
@@ -208,10 +258,15 @@
     document.querySelectorAll('table.cases tbody tr').forEach(function (row) {
         var rolSelect = row.querySelector('select.rol-select');
         var checkboxes = row.querySelectorAll('.modulo-checkbox');
+        var sedes = row.querySelectorAll('.sede-checkbox');
         if (!rolSelect || checkboxes.length === 0) return;
         rolSelect.addEventListener('change', function () {
             var habilitados = rolSelect.value === 'Administrativo';
             checkboxes.forEach(function (checkbox) { checkbox.disabled = !habilitados; });
+            var restringido = rolSelect.value === 'Administrativo' || rolSelect.value === 'Coordinador';
+            sedes.forEach(function (checkbox) { checkbox.disabled = !restringido; });
+            var nota = row.querySelector('.sede-todas');
+            if (nota) nota.style.display = restringido ? 'none' : '';
         });
     });
 </script>

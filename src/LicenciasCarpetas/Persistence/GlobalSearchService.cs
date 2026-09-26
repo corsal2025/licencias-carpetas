@@ -5,12 +5,14 @@ namespace LicenciasCarpetas.Persistence;
 
 public interface IGlobalSearchService
 {
-    IReadOnlyList<GlobalSearchResult> Search(string query, int limit = 20);
+    /// <summary>Cases are limited to <paramref name="scope"/> (per-office roles); F8, Cambio de
+    /// Domicilio and Certificados have no office and are not filtered.</summary>
+    IReadOnlyList<GlobalSearchResult> Search(string query, int limit = 20, OfficeScope? scope = null);
 }
 
 public sealed class GlobalSearchService(string connectionString) : IGlobalSearchService
 {
-    public IReadOnlyList<GlobalSearchResult> Search(string query, int limit = 20)
+    public IReadOnlyList<GlobalSearchResult> Search(string query, int limit = 20, OfficeScope? scope = null)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -28,10 +30,14 @@ public sealed class GlobalSearchService(string connectionString) : IGlobalSearch
         try
         {
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = """
+            var allowed = scope?.AllowedOffices;
+            var officeClause = allowed is null
+                ? string.Empty
+                : allowed.Count == 0 ? "AND 1 = 0" : $"AND Office IN ({string.Join(", ", allowed.Select(o => (int)o))})";
+            cmd.CommandText = $"""
                 SELECT Id, FullName, Rut, CitationDate, FolderState, FolderStateRaw
                 FROM FolderCase
-                WHERE DeletedAt IS NULL
+                WHERE DeletedAt IS NULL {officeClause}
                   AND (FullName LIKE $search COLLATE NOCASE OR replace(replace(Rut, '.', ''), '-', '') LIKE $rutSearch)
                 ORDER BY CitationDate DESC, Id DESC
                 LIMIT $limit

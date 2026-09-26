@@ -24,7 +24,9 @@ public class UsuariosModelTests
         users.EnsureSchema();
         var backupDirectory = Path.Combine(Path.GetTempPath(), $"licencias-carpetas-backups-{Guid.NewGuid():N}");
         var backup = new DatabaseBackup(db.Path, backupDirectory, keep: 5);
-        var model = new UsuariosModel(users, new UserProvisioning(users), db.Cases, backup)
+        var offices = new UserOfficeRepository(db.ConnectionString);
+        offices.EnsureSchema();
+        var model = new UsuariosModel(users, new UserProvisioning(users), db.Cases, backup, offices)
         {
             TempData = new TempDataDictionary(new DefaultHttpContext(), new InMemoryTempDataProvider())
         };

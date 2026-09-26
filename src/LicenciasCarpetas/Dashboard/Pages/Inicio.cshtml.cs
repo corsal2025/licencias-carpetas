@@ -10,7 +10,7 @@ namespace LicenciasCarpetas.Dashboard.Pages;
 
 [Authorize]
 public class InicioModel(
-    IFolderCaseRepository cases,
+    IScopedCaseRepository cases,
     ICambioDomicilioRequestRepository cambioDomicilioRequests,
     CambioDomicilioStatisticsService cambioDomicilioStatistics,
     IUrgentRequestRepository urgentRequests,

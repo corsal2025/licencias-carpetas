@@ -37,7 +37,7 @@
         <label>Sede
             <select name="sede">
                 <option value="">Todas</option>
-                @foreach (var office in Enum.GetValues<Office>())
+                @foreach (var office in Model.Offices)
                 {
                     <option value="@office" selected="@(Model.Sede == office)">@OfficeCatalog.Display(office)</option>
                 }

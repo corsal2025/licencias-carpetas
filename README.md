@@ -114,7 +114,13 @@ La ruta por defecto del Excel se configura en `Carpetas:DefaultWorkbookPath` (ve
   Las carpetas ya subidas a Conaset bajan al final de la lista, ordenadas por fecha de subida: son
   trabajo terminado y dejan arriba lo pendiente.
 - `/Papelera`: casos eliminados, con restauración. Nada se borra de verdad hasta confirmarlo ahí.
-- `/Usuarios`: crear cuentas, cambiarle la contraseña a quien la olvidó, eliminar usuarios.
+- `/Usuarios`: crear cuentas, cambiarle la contraseña a quien la olvidó, eliminar usuarios, y
+  asignar **rol, módulos y sedes**. Incluye el historial de cambios de permisos.
+- `/Persona` **Ficha de persona**: se escribe un RUT (con o sin puntos/guion) y se ve en una sola
+  página, en solo lectura, todo lo registrado para esa persona: sus casos de todas las sedes, el
+  historial de cambios, F8, Cambio de Domicilio (recibidos y solicitados) y Certificados. El RUT
+  viaja por POST y nunca queda en la URL. También se abre con el botón **🧾 Ficha** de la búsqueda
+  global (Ctrl+K).
 - `/Sector/Archivo` y `/Sector/Oficina43`: **documento imprimible** para pedir carpetas físicas, con
   escudo municipal, destino, período, quién solicita, total, filas numeradas y firmas. Filtrable por
   día o mes de citación. Muestra nombre, RUT y fecha de última carpeta, con el mes escrito
@@ -126,6 +132,12 @@ La ruta por defecto del Excel se configura en `Carpetas:DefaultWorkbookPath` (ve
   gráficos de barras**: atención por oficina, licencias por clase (profesionales destacadas) y
   estados de carpeta, cada barra con el mismo color que esa fila tiene en Casos. Los gráficos son
   CSS puro, sin librerías: un equipo sin internet no puede quedarse con la pantalla en blanco.
+- `/Estadisticas/Comparativo` **Comparativo por sede**: Av. Argentina, Placilla y Merc. Puerto
+  lado a lado para un mes, semestre o año: otorgados, denegados, en curso y sin decisión; desglose por
+  estado; días citación→decisión (promedio y mediana, con el N usado); backlog por antigüedad
+  (🟢 <7 días, 🟡 7–14, 🔴 ≥15); tendencia mensual e indicadores de calidad de datos. Exporta a
+  Excel (hojas Resumen, Estados y Tendencia). La fecha de decisión sale del historial de cambios, así
+  que los casos importados del libro (nunca editados acá) se informan como "decididos sin fecha".
 - `/Sector/Archivo` y `/Sector/Oficina43`: listado imprimible (imprimir del navegador → PDF) de las
   carpetas a retirar. Por defecto muestra solo los casos marcados; hay un enlace para ver todo el sector.
 - `/Comunas`: directorio de correos por municipio.
@@ -134,7 +146,24 @@ La ruta por defecto del Excel se configura en `Carpetas:DefaultWorkbookPath` (ve
 - `/Setup`: creación de la primera cuenta. Solo aparece mientras no existe ninguna; después se
   cierra y las cuentas se crean desde `/Usuarios`, ya con sesión iniciada.
 
-## Cuentas y contraseñas
+## Cuentas, roles y sedes
+
+| Rol | Sedes | Pantallas |
+| --- | --- | --- |
+| Administrador | Todas | Todo, incluida Usuarios (único que asigna roles y sedes) |
+| Jefatura | Todas | Todo menos Usuarios |
+| Coordinador | Las asignadas | Casos, estadísticas, sector, comunas, papelera; sin Importar |
+| Administrativo | Las asignadas | Casos; F8 y Cambio de Domicilio según se le habilite |
+
+- La restricción por sede se aplica **en el servidor**: listados, conteos, exportación, papelera,
+  sector, estadísticas, comparativo, ficha de persona y búsqueda global solo muestran casos de las
+  sedes del usuario, y cualquier caso de otra sede pedido por URL responde 404.
+- F8, Cambio de Domicilio, Certificados e Importar no tienen sede y no se filtran.
+- Un cambio de rol, módulos o sedes se aplica en la **siguiente acción** del usuario afectado, sin que
+  tenga que volver a entrar, y queda registrado en el historial de permisos.
+- Al actualizar desde una versión anterior, todos los usuarios existentes reciben las tres sedes: nadie
+  pierde acceso.
+
 
 La primera cuenta se crea sola en pantalla al abrir una instalación nueva. Las siguientes, desde
 `/Usuarios`. Mínimo 8 caracteres, y el nombre de usuario no distingue mayúsculas ni espacios
@@ -166,12 +195,14 @@ migración fallida, **no** contra la falla del disco. Para eso hay que copiar `d
 dotnet test -c Release
 ```
 
-267 pruebas: catálogos y variantes de escritura, validación de RUT, lectura de celdas (fecha real,
+Más de 600 pruebas: catálogos y variantes de escritura, validación de RUT, lectura de celdas (fecha real,
 serial de Excel, texto tipeado), mapeo de filas, deduplicación al reimportar, detección de hojas por
 contenido, filtros, orden (incluido el de nombres con tilde y el hundimiento de lo ya subido),
 paginación, papelera, asistencia, clases de licencia, colores por estado, RUT repetidos, informes de
 sector por período, estadísticas, saneado del libro, exportación completa, autenticación (bloqueo por
-intentos fallidos, mayúsculas en el usuario, restablecimiento) y respaldos.
+intentos fallidos, mayúsculas en el usuario, restablecimiento), respaldos, ficha de persona, KPI por
+sede y roles por sede (filtro en cada pantalla, 404 fuera de sede, sesión rehecha al cambiar permisos
+y una prueba de arquitectura que impide que una pantalla use el repositorio de casos sin filtro).
 
 ### CI
 

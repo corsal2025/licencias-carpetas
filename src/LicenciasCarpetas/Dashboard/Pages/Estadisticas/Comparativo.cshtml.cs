@@ -9,7 +9,7 @@ namespace LicenciasCarpetas.Dashboard.Pages.Estadisticas;
 
 /// <summary>Comparativo por sede: la página solo presenta; todo el cálculo vive en <see cref="SedeKpiService"/>.</summary>
 [Authorize(Roles = "Administrador,Jefatura,Coordinador")]
-public class ComparativoModel(SedeKpiService kpis) : PageModel
+public class ComparativoModel(SedeKpiService kpis, OfficeScope userScope) : PageModel
 {
     [BindProperty(SupportsGet = true)]
     public int Year { get; set; } = DateTime.Today.Year;
@@ -25,6 +25,9 @@ public class ComparativoModel(SedeKpiService kpis) : PageModel
     public Office? Sede { get; set; }
 
     public SedeKpiReport Report { get; private set; } = null!;
+
+    /// <summary>Sedes que el usuario puede elegir en el filtro.</summary>
+    public IReadOnlyList<Office> Offices => userScope.Offices;
 
     public void OnGet() => Report = Build();
 
@@ -43,7 +46,7 @@ public class ComparativoModel(SedeKpiService kpis) : PageModel
             KpiPeriodKind.Semestre => Math.Clamp(Index, 1, 2),
             _ => 0
         };
-        var scope = OfficeScope.All.Narrow(Sede);
+        var scope = userScope.Narrow(Sede);
         return kpis.Build(new KpiPeriod(Year, Kind, Index), scope, DateOnly.FromDateTime(DateTime.Today));
     }
 }

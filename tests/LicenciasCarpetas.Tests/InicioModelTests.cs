@@ -29,7 +29,7 @@ public class InicioModelTests
             User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"))
         };
         var stats = new LicenciasCarpetas.Statistics.StatisticsService(db.Cases, db.Counters);
-        return new InicioModel(db.Cases, cambioDomicilio, new CambioDomicilioStatisticsService(new CambioDomicilioOptions()), urgent, stats)
+        return new InicioModel(db.ScopedCases(), cambioDomicilio, new CambioDomicilioStatisticsService(new CambioDomicilioOptions()), urgent, stats)
         {
             PageContext = new PageContext(new ActionContext(httpContext, new RouteData(), new PageActionDescriptor()))
         };

@@ -16,7 +16,7 @@ public class PersonaPageTests : IClassFixture<CambioDomicilioWebAppFactory>
     [Fact]
     public async Task A_valid_rut_redirects_without_the_rut_and_then_shows_the_file()
     {
-        using var client = factory.CreateAuthenticatedClient(canAccessCambioDomicilio: true);
+        using var client = factory.CreateClientWithRole("Administrativo", "Placilla");
         factory.Services.GetRequiredService<IFolderCaseRepository>().Insert(new FolderCase
         {
             FullName = "MARIA SOTO", Rut = "12.345.678-5", Office = Office.Placilla,
@@ -34,6 +34,23 @@ public class PersonaPageTests : IClassFixture<CambioDomicilioWebAppFactory>
         Assert.Contains("MARIA SOTO", body);
         Assert.Contains("12.345.678-5", body);
         Assert.Contains("Placilla", body);
+    }
+
+    [Fact]
+    public async Task Cases_of_other_offices_are_left_out()
+    {
+        factory.Services.GetRequiredService<IFolderCaseRepository>().Insert(new FolderCase
+        {
+            FullName = "PEDRO ROJAS", Rut = "11.111.111-1", Office = Office.MercadoPuerto,
+            CitationDate = new DateOnly(2026, 4, 2)
+        });
+        using var client = factory.CreateClientWithRole("Administrativo", "Placilla");
+
+        var post = await PostRut(client, "11.111.111-1");
+        var body = await (await client.GetAsync(post.Headers.Location)).Content.ReadAsStringAsync();
+
+        Assert.DoesNotContain("PEDRO ROJAS", body);
+        Assert.DoesNotContain("Merc. Puerto", body);
     }
 
     [Fact]
