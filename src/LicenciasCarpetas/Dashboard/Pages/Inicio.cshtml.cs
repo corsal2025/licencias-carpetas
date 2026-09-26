@@ -14,7 +14,8 @@ public class InicioModel(
     ICambioDomicilioRequestRepository cambioDomicilioRequests,
     CambioDomicilioStatisticsService cambioDomicilioStatistics,
     IUrgentRequestRepository urgentRequests,
-    StatisticsService statisticsService) : PageModel
+    StatisticsService statisticsService,
+    LicenciasCarpetas.CambioDomicilio.Ews.EwsHealthCheck? ewsHealth = null) : PageModel
 {
     private const string F8EstadoActualSubida = "SUBIDA A CONASET";
 
@@ -30,6 +31,19 @@ public class InicioModel(
     public bool PuedeCambioDomicilio { get; private set; }
     public int? CambioDomicilioPendientes { get; private set; }
 
+    /// <summary>Último estado conocido del correo institucional (solo con acceso a Cambio de Domicilio).</summary>
+    public LicenciasCarpetas.CambioDomicilio.Ews.EwsStatus? EwsStatus { get; private set; }
+
+    public async Task<Microsoft.AspNetCore.Mvc.IActionResult> OnPostCheckEwsAsync(CancellationToken cancellationToken)
+    {
+        if (ewsHealth is not null && User.HasClaim("mod:cambio-domicilio", "true"))
+        {
+            await ewsHealth.CheckAsync(DateTimeOffset.Now, cancellationToken);
+        }
+
+        return RedirectToPage();
+    }
+
     public bool PuedeF8 { get; private set; }
     public int? F8Count { get; private set; }
 
@@ -42,13 +56,14 @@ public class InicioModel(
 
         CurrentYear = DateTime.Today.Year;
         CurrentMonth = DateTime.Today.Month;
-        MonthStats = statisticsService.ForMonth(CurrentYear, CurrentMonth);
+        MonthStats = statisticsService.ForMonth(CurrentYear, CurrentMonth, cases.Scope);
 
         PuedeCambioDomicilio = User.HasClaim("mod:cambio-domicilio", "true");
         if (PuedeCambioDomicilio)
         {
             var requests = cambioDomicilioRequests.GetAll();
             CambioDomicilioPendientes = cambioDomicilioStatistics.GetStatusCounts(requests).Pending;
+            EwsStatus = ewsHealth?.Last;
         }
 
         PuedeF8 = User.HasClaim("mod:f8-urgentes", "true");

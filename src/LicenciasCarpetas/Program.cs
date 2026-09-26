@@ -72,7 +72,8 @@ builder.Services.AddSingleton(new DatabaseBackup(
     databasePath,
     Path.Combine(Path.GetDirectoryName(databasePath)!, "backups"),
     options.BackupsToKeep,
-    options.SecondaryBackupDirectory));
+    options.SecondaryBackupDirectory,
+    options.BackupEncryptionKey));
 builder.Services.AddSingleton<IFolderCaseRepository>(_ => new FolderCaseRepository(connectionString));
 builder.Services.AddSingleton<IDailyCounterRepository>(_ => new DailyCounterRepository(connectionString));
 builder.Services.AddSingleton<IComunaContactRepository>(_ => new ComunaContactRepository(connectionString));
@@ -136,6 +137,7 @@ builder.Services.AddSingleton<INotificationChannel, WindowsToastNotificationChan
 builder.Services.AddSingleton<INotificationChannel, EmailNotificationChannel>();
 builder.Services.AddSingleton<AddressChangeRoutingService>();
 builder.Services.AddSingleton<CambioDomicilioSyncService>();
+builder.Services.AddSingleton<EwsHealthCheck>();
 builder.Services.AddSingleton<CambioDomicilioStatisticsService>();
 
 var keysFolder = Path.Combine(Path.GetDirectoryName(databasePath) ?? AppContext.BaseDirectory, "keys");
@@ -312,6 +314,33 @@ if (args.Contains("--import"))
     foreach (var warning in summary.Warnings)
     {
         Console.WriteLine($"AVISO: {warning}");
+    }
+
+    return;
+}
+
+// Restaurar un respaldo cifrado: --decrypt-backup <archivo.db.enc> <destino.db>, con la misma
+// Carpetas:BackupEncryptionKey con que se cifró. No toca la base en uso.
+if (args.Contains("--decrypt-backup"))
+{
+    var index = Array.IndexOf(args, "--decrypt-backup");
+    if (index + 2 >= args.Length || string.IsNullOrEmpty(options.BackupEncryptionKey))
+    {
+        Console.Error.WriteLine("Uso: --decrypt-backup <archivo.db.enc> <destino.db> (requiere Carpetas:BackupEncryptionKey).");
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    try
+    {
+        var plain = BackupCipher.Decrypt(File.ReadAllBytes(args[index + 1]), options.BackupEncryptionKey);
+        File.WriteAllBytes(args[index + 2], plain);
+        Console.WriteLine($"Respaldo descifrado en {args[index + 2]}.");
+    }
+    catch (System.Security.Cryptography.CryptographicException ex)
+    {
+        Console.Error.WriteLine($"No se pudo descifrar: {ex.Message} (¿clave distinta?)");
+        Environment.ExitCode = 1;
     }
 
     return;

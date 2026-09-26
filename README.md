@@ -186,6 +186,18 @@ alcance este puerto.
 Cada arranque copia la base a `data/backups/` **antes** de aplicar migraciones, y conserva las 10
 copias más recientes (`Carpetas:BackupsToKeep`). Un fallo al respaldar nunca impide arrancar.
 
+**Cifrado de respaldos (recomendado):** con `Carpetas:BackupEncryptionKey` en
+`appsettings.Local.json`, cada copia se verifica y se guarda solo cifrada (`.db.enc`, AES-256-GCM);
+la copia en claro se borra. Así un respaldo copiado a un pendrive o carpeta compartida no expone RUT,
+nombres, correos ni celulares. Para restaurar:
+
+```powershell
+.\LicenciasCarpetas.exe --decrypt-backup data\backups\carpetas-20260926-0900.db.enc restaurada.db
+```
+
+Si se pierde la frase, los respaldos cifrados **no se pueden recuperar**: guardarla también fuera
+del equipo. Los respaldos anteriores a activar el cifrado siguen en claro hasta que rotan.
+
 Las copias quedan junto a la base, en el mismo disco: sirven contra un borrado accidental o una
 migración fallida, **no** contra la falla del disco. Para eso hay que copiar `data/` a otro medio.
 
@@ -238,6 +250,11 @@ Runbook completo, actualización, reimportación y respaldos en [`deploy/README.
 No lleva Tarea Programada: a diferencia de `outlook-comuna-router`, esta aplicación no corre en
 segundo plano, se abre cuando el operador la necesita.
 
+
+**Base de datos:** se mantiene SQLite también en un servidor municipal (decisión 2026-09-26). Para 3
+sedes y unas decenas de miles de casos alcanza; el servidor corre la misma app con Docker/TrueNAS
+(`TRUENAS_DEPLOY.md`). La base debe quedar en disco local del servidor, no en una carpeta de red.
+
 ## Detalles de implementación que conviene conocer
 
 - **Validaciones de datos del Excel**: ClosedXML se niega a abrir el libro real porque las listas
@@ -278,6 +295,11 @@ Falta solo cargar `CambioDomicilio:Ews:Username` y `Password`, que **no viajan e
 o en variables de entorno. Runbook en [`deploy/README.md`](deploy/README.md) § "Correo institucional (EWS)".
 Funcionamiento completo de principio a fin, con diagramas de flujo: [`docs/cambio-domicilio-informe.md`](docs/cambio-domicilio-informe.md)
 (versión imprimible: `docs/cambio-domicilio-informe.html`).
+
+
+El Panel de Control muestra el estado del correo institucional (🟢 conectado, 🔴 sin conexión,
+⚪ sin configurar o sin verificar) con un botón **Verificar correo**, que lista la carpeta de entrada
+con un tope de 15 segundos. Para el detalle técnico del error está `--test-ews`.
 
 ## Arquitectura
 
