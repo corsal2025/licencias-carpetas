@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Estadísticas";
     var stats = Model.Statistics!;
-    var offices = Enum.GetValues<Office>();
+    var offices = Model.AllowedOffices;
 }
 
 <partial name="Shared/_EstadisticasTabs" />

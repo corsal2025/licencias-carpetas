@@ -21,7 +21,7 @@ public class EstadisticasModelTests
     }
 
     private static EstadisticasModel Model(SqliteTestDatabase db) =>
-        new(new StatisticsService(db.Cases, db.Counters), db.Counters, db.Cases)
+        new(new StatisticsService(db.Cases, db.Counters), db.Counters, db.ScopedCases())
         {
             TempData = new TempDataDictionary(new DefaultHttpContext(), new InMemoryTempDataProvider())
         };

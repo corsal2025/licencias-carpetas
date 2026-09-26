@@ -28,11 +28,11 @@ public interface IFolderCaseRepository
     /// <summary>RUTs appearing on more than one case inside the current filter — the same person
     /// cited twice, which the workbook flags in violet.</summary>
     IReadOnlyList<string> DuplicateRuts(CaseFilter filter);
-    int CountNeedingReview();
+    int CountNeedingReview(IReadOnlyCollection<Office>? allowedOffices = null);
     IReadOnlyList<int> DistinctYears();
     /// <summary>Folders to pull from a sector, optionally narrowed to one citation day or month.</summary>
     IReadOnlyList<FolderCase> ForSector(FolderSector sector, bool onlyMarked, bool includePrinted = false,
-        DateOnly? citationDay = null, int? year = null, int? month = null);
+        DateOnly? citationDay = null, int? year = null, int? month = null, IReadOnlyCollection<Office>? allowedOffices = null);
 
     /// <summary>Records that these cases went out on a printed sector list.</summary>
     void MarkSectorPrinted(IReadOnlyCollection<long> ids);
@@ -44,9 +44,9 @@ public interface IFolderCaseRepository
     /// esquema: los demás módulos (F8, Cambio de Domicilio) y las cuentas de usuario no se tocan.
     /// El único resguardo real es el respaldo que el llamador debe hacer antes de llamar esto.</summary>
     int DeleteAllPermanently();
-    IReadOnlyList<(DateOnly Date, Office Office, int Scheduled, int Attended)> DailyAttendance(int year, int month);
-    IReadOnlyList<(FolderState? State, int Count)> FolderStateBreakdown(int year, int? month, Office? office);
-    IReadOnlyList<(FinalDecision? Decision, int Count)> FinalDecisionBreakdown(int year, int? month, Office? office);
+    IReadOnlyList<(DateOnly Date, Office Office, int Scheduled, int Attended)> DailyAttendance(int year, int month, IReadOnlyCollection<Office>? allowedOffices = null);
+    IReadOnlyList<(FolderState? State, int Count)> FolderStateBreakdown(int year, int? month, Office? office, IReadOnlyCollection<Office>? allowedOffices = null);
+    IReadOnlyList<(FinalDecision? Decision, int Count)> FinalDecisionBreakdown(int year, int? month, Office? office, IReadOnlyCollection<Office>? allowedOffices = null);
     void UpdateEditableFields(long id, string? fullName, string? rut, DateOnly? citationDate,
         DateOnly? folderUploadedDate, DateOnly? lastFolderDate, string? lastFolderComuna,
         FolderState? folderState, FinalDecision? finalDecision, MoralIdoneity? moralIdoneity,
@@ -68,19 +68,19 @@ public interface IFolderCaseRepository
     IReadOnlyList<CaseAuditEntry> GetAuditLog(long caseId);
 
     /// <summary>Retrieves all audit logs in a given date range for user statistics.</summary>
-    IReadOnlyList<CaseAuditEntry> GetAuditLogsForPeriod(DateTimeOffset start, DateTimeOffset end);
+    IReadOnlyList<CaseAuditEntry> GetAuditLogsForPeriod(DateTimeOffset start, DateTimeOffset end, IReadOnlyCollection<Office>? allowedOffices = null);
 
     /// <summary>Cuántos casos hay por clase de licencia en el período. Un caso con varias clases
     /// suma en cada una: la pregunta es cuántas licencias se tramitan, no cuántas personas.</summary>
-    IReadOnlyList<(LicenceClass Licence, int Count)> LicenceClassBreakdown(int year, int? month, Office? office);
+    IReadOnlyList<(LicenceClass Licence, int Count)> LicenceClassBreakdown(int year, int? month, Office? office, IReadOnlyCollection<Office>? allowedOffices = null);
 
     /// <summary>Moves the case to the bin. Recoverable with <see cref="Restore"/>.</summary>
     void Delete(long id);
 
     void Restore(long id);
     void DeletePermanently(long id);
-    IReadOnlyList<FolderCase> Deleted();
-    int CountDeleted();
+    IReadOnlyList<FolderCase> Deleted(IReadOnlyCollection<Office>? allowedOffices = null);
+    int CountDeleted(IReadOnlyCollection<Office>? allowedOffices = null);
     long Insert(FolderCase folderCase);
 }
 
@@ -534,30 +534,30 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         return duplicates;
     }
 
-    public int CountNeedingReview()
+    public int CountNeedingReview(IReadOnlyCollection<Office>? allowedOffices = null)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM FolderCase WHERE NeedsReview = 1 AND DeletedAt IS NULL";
+        command.CommandText = $"SELECT COUNT(*) FROM FolderCase WHERE NeedsReview = 1 AND DeletedAt IS NULL {OfficeClause(allowedOffices, command)}";
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
-    public int CountDeleted()
+    public int CountDeleted(IReadOnlyCollection<Office>? allowedOffices = null)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM FolderCase WHERE DeletedAt IS NOT NULL";
+        command.CommandText = $"SELECT COUNT(*) FROM FolderCase WHERE DeletedAt IS NOT NULL {OfficeClause(allowedOffices, command)}";
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
     /// <summary>Everything currently in the bin, most recently deleted first.</summary>
-    public IReadOnlyList<FolderCase> Deleted()
+    public IReadOnlyList<FolderCase> Deleted(IReadOnlyCollection<Office>? allowedOffices = null)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
-        command.CommandText = """
+        command.CommandText = $"""
             SELECT * FROM FolderCase
-            WHERE DeletedAt IS NOT NULL
+            WHERE DeletedAt IS NOT NULL {OfficeClause(allowedOffices, command)}
             ORDER BY DeletedAt DESC
             LIMIT 500
             """;
@@ -595,7 +595,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
     /// <summary>Cases whose physical folder has to be pulled from a given sector, for the printable
     /// list. Folders already requested are left out unless explicitly asked for.</summary>
     public IReadOnlyList<FolderCase> ForSector(FolderSector sector, bool onlyMarked, bool includePrinted = false,
-        DateOnly? citationDay = null, int? year = null, int? month = null)
+        DateOnly? citationDay = null, int? year = null, int? month = null, IReadOnlyCollection<Office>? allowedOffices = null)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
@@ -628,7 +628,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         command.CommandText = $"""
             SELECT * FROM FolderCase
             WHERE DeletedAt IS NULL AND LastFolderDate IS NOT NULL
-              AND {sectorClause} {markedClause} {printedClause} {periodClause}
+              AND {sectorClause} {markedClause} {printedClause} {periodClause} {OfficeClause(allowedOffices, command)}
             ORDER BY CitationDate DESC, FullNameSort COLLATE NOCASE ASC
             LIMIT {SectorListLimit}
             """;
@@ -644,16 +644,16 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
     }
 
     /// <summary>Scheduled vs attended people per day and office — the agenda half of the statistics screen.</summary>
-    public IReadOnlyList<(DateOnly Date, Office Office, int Scheduled, int Attended)> DailyAttendance(int year, int month)
+    public IReadOnlyList<(DateOnly Date, Office Office, int Scheduled, int Attended)> DailyAttendance(int year, int month, IReadOnlyCollection<Office>? allowedOffices = null)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
-        command.CommandText = """
+        command.CommandText = $"""
             SELECT CitationDate, Office, COUNT(*) AS Scheduled, SUM(Attended) AS Attended
             FROM FolderCase
             WHERE DeletedAt IS NULL AND CitationDate IS NOT NULL
               AND substr(CitationDate, 1, 4) = $year
-              AND substr(CitationDate, 6, 2) = $month
+              AND substr(CitationDate, 6, 2) = $month {OfficeClause(allowedOffices, command)}
             GROUP BY CitationDate, Office
             ORDER BY CitationDate ASC, Office ASC
             """;
@@ -673,13 +673,13 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         return results;
     }
 
-    public IReadOnlyList<(FolderState? State, int Count)> FolderStateBreakdown(int year, int? month, Office? office)
-        => Breakdown("FolderState", year, month, office)
+    public IReadOnlyList<(FolderState? State, int Count)> FolderStateBreakdown(int year, int? month, Office? office, IReadOnlyCollection<Office>? allowedOffices = null)
+        => Breakdown("FolderState", year, month, office, allowedOffices)
             .Select(entry => (entry.Value is { } value ? (FolderState)value : (FolderState?)null, entry.Count))
             .ToList();
 
-    public IReadOnlyList<(FinalDecision? Decision, int Count)> FinalDecisionBreakdown(int year, int? month, Office? office)
-        => Breakdown("FinalDecision", year, month, office)
+    public IReadOnlyList<(FinalDecision? Decision, int Count)> FinalDecisionBreakdown(int year, int? month, Office? office, IReadOnlyCollection<Office>? allowedOffices = null)
+        => Breakdown("FinalDecision", year, month, office, allowedOffices)
             .Select(entry => (entry.Value is { } value ? (FinalDecision)value : (FinalDecision?)null, entry.Count))
             .ToList();
 
@@ -687,7 +687,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
     /// Las clases viven en un texto ("B,C"), así que el conteo se arma acá y no en SQL: un caso con
     /// dos clases suma en las dos. La pregunta que responde es cuántas licencias se tramitan.
     /// </summary>
-    public IReadOnlyList<(LicenceClass Licence, int Count)> LicenceClassBreakdown(int year, int? month, Office? office)
+    public IReadOnlyList<(LicenceClass Licence, int Count)> LicenceClassBreakdown(int year, int? month, Office? office, IReadOnlyCollection<Office>? allowedOffices = null)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
@@ -696,7 +696,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         command.CommandText = $"""
             SELECT LicenceClasses FROM FolderCase
             WHERE DeletedAt IS NULL AND LicenceClasses IS NOT NULL AND CitationDate IS NOT NULL
-              AND substr(CitationDate, 1, 4) = $year {monthClause} {officeClause}
+              AND substr(CitationDate, 1, 4) = $year {monthClause} {officeClause} {OfficeClause(allowedOffices, command)}
             """;
         command.Parameters.AddWithValue("$year", year.ToString("D4"));
         if (month is { } monthValue)
@@ -723,7 +723,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
 
     /// <summary>Counts per catalog value. The column name is never caller-supplied text — only the two
     /// literals below reach it — so it cannot carry SQL injection.</summary>
-    private List<(int? Value, int Count)> Breakdown(string column, int year, int? month, Office? office)
+    private List<(int? Value, int Count)> Breakdown(string column, int year, int? month, Office? office, IReadOnlyCollection<Office>? allowedOffices)
     {
         if (column is not ("FolderState" or "FinalDecision"))
         {
@@ -738,7 +738,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
             SELECT {column} AS Value, COUNT(*) AS Total
             FROM FolderCase
             WHERE DeletedAt IS NULL AND CitationDate IS NOT NULL
-              AND substr(CitationDate, 1, 4) = $year {monthClause} {officeClause}
+              AND substr(CitationDate, 1, 4) = $year {monthClause} {officeClause} {OfficeClause(allowedOffices, command)}
             GROUP BY {column}
             ORDER BY Total DESC
             """;
@@ -938,14 +938,17 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         return entries;
     }
 
-    public IReadOnlyList<CaseAuditEntry> GetAuditLogsForPeriod(DateTimeOffset start, DateTimeOffset end)
+    public IReadOnlyList<CaseAuditEntry> GetAuditLogsForPeriod(DateTimeOffset start, DateTimeOffset end, IReadOnlyCollection<Office>? allowedOffices = null)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
-        command.CommandText = """
+        var officeClause = allowedOffices is null
+            ? string.Empty
+            : $"AND FolderCaseId IN (SELECT Id FROM FolderCase WHERE 1 = 1 {OfficeClause(allowedOffices, command)})";
+        command.CommandText = $"""
             SELECT Id, FolderCaseId, ChangedBy, ChangedAt, FieldName, OldValue, NewValue
             FROM CaseAuditLog
-            WHERE ChangedAt >= $start AND ChangedAt < $end
+            WHERE ChangedAt >= $start AND ChangedAt < $end {officeClause}
             ORDER BY ChangedAt ASC, Id ASC
             """;
         command.Parameters.AddWithValue("$start", start.ToString("O"));
@@ -1162,6 +1165,11 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
             command.Parameters.AddWithValue("$office", (int)office);
         }
 
+        if (OfficeClause(filter.AllowedOffices, command) is { Length: > 0 } allowedClause)
+        {
+            clauses.Add(allowedClause["AND ".Length..]);
+        }
+
         if (filter.Year is { } year)
         {
             clauses.Add("substr(CitationDate, 1, 4) = $year");
@@ -1234,6 +1242,31 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         var builder = new StringBuilder("WHERE ");
         builder.AppendJoin(" AND ", clauses);
         return builder.ToString();
+    }
+
+    /// <summary>"AND Office IN (...)" for a per-office scope: empty for no restriction, and a
+    /// clause that matches nothing for an empty scope (a user with no offices sees no cases).
+    /// Only enum ordinals reach the SQL, as parameters.</summary>
+    private static string OfficeClause(IReadOnlyCollection<Office>? allowedOffices, SqliteCommand command)
+    {
+        if (allowedOffices is null)
+        {
+            return string.Empty;
+        }
+
+        if (allowedOffices.Count == 0)
+        {
+            return "AND 1 = 0";
+        }
+
+        var names = new List<string>();
+        foreach (var (office, index) in allowedOffices.Distinct().Select((office, index) => (office, index)))
+        {
+            names.Add($"$allowedOffice{index}");
+            command.Parameters.AddWithValue($"$allowedOffice{index}", (int)office);
+        }
+
+        return $"AND Office IN ({string.Join(", ", names)})";
     }
 
     private SqliteConnection Open()

@@ -20,4 +20,8 @@ public sealed class DashboardUser
     /// <summary>Personal signature appended to outgoing Cambio de Domicilio emails (confirmación,
     /// rectificación) — set once, reused on every send. Null/empty means no footer.</summary>
     public string? EmailFooter { get; set; }
+
+    /// <summary>Changes whenever the account's role, modules or offices change; open sessions whose
+    /// "stamp" claim no longer matches are rebuilt on their next request.</summary>
+    public string? SecurityStamp { get; set; }
 }

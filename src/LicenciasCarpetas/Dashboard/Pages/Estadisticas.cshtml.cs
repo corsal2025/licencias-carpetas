@@ -11,7 +11,7 @@ namespace LicenciasCarpetas.Dashboard.Pages;
 public class EstadisticasModel(
     StatisticsService statistics,
     IDailyCounterRepository counters,
-    IFolderCaseRepository cases) : PageModel
+    IScopedCaseRepository cases) : PageModel
 {
     public MonthlyStatistics? Statistics { get; private set; }
     public MonthlyUserStatistics? UserStatistics { get; private set; }
@@ -30,6 +30,9 @@ public class EstadisticasModel(
     public string? AttendanceDate { get; set; }
 
     public string? Message { get; set; }
+
+    /// <summary>Sedes que este usuario puede ver y elegir (roles por sede).</summary>
+    public IReadOnlyList<Office> AllowedOffices => cases.Scope.Offices;
 
     public void OnGet()
     {
@@ -84,8 +87,8 @@ public class EstadisticasModel(
             Year = Years[0];
         }
 
-        Statistics = statistics.ForMonth(Year, Month);
-        UserStatistics = statistics.UserStatsForMonth(Year, Month);
+        Statistics = statistics.ForMonth(Year, Month, cases.Scope);
+        UserStatistics = statistics.UserStatsForMonth(Year, Month, cases.Scope);
         Message = TempData["Message"] as string;
 
         if (DateOnly.TryParseExact(AttendanceDate, "yyyy-MM-dd", out var date))

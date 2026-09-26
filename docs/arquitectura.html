@@ -47,17 +47,19 @@ footer{color:var(--mut);font-size:13px;border-top:1px solid var(--bd)}
    Regla SDD (openspec/config.yaml → rules.proposal): todo cambio que altere
    arquitectura, módulos, modelo o despliegue MUST actualizar este archivo.
    ===================================================================== */
-const VERSION = "v0.4.0";
+const VERSION = "v0.5.0";
 const CHANGELOG = [
   ["v0.1.0","2026-09-25","Arquitectura inicial (borrador fuera del repo, stack planificado pero no real: Blazor, Clean Architecture, SQL Server, EF Core, 3 sedes)."],
   ["v0.2.0","2026-09-25","Diagrama traído al repo (docs/arquitectura.html) y corregido con el stack real: .NET 10 Razor Pages, SQLite con repositorios de SQL crudo, ClosedXML para Excel, módulos Gestión de Licencias / F8 Urgentes / Cambio de Domicilio (EWS contra Exchange on-prem), roles y auditoría (CaseAuditEntry), estadísticas y respaldos. Enums reales tomados de Domain/. mermaid.min.js vendorizado en docs/vendor/ (sin CDN)."],
   ["v0.3.0","2026-09-26","sgl-ficha-persona: página /Persona (solo lectura, PRG + TempData, el RUT nunca en la URL) con PersonFileQuery que consolida casos de todas las sedes, historial de auditoría, F8, Cambio de Domicilio y Certificados por RUT canónico. OfficeScope como punto de enchufe para roles por sede. Búsqueda global corregida (columnas reales de Cambio de Domicilio) y ampliada a Certificados."],
-  ["v0.4.0","2026-09-26","sgl-kpi-dashboard-comparativo: /Estadisticas/Comparativo con SedeKpiService (decisiones, estados, tiempo citación→decisión desde la auditoría con N y % sin fecha, backlog por antigüedad, tendencia mensual) y export Excel de 3 hojas. OfficeScope pasa a Domain y es compartido por ficha, KPI y roles."]
+  ["v0.4.0","2026-09-26","sgl-kpi-dashboard-comparativo: /Estadisticas/Comparativo con SedeKpiService (decisiones, estados, tiempo citación→decisión desde la auditoría con N y % sin fecha, backlog por antigüedad, tendencia mensual) y export Excel de 3 hojas. OfficeScope pasa a Domain y es compartido por ficha, KPI y roles."],
+  ["v0.5.0","2026-09-26","sgl-roles-por-sede: tablas UserOffice y PermissionAudit, columna DashboardUser.SecurityStamp. Claims office:<sede> emitidos por ClaimsFactory (Administrador y Jefatura sin restricción). ScopedCaseRepository por request filtra toda lectura y rechaza toda mutación fuera de sede (404). SessionRevalidator rehace la sesión al cambiar permisos. Estadísticas, búsqueda global, ficha y comparativo respetan las sedes; F8, Cambio de Domicilio, Certificados e Importar no se filtran. Solo el Administrador asigna sedes."]
 ];
 const INFO = {
   U:"Funcionarios (roles Administrador, Jefatura, Coordinador y operador) autenticados por cookie. Un solo equipo local por ahora.",
   WEB:"Interfaz web: ASP.NET Core Razor Pages (.NET 10). Sin SPA ni framework de UI adicional.",
-  AUTH:"Autenticación por cookie con hash PBKDF2. Autorización por roles y por claims de módulo (mod:f8-urgentes, mod:cambio-domicilio).",
+  AUTH:"Autenticación por cookie con hash PBKDF2. Autorización por roles, claims de módulo (mod:f8-urgentes, mod:cambio-domicilio) y claims de sede (office:<sede>) emitidos por ClaimsFactory. SecurityStamp + SessionRevalidator aplican los cambios de permisos en la siguiente request.",
+  SCOPE:"Alcance por sede: OfficeScope (Domain) se arma por request desde los claims. ScopedCaseRepository envuelve el repositorio de casos: filtra listados, conteos, papelera, sector y estadísticas, y responde 404 a cualquier caso de otra sede. UserOffice guarda las sedes; PermissionAudit, cada cambio.",
   GL:"Módulo Gestión de Licencias: pantalla Casos, filtros por oficina/año/mes/estado/decisión/sector, exportación a Excel.",
   F8:"Módulo F8 Urgentes: mismo login y misma carpetas.db (tabla UrgentRequest propia), detrás de la política F8Access.",
   CD:"Módulo Cambio de Domicilio: sincroniza contra Exchange Web Services (EWS) on-prem al apretar \"Sincronizar ahora\" (sin polling), detrás de la política CambioDomicilioAccess.",
@@ -77,6 +79,8 @@ const VIEWS = {
 flowchart TB
   U([Funcionarios]) --> AUTH[Autenticación y roles]
   AUTH --> WEB[Razor Pages .NET 10]
+  AUTH --> SCOPE[Alcance por sede]
+  SCOPE --> REPO
   WEB --> GL[Gestión de Licencias]
   WEB --> F8[F8 Urgentes]
   WEB --> CD[Cambio de Domicilio]
@@ -109,6 +113,22 @@ stateDiagram-v2
   "Modelo de datos": {d:"Entidades principales en SQLite. Enums reales del Dominio, guardados como ordinal (no reordenar).", g:`
 erDiagram
   CARPETA ||--o{ HISTORIAL : registra
+  USUARIO ||--o{ USUARIO_SEDE : "puede ver"
+  USUARIO ||--o{ AUDITORIA_PERMISOS : "cambios"
+  USUARIO {
+    string Role "Administrador, Jefatura, Coordinador, Administrativo"
+    string SecurityStamp "cambia con rol, módulos o sedes"
+  }
+  USUARIO_SEDE {
+    int Office "ordinal de Office"
+  }
+  AUDITORIA_PERMISOS {
+    datetime Fecha
+    string Quien
+    string Campo
+    string Antes
+    string Despues
+  }
   CARPETA {
     string FolderState "16 valores, 5 retirados de la selección"
     string FinalDecision "9 valores"
