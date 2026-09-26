@@ -161,6 +161,33 @@
             <div class="hub-card-count">@Model.CambioDomicilioPendientes</div>
             <p class="text-md" style="margin:0; color:var(--color-text-muted);">solicitudes pendientes</p>
             <a asp-page="/CambioDomicilio/Index" class="hub-card-link">Acceder al módulo →</a>
+            @if (Model.EwsStatus is { } ews)
+            {
+                var (icono, texto) = ews.Health switch
+                {
+                    LicenciasCarpetas.CambioDomicilio.Ews.EwsHealth.Ok => ("🟢", "Correo institucional conectado"),
+                    LicenciasCarpetas.CambioDomicilio.Ews.EwsHealth.Failed => ("🔴", "Correo institucional sin conexión"),
+                    LicenciasCarpetas.CambioDomicilio.Ews.EwsHealth.NotConfigured => ("⚪", "Correo institucional sin configurar"),
+                    _ => ("⚪", "Correo institucional sin verificar")
+                };
+                <div class="ews-status" style="margin-top:8px; font-size:var(--font-sm);">
+                    <strong>@icono @texto</strong>
+                    @if (ews.CheckedAt is { } at)
+                    {
+                        <span style="color:var(--color-text-muted);"> · @at.ToString("dd-MM HH:mm")</span>
+                    }
+                    @if (ews.Detail is not null)
+                    {
+                        <div style="color:var(--color-text-muted);">@ews.Detail</div>
+                    }
+                    @if (ews.Health != LicenciasCarpetas.CambioDomicilio.Ews.EwsHealth.NotConfigured)
+                    {
+                        <form method="post" asp-page-handler="CheckEws" style="margin-top:4px;">
+                            <button type="submit" class="nav-pill" style="cursor:pointer;">Verificar correo</button>
+                        </form>
+                    }
+                </div>
+            }
         </div>
     }
 

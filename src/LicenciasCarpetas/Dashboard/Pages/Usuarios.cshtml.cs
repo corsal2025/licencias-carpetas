@@ -1,4 +1,5 @@
 using LicenciasCarpetas.Dashboard.Auth;
+using LicenciasCarpetas.Domain;
 using LicenciasCarpetas.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ namespace LicenciasCarpetas.Dashboard.Pages;
 /// </summary>
 [Authorize(Roles = "Administrador")]
 public class UsuariosModel(IUserRepository users, UserProvisioning provisioning,
-    IFolderCaseRepository cases, DatabaseBackup backup) : PageModel
+    IFolderCaseRepository cases, DatabaseBackup backup, IUserOfficeRepository userOffices) : PageModel
 {
     /// <summary>La palabra exacta que hay que escribir para confirmar el vaciado de Casos — un
     /// simple sí/no de navegador se acepta sin pensar, esto obliga a leer lo que se está por hacer.</summary>
@@ -25,6 +26,14 @@ public class UsuariosModel(IUserRepository users, UserProvisioning provisioning,
 
     public string? CurrentUsername { get; private set; }
 
+    /// <summary>Sedes asignadas por usuario (Id → sedes).</summary>
+    public IReadOnlyDictionary<long, IReadOnlyList<Office>> OfficesByUser { get; private set; } = new Dictionary<long, IReadOnlyList<Office>>();
+
+    /// <summary>Últimos cambios de rol, módulos y sedes.</summary>
+    public IReadOnlyList<PermissionAuditEntry> PermissionLog { get; private set; } = [];
+
+    public const string MissingOfficeMessage = "Coordinador y Administrativo necesitan al menos una sede: sin sedes no verían ningún caso.";
+
     public string? Message { get; set; }
     public bool MessageIsError { get; set; }
 
@@ -34,9 +43,19 @@ public class UsuariosModel(IUserRepository users, UserProvisioning provisioning,
     }
 
     public IActionResult OnPostCreate(string? usuario, string? clave, string? confirmacion,
-        UserRole rol = UserRole.Administrativo, bool moduloCambioDomicilio = false, bool moduloF8 = false)
+        UserRole rol = UserRole.Administrativo, bool moduloCambioDomicilio = false, bool moduloF8 = false, Office[]? sedes = null)
     {
+        if (MissingOffices(rol, sedes))
+        {
+            return Finish(ProvisioningResult.UsernameInvalid, MissingOfficeMessage);
+        }
+
         var result = provisioning.Create(usuario, clave, confirmacion, rol, moduloCambioDomicilio, moduloF8);
+        if (result == ProvisioningResult.Created && users.FindByUsername(usuario!) is { } created)
+        {
+            userOffices.Replace(created.Id, OfficesFor(rol, sedes), Actor);
+        }
+
         return Finish(result, result == ProvisioningResult.Created
             ? $"Usuario '{usuario?.Trim().ToLowerInvariant()}' creado."
             : UserProvisioning.Describe(result));
@@ -45,7 +64,7 @@ public class UsuariosModel(IUserRepository users, UserProvisioning provisioning,
     /// <summary>Rol y módulos se editan aparte de la clave — cambian con más frecuencia que una
     /// contraseña, y mezclarlos en el mismo formulario forzaría a tocar la clave para cambiar solo
     /// el rol.</summary>
-    public IActionResult OnPostUpdateRole(string usuario, UserRole rol, bool moduloCambioDomicilio = false, bool moduloF8 = false)
+    public IActionResult OnPostUpdateRole(string usuario, UserRole rol, bool moduloCambioDomicilio = false, bool moduloF8 = false, Office[]? sedes = null)
     {
         var target = users.FindByUsername(usuario);
         if (target is null)
@@ -60,9 +79,36 @@ public class UsuariosModel(IUserRepository users, UserProvisioning provisioning,
             return Finish(ProvisioningResult.UsernameInvalid, "No puede quitarse a sí mismo el rol de Administrador.");
         }
 
+        if (MissingOffices(rol, sedes))
+        {
+            return Finish(ProvisioningResult.UsernameInvalid, MissingOfficeMessage);
+        }
+
         users.UpdateRole(target.Id, rol, moduloCambioDomicilio, moduloF8);
-        return Finish(ProvisioningResult.Created, $"Rol de '{usuario}' actualizado.");
+        // Auditoría + nuevo sello de seguridad: la sesión abierta del afectado se rehace sola.
+        userOffices.RecordRoleChange(target.Id, Actor,
+            DescribeRole(target.Role, target.CanAccessCambioDomicilio, target.CanAccessF8Urgentes),
+            DescribeRole(rol, moduloCambioDomicilio, moduloF8));
+        userOffices.Replace(target.Id, OfficesFor(rol, sedes), Actor);
+        return Finish(ProvisioningResult.Created, $"Rol y sedes de '{usuario}' actualizados.");
     }
+
+    private string Actor => User?.Identity?.Name ?? "desconocido";
+
+    private static bool MissingOffices(UserRole role, Office[]? offices) =>
+        !OfficeScopeClaims.IsUnrestrictedRole(role) && (offices is null || offices.Length == 0);
+
+    /// <summary>Administrador y Jefatura ven todo por rol; se les guardan las tres sedes para que,
+    /// si más adelante bajan de rol, no queden sin acceso por sorpresa.</summary>
+    private static IReadOnlyCollection<Office> OfficesFor(UserRole role, Office[]? offices) =>
+        OfficeScopeClaims.IsUnrestrictedRole(role) && (offices is null || offices.Length == 0)
+            ? Enum.GetValues<Office>()
+            : offices ?? [];
+
+    private static string DescribeRole(UserRole role, bool cambioDomicilio, bool f8) =>
+        role == UserRole.Administrativo
+            ? $"{UserRoleCatalog.Display(role)} (Cambio de Domicilio: {(cambioDomicilio ? "sí" : "no")}, F8: {(f8 ? "sí" : "no")})"
+            : UserRoleCatalog.Display(role);
 
     public IActionResult OnPostSetPassword(string? usuario, string? clave, string? confirmacion)
     {
@@ -128,6 +174,8 @@ public class UsuariosModel(IUserRepository users, UserProvisioning provisioning,
     private void Load()
     {
         Users = users.AllUsers();
+        OfficesByUser = Users.ToDictionary(u => u.Id, u => userOffices.For(u.Id));
+        PermissionLog = userOffices.Audit(50);
         Usernames = users.AllUsernames();
         CurrentUsername = User.Identity?.Name;
         Message = TempData["Message"] as string;

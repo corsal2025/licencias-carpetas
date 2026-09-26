@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using LicenciasCarpetas.Dashboard.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -7,7 +6,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace LicenciasCarpetas.Dashboard.Pages;
 
-public class LoginModel(ILoginService loginService, IUserRepository users, UserProvisioning provisioning) : PageModel
+public class LoginModel(ILoginService loginService, IUserRepository users, UserProvisioning provisioning,
+    IUserOfficeRepository userOffices) : PageModel
 {
     [BindProperty]
     public string Username { get; set; } = string.Empty;
@@ -46,26 +46,14 @@ public class LoginModel(ILoginService loginService, IUserRepository users, UserP
         }
 
         var user = users.FindByUsername(Username)!;
-        // Acceso a módulos externos: incondicional salvo para Administrativo, donde se decide
-        // persona por persona (ver DashboardUser.CanAccessCambioDomicilio/F8Urgentes).
-        var canAccessCambioDomicilio = UserRoleCatalog.HasFullModuleAccess(user.Role) || user.CanAccessCambioDomicilio;
-        var canAccessF8Urgentes = UserRoleCatalog.HasFullModuleAccess(user.Role) || user.CanAccessF8Urgentes;
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role.ToString()),
-            new("mod:cambio-domicilio", canAccessCambioDomicilio ? "true" : "false"),
-            new("mod:f8-urgentes", canAccessF8Urgentes ? "true" : "false")
-        };
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = ClaimsFactory.Create(user, userOffices.For(user.Id));
         var authProperties = new AuthenticationProperties
         {
             IsPersistent = true,
             ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30),
             AllowRefresh = true
         };
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), authProperties);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
 
         return RedirectToPage("/Index");
     }

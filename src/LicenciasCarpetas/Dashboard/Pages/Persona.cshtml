@@ -1,0 +1,94 @@
+@page
+@model LicenciasCarpetas.Dashboard.Pages.PersonaModel
+@{
+    ViewData["Title"] = "Ficha de persona";
+    var file = Model.File;
+}
+
+<div class="card" style="padding:14px 20px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+        <h2 style="margin:0; font-size:var(--font-lg); font-weight:700; color:var(--color-text);">Ficha de persona</h2>
+        <span style="font-size:var(--font-xs); color:var(--color-text-muted); font-weight:600;">Todo lo registrado para un RUT en sus sedes y módulos. Solo lectura.</span>
+    </div>
+    <form method="post" style="display:flex; gap:8px; align-items:flex-end;">
+        <div>
+            <label class="form-label" for="rut" style="font-weight:700; font-size:var(--font-xs);">RUT</label>
+            <input type="text" name="rut" id="rut" class="rut-input" required autocomplete="off" placeholder="ej: 13.025.150-1"
+                   style="border:1.5px solid var(--color-border); border-radius:var(--radius-sm); padding:8px 12px; font-weight:600; background:var(--color-bg);" />
+        </div>
+        <button type="submit" class="btn-primary" style="padding:8px 16px; font-weight:700;">Ver ficha</button>
+    </form>
+</div>
+
+@if (Model.Error is not null)
+{
+    <p class="message-banner" style="margin-bottom:14px;">@Model.Error</p>
+}
+
+@if (file is not null)
+{
+    <div class="card" style="padding:14px 20px; margin-bottom:14px;">
+        <h3 style="margin:0;">@(file.FullName ?? "Sin casos en Gestión de Licencias")</h3>
+        <span class="rut-cell" style="font-weight:600; color:var(--color-text-muted);">RUT @file.Rut</span>
+        @if (!file.HasAnyRecord)
+        {
+            <p style="margin:8px 0 0;">No hay registros para este RUT.</p>
+        }
+    </div>
+
+    <div class="card table-card" style="margin-bottom:14px;">
+        <h3 style="padding:12px 16px 0; margin:0;">🪪 Casos (@file.Cases.Count)</h3>
+        <table class="cases" style="width:100%;">
+            <thead><tr><th>Citación</th><th>Sede</th><th>Estado carpeta</th><th>Decisión final</th><th>Idoneidad</th><th>Última carpeta</th><th>Código F8</th><th>Atendido</th></tr></thead>
+            <tbody>
+            @foreach (var c in file.Cases)
+            {
+                <tr>
+                    <td>@(c.CitationDate?.ToString("dd-MM-yyyy") ?? "—")</td>
+                    <td>@OfficeCatalog.Display(c.Office)</td>
+                    <td>@(c.FolderState ?? "—")</td>
+                    <td>@(c.FinalDecision ?? "—")</td>
+                    <td>@(c.MoralIdoneity ?? "—")</td>
+                    <td>@(c.LastFolder ?? "—")</td>
+                    <td>@(c.CodigoF8 ?? "—")</td>
+                    <td>@(c.Attended ? "Sí" : "No")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card table-card" style="margin-bottom:14px;">
+        <h3 style="padding:12px 16px 0; margin:0;">🕑 Historial de cambios (@file.Audit.Count)</h3>
+        <table class="cases" style="width:100%;">
+            <thead><tr><th>Fecha</th><th>Usuario</th><th>Sede</th><th>Campo</th><th>Antes</th><th>Después</th></tr></thead>
+            <tbody>
+            @foreach (var a in file.Audit)
+            {
+                <tr>
+                    <td>@a.ChangedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")</td>
+                    <td>@a.ChangedBy</td>
+                    <td>@OfficeCatalog.Display(a.Office)</td>
+                    <td>@a.FieldName</td>
+                    <td>@(a.OldValue ?? "—")</td>
+                    <td>@(a.NewValue ?? "—")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.CanSeeF8)
+    {
+        <partial name="Shared/_PersonaRequests" model="@(("⚡ F8 Urgentes", "Código F8", file.F8Requests))" />
+    }
+    @if (Model.CanSeeCambioDomicilio)
+    {
+        <partial name="Shared/_PersonaRequests" model="@(("📥 Cambio de domicilio recibido", "Comuna", file.AddressChangesReceived))" />
+        <partial name="Shared/_PersonaRequests" model="@(("📤 Cambio de domicilio solicitado", "Comuna destino", file.AddressChangesRequested))" />
+    }
+    @if (Model.CanSeeF8 || Model.CanSeeCambioDomicilio)
+    {
+        <partial name="Shared/_PersonaRequests" model="@(("📜 Certificados", "Comuna", file.Certificates))" />
+    }
+}

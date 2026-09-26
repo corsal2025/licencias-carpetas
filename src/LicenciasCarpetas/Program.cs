@@ -17,6 +17,7 @@ using LicenciasCarpetas.Import;
 using LicenciasCarpetas.Persistence;
 using LicenciasCarpetas.Reporting;
 using LicenciasCarpetas.Statistics;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -30,15 +31,18 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = baseDir
 });
 
+// CreateBuilder ya carga appsettings.json y appsettings.{Environment}.json desde ContentRootPath
+// (= la carpeta del exe), más variables de entorno y argumentos. Volver a agregarlos acá los ponía
+// por encima de todo lo demás — incluida la configuración que inyectan los tests de integración,
+// que terminaban escribiendo en el data/carpetas.db real de bin/. Solo se suma Local.json.
 builder.Configuration
-    .SetBasePath(baseDir)
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     // Secretos y overrides de la instalación (credenciales EWS del correo institucional, rutas
     // locales). Va fuera de git y `dotnet publish` NO lo sobrescribe, así que sobrevive a cada
     // republicación. Ver deploy/README.md ("Correo institucional (EWS)").
-    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
-    .AddEnvironmentVariables();
+    .AddJsonFile(Path.Combine(baseDir, "appsettings.Local.json"), optional: true, reloadOnChange: true)
+    // Mismo orden de precedencia de siempre: entorno y línea de comandos le ganan a Local.json.
+    .AddEnvironmentVariables()
+    .AddCommandLine(args);
 
 var options = builder.Configuration.GetSection(CarpetasOptions.SectionName).Get<CarpetasOptions>()
     ?? throw new InvalidOperationException($"Missing '{CarpetasOptions.SectionName}' configuration section.");
@@ -68,17 +72,28 @@ builder.Services.AddSingleton(new DatabaseBackup(
     databasePath,
     Path.Combine(Path.GetDirectoryName(databasePath)!, "backups"),
     options.BackupsToKeep,
-    options.SecondaryBackupDirectory));
+    options.SecondaryBackupDirectory,
+    options.BackupEncryptionKey));
 builder.Services.AddSingleton<IFolderCaseRepository>(_ => new FolderCaseRepository(connectionString));
 builder.Services.AddSingleton<IDailyCounterRepository>(_ => new DailyCounterRepository(connectionString));
 builder.Services.AddSingleton<IComunaContactRepository>(_ => new ComunaContactRepository(connectionString));
 builder.Services.AddSingleton<IUserRepository>(_ => new UserRepository(connectionString));
+builder.Services.AddSingleton<IUserOfficeRepository>(_ => new UserOfficeRepository(connectionString));
+builder.Services.AddSingleton<SessionRevalidator>();
+// Roles por sede: cada request ve los casos a través de ScopedCaseRepository, armado con las sedes
+// del usuario. El IFolderCaseRepository singleton (sin filtro) queda para importador y servicios.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped(sp => OfficeScopeClaims.From(sp.GetRequiredService<IHttpContextAccessor>().HttpContext?.User));
+builder.Services.AddScoped<IScopedCaseRepository>(sp => new ScopedCaseRepository(
+    sp.GetRequiredService<IFolderCaseRepository>(), sp.GetRequiredService<OfficeScope>()));
 builder.Services.AddSingleton<ILoginService, LoginService>();
 builder.Services.AddSingleton<UserProvisioning>();
 builder.Services.AddSingleton<IExcelWorkbookImporter, ExcelWorkbookImporter>();
 builder.Services.AddSingleton<IExcelCaseExporter, ExcelCaseExporter>();
 builder.Services.AddSingleton<StatisticsService>();
+builder.Services.AddSingleton(_ => new SedeKpiService(connectionString));
 builder.Services.AddSingleton<IGlobalSearchService>(_ => new GlobalSearchService(connectionString));
+builder.Services.AddSingleton<IPersonFileQuery>(_ => new PersonFileQuery(connectionString));
 
 // Módulo F8 Urgentes: vive en la misma carpetas.db (tabla propia, UrgentRequest) y detrás del
 // mismo login — ya no es una app aparte. Solo trae sus propias rutas de Excel de config.
@@ -122,6 +137,7 @@ builder.Services.AddSingleton<INotificationChannel, WindowsToastNotificationChan
 builder.Services.AddSingleton<INotificationChannel, EmailNotificationChannel>();
 builder.Services.AddSingleton<AddressChangeRoutingService>();
 builder.Services.AddSingleton<CambioDomicilioSyncService>();
+builder.Services.AddSingleton<EwsHealthCheck>();
 builder.Services.AddSingleton<CambioDomicilioStatisticsService>();
 
 var keysFolder = Path.Combine(Path.GetDirectoryName(databasePath) ?? AppContext.BaseDirectory, "keys");
@@ -142,6 +158,24 @@ builder.Services
         cookieOptions.Cookie.HttpOnly = true;
         cookieOptions.ExpireTimeSpan = TimeSpan.FromDays(30);
         cookieOptions.SlidingExpiration = true;
+        // Permisos al instante: si el rol, los módulos o las sedes cambiaron (SecurityStamp nuevo),
+        // la sesión abierta se rehace con los datos actuales en la siguiente request; si la cuenta
+        // fue eliminada, se cierra. Cuesta un SELECT por clave primaria en SQLite local.
+        cookieOptions.Events.OnValidatePrincipal = async context =>
+        {
+            var (result, principal) = context.HttpContext.RequestServices
+                .GetRequiredService<SessionRevalidator>().Check(context.Principal!);
+            if (result == SessionCheck.Rejected)
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+            else if (result == SessionCheck.Replaced)
+            {
+                context.ReplacePrincipal(principal!);
+                context.ShouldRenew = true;
+            }
+        };
     });
 builder.Services.AddAuthorization(authorizationOptions =>
 {
@@ -285,6 +319,33 @@ if (args.Contains("--import"))
     return;
 }
 
+// Restaurar un respaldo cifrado: --decrypt-backup <archivo.db.enc> <destino.db>, con la misma
+// Carpetas:BackupEncryptionKey con que se cifró. No toca la base en uso.
+if (args.Contains("--decrypt-backup"))
+{
+    var index = Array.IndexOf(args, "--decrypt-backup");
+    if (index + 2 >= args.Length || string.IsNullOrEmpty(options.BackupEncryptionKey))
+    {
+        Console.Error.WriteLine("Uso: --decrypt-backup <archivo.db.enc> <destino.db> (requiere Carpetas:BackupEncryptionKey).");
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    try
+    {
+        var plain = BackupCipher.Decrypt(File.ReadAllBytes(args[index + 1]), options.BackupEncryptionKey);
+        File.WriteAllBytes(args[index + 2], plain);
+        Console.WriteLine($"Respaldo descifrado en {args[index + 2]}.");
+    }
+    catch (System.Security.Cryptography.CryptographicException ex)
+    {
+        Console.Error.WriteLine($"No se pudo descifrar: {ex.Message} (¿clave distinta?)");
+        Environment.ExitCode = 1;
+    }
+
+    return;
+}
+
 // Diagnóstico del correo institucional: reproduce lo que hace "Sincronizar Ahora" al leer el
 // buzón por EWS, e imprime el error real (sin tener que buscar en el log del servidor).
 if (args.Contains("--test-ews"))
@@ -347,15 +408,29 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+// Un caso de otra sede pedido por Id responde 404, igual que uno inexistente: el código de
+// respuesta no revela que el caso existe en otra sede.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (CaseOutOfScopeException) when (!context.Response.HasStarted)
+    {
+        context.Response.Clear();
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+    }
+});
 app.MapRazorPages();
 
-app.MapGet("/api/global-search", (string? q, IGlobalSearchService searchService) =>
+app.MapGet("/api/global-search", (string? q, IGlobalSearchService searchService, OfficeScope scope) =>
 {
     if (string.IsNullOrWhiteSpace(q))
     {
         return Results.Ok(Array.Empty<GlobalSearchResult>());
     }
-    var results = searchService.Search(q, limit: 15);
+    var results = searchService.Search(q, limit: 15, scope);
     return Results.Ok(results);
 }).RequireAuthorization();
 
@@ -405,6 +480,7 @@ static void EnsureSchemas(IServiceProvider services)
         provisioning.Create("admin", "Valparaiso2025!", "Valparaiso2025!", UserRole.Administrador, canAccessCambioDomicilio: true, canAccessF8Urgentes: true);
         Console.WriteLine("Usuarios iniciales 'raul' y 'admin' aprovisionados automáticamente.");
     }
+    services.GetRequiredService<IUserOfficeRepository>().EnsureSchema();
     services.GetRequiredService<IUrgentRequestRepository>().EnsureSchema();
     services.GetRequiredService<ICambioDomicilioRequestRepository>().EnsureSchema();
     services.GetRequiredService<IOutboundAddressChangeRequestRepository>().EnsureSchema();

@@ -166,4 +166,43 @@ public class DatabaseBackupTests : IDisposable
         Assert.NotNull(created);
         Assert.True(File.Exists(created));
     }
+
+    [Fact]
+    public void With_a_key_only_an_encrypted_copy_is_kept_and_it_round_trips()
+    {
+        var databasePath = WriteDatabase("rut-secreto");
+        var backup = new DatabaseBackup(databasePath, BackupDirectory, keep: 5, encryptionKey: "frase-larga-de-prueba");
+
+        var path = backup.Run(new DateTimeOffset(2026, 9, 26, 10, 0, 0, TimeSpan.Zero))!;
+
+        Assert.EndsWith(".db.enc", path);
+        Assert.Empty(Directory.GetFiles(BackupDirectory, "*.db"));
+        var bytes = File.ReadAllBytes(path);
+        Assert.DoesNotContain("rut-secreto", System.Text.Encoding.UTF8.GetString(bytes));
+        var restored = Path.Combine(_root, "restaurada.db");
+        File.WriteAllBytes(restored, BackupCipher.Decrypt(bytes, "frase-larga-de-prueba"));
+        Assert.Equal("rut-secreto", ReadMarker(restored));
+    }
+
+    [Fact]
+    public void A_wrong_key_fails_instead_of_returning_garbage()
+    {
+        var data = BackupCipher.Encrypt([1, 2, 3], "clave-buena");
+
+        Assert.ThrowsAny<System.Security.Cryptography.CryptographicException>(() => BackupCipher.Decrypt(data, "clave-mala"));
+    }
+
+    [Fact]
+    public void Encrypted_copies_are_rotated_like_plain_ones()
+    {
+        var databasePath = WriteDatabase();
+        var backup = new DatabaseBackup(databasePath, BackupDirectory, keep: 2, encryptionKey: "k");
+
+        for (var minute = 0; minute < 4; minute++)
+        {
+            backup.Run(new DateTimeOffset(2026, 9, 26, 10, minute, 0, TimeSpan.Zero));
+        }
+
+        Assert.Equal(2, Directory.GetFiles(BackupDirectory, "*.enc").Length);
+    }
 }

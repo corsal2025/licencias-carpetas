@@ -11,10 +11,13 @@ public class CambioDomicilioPathResolverTests
     [Fact]
     public void Relative_path_is_combined_with_the_base_directory()
     {
-        var resolved = CambioDomicilioPathResolver.ResolveAgainstBaseDirectory(
-            "data/comunas.csv", @"C:\app\bin");
+        // Rooted on every OS (C:\app\bin is not rooted on Linux, where the Docker image runs).
+        var baseDirectory = Path.Combine(Path.GetTempPath(), "app", "bin");
 
-        Assert.Equal(Path.Combine(@"C:\app\bin", "data/comunas.csv"), resolved);
+        var resolved = CambioDomicilioPathResolver.ResolveAgainstBaseDirectory(
+            "data/comunas.csv", baseDirectory);
+
+        Assert.Equal(Path.Combine(baseDirectory, "data/comunas.csv"), resolved);
         Assert.True(Path.IsPathRooted(resolved));
     }
 
