@@ -53,6 +53,20 @@ Se escriben a mano y **una reimportación nunca los pisa**, porque el libro no t
 | **Atendido** | Si la persona asistió. Alimenta el % de atención de Estadísticas |
 | **Marcar** | Marca personal del operador; también elige qué entra en los informes de sector |
 
+## Usar en local sin compilar (Windows)
+
+La carpeta **`app-windows/`** trae la aplicación ya compilada:
+
+1. Instalar una vez el **ASP.NET Core Runtime 10** (Windows x64):
+   https://dotnet.microsoft.com/download/dotnet/10.0
+2. Clonar o descargar el repositorio y hacer doble clic en `app-windows\Iniciar.bat`.
+   Se abre http://localhost:5010. Para cerrar, cerrar la ventana negra.
+3. Si no se conoce la clave de `admin`: en `app-windows`, `LicenciasCarpetas.exe --reset-password admin`.
+
+La base se crea en `app-windows\data\` (fuera de git, ver `.gitignore`). Al hacer `git pull` con una
+versión nueva, los datos se conservan. Para regenerar la carpeta:
+`dotnet publish src/LicenciasCarpetas -c Release -r win-x64 --self-contained false -o app-windows`.
+
 ## Requisitos
 
 - .NET 10 SDK

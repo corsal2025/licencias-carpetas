@@ -36,3 +36,7 @@ publish/
 # Logs
 *.log
 
+
+# Datos reales de la app lista para usar (RUT, nombres): nunca a git
+app-windows/data/
+app-windows/appsettings.Local.json

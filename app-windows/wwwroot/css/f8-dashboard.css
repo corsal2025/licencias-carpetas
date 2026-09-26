@@ -1,0 +1,1205 @@
+:root {
+    --color-primary: #0b2545;
+    --color-primary-dark: #07172c;
+    --color-primary-light: #133e63;
+    --color-accent: #1d4ed8;
+    --color-accent-hover: #1e40af;
+    --color-gold: #c59b27;
+    --color-gold-hover: #b45309;
+    --color-bg: #f1f5f9;
+    --color-surface: #ffffff;
+    --color-border: #cbd5e1;
+    --color-border-subtle: #e2e8f0;
+    --color-text: #0f172a;
+    --color-text-muted: #64748b;
+    --color-sidebar-bg: #0b2545;
+    --color-sidebar-border: rgba(255, 255, 255, 0.12);
+    --color-sidebar-text: #e2e8f0;
+    --color-sidebar-text-muted: #94a3b8;
+    --color-sidebar-active-bg: #1d4ed8;
+    --color-sidebar-active-text: #ffffff;
+    --color-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+    --sidebar-width: 248px;
+    --color-pending: #d97706;
+    --color-pending-bg: #fffbeb;
+    --color-pending-border: #fde68a;
+    --color-uploaded: #059669;
+    --color-uploaded-bg: #ecfdf5;
+    --color-uploaded-border: #a7f3d0;
+    --color-confirmed: #0d9488;
+    --color-confirmed-bg: #f0fdfa;
+    --color-review: #e11d48;
+    --color-review-bg: #fff1f2;
+    --color-review-border: #fecdd3;
+    --color-selected-bg: #e0f2fe;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --radius-lg: 12px;
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    width: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+header.app-header {
+    width: 100%;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: var(--shadow-sm);
+}
+
+header.app-header .brand-logo {
+    height: 76px;
+    width: auto;
+    border-radius: 6px;
+    background: #fff;
+    padding: 3px;
+}
+
+.nav-search-clear {
+    /* Mismo tamaño que dashboard.css (--font-xs). */
+    font-size: 0.65rem;
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
+main {
+    padding: 20px 24px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Fila de controles no-navegación de página (selector de mes, botones de imprimir, etc en
+   ImpresionMensual) — las pestañas/links de navegación reales viven en el header compartido
+   (_Layout.cshtml, grupos condicionales por módulo) o en .cd-filter-bar (dashboard.css). */
+main > .nav-group {
+    border-left: none;
+    padding: 4px 0 16px;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nav-search {
+    margin-bottom: 18px;
+}
+
+.message-banner {
+    background: var(--color-confirmed-bg);
+    border: 1px solid var(--color-confirmed);
+    color: var(--color-confirmed);
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+}
+
+.btn-primary,
+button.btn-primary,
+a.btn-primary,
+.nav-sync,
+.btn-sync {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #1d4ed8 !important;
+    background-color: #1d4ed8 !important;
+    color: #ffffff !important;
+    border: 1px solid #1e40af !important;
+    border-radius: 8px !important;
+    padding: 6px 14px !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2);
+    transition: background-color 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-primary:hover,
+button.btn-primary:hover,
+a.btn-primary:hover,
+.nav-sync:hover,
+.btn-sync:hover {
+    background: #1e40af !important;
+    background-color: #1e40af !important;
+    color: #ffffff !important;
+    border-color: #1e3a8a !important;
+    box-shadow: 0 4px 6px -1px rgba(29, 78, 216, 0.3);
+}
+
+.btn-primary:active,
+.btn-sync:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.2);
+}
+
+.card {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* On the cases table (Index page), pin the table's own area to the viewport height instead of
+   letting the whole page scroll — otherwise the horizontal scrollbar sits at the bottom of a
+   potentially very long table, requiring a long vertical scroll first just to reach it. With
+   this, the horizontal scrollbar (and the vertical one, for tall tables) stays reachable right
+   at the bottom of the visible table area. */
+body.cases-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+body.cases-page main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    padding-left: 14px;
+    padding-right: 14px;
+    min-height: 0;
+}
+
+.card.table-card {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: auto;
+    scrollbar-width: auto;
+    scrollbar-color: var(--color-text-muted) var(--color-bg);
+}
+
+/* Default browser scrollbar was too thin to notice at the bottom of a wide table —
+   make it thick and high-contrast so it's obvious there's more to scroll. */
+.card.table-card::-webkit-scrollbar {
+    width: 22px;
+    height: 22px;
+}
+
+.card.table-card::-webkit-scrollbar-track {
+    background: var(--color-bg);
+}
+
+.card.table-card::-webkit-scrollbar-thumb {
+    background-color: var(--color-text-muted);
+    border-radius: 8px;
+    border: 3px solid var(--color-bg);
+}
+
+.card.table-card::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-accent);
+}
+
+table.cases {
+    width: 100%;
+    border-collapse: collapse;
+    /* Mismo tamaño que dashboard.css (--font-lg). */
+    font-size: 0.9rem;
+}
+
+table.cases th {
+    background: #eef2f6;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    /* Mismo tamaño que dashboard.css (--font-sm). */
+    font-size: 0.7rem;
+    letter-spacing: 0.4px;
+    text-align: center;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+table.cases td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+    text-align: center;
+    font-weight: 700;
+}
+
+table.cases tbody tr:nth-child(even) { background: #fafbfc; }
+table.cases tbody tr:hover { background: #f0f6fb; transition: background 0.12s ease; }
+
+table.cases-index {
+    table-layout: fixed;
+    /* Mismo tamaño que la tabla de Casos en el modelo central (dashboard.css) — antes 0.8rem
+       acá volvía la tabla de F8 visiblemente más grande que la del resto de la app. */
+    font-size: 0.64rem;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Zebra striping is computed server-side into an explicit class instead of relying on
+   :nth-child, since row visibility/order has changed before under a fixed layout — keeping
+   this explicit avoids depending on layout details that are unrelated to the striping itself. */
+table.cases-index tbody tr:nth-child(even) {
+    background: transparent;
+}
+
+table.cases-index tbody tr.row-alt {
+    background: #fafbfc;
+}
+
+table.cases-index th {
+    padding: 6px 6px;
+    /* Mismo tamaño que dashboard.css (--font-xs). */
+    font-size: 0.65rem;
+    line-height: 1.2;
+}
+
+table.cases-index td {
+    padding: 5px 6px;
+}
+
+table.cases-index th,
+table.cases-index td {
+    text-align: center;
+}
+
+/* Fixed layout needs explicit widths, otherwise all 11 columns split the row evenly and the
+   checkbox columns (which need very little space) starve Nombre/Acción of the room they need. */
+table.cases-index th:nth-child(1), table.cases-index td:nth-child(1) { width: 5%; }
+table.cases-index th:nth-child(2), table.cases-index td:nth-child(2) { width: 6%; }
+table.cases-index th:nth-child(3), table.cases-index td:nth-child(3) { width: 22%; }
+table.cases-index th:nth-child(4), table.cases-index td:nth-child(4) { width: 8%; }
+table.cases-index th:nth-child(5), table.cases-index td:nth-child(5) { width: 8%; }
+table.cases-index th:nth-child(6), table.cases-index td:nth-child(6) { width: 7%; }
+table.cases-index th:nth-child(7), table.cases-index td:nth-child(7) { width: 9%; }
+table.cases-index th:nth-child(8), table.cases-index td:nth-child(8) { width: 6%; }
+table.cases-index th:nth-child(9), table.cases-index td:nth-child(9) { width: 8%; }
+table.cases-index th:nth-child(10), table.cases-index td:nth-child(10) { width: 8%; }
+table.cases-index th:nth-child(11), table.cases-index td:nth-child(11) { width: 13%; }
+
+
+table.cases-index .badge {
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+table.cases-index button.btn-primary {
+    padding: 4px 10px;
+    /* Mismo tamaño que dashboard.css (--font-base). */
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+table.cases-index td:last-child {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+table.cases-index td:last-child {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+table.cases-index td:last-child form {
+    margin: 0;
+}
+
+table.cases-index .input-inline {
+    padding: 3px 4px;
+    /* Mismo tamaño que dashboard.css (--font-base). */
+    font-size: 0.75rem;
+}
+
+table.cases-index td.name-cell {
+    text-align: center;
+}
+
+/* width:100% here fills whatever extra room the column has (so short names don't leave a
+   visible gap); the per-row inline `min-width: Nch` (see Index.cshtml) is what actually forces
+   the column itself to grow — table-layout:auto respects an input's min-width when sizing its
+   column even under width:100%, unlike the HTML `size` attribute, which browsers ignore for
+   column sizing once a CSS width is set. */
+table.cases-index td.name-cell .name-input {
+    width: 100%;
+    box-sizing: border-box;
+    /* Mismo tamaño que dashboard.css (--font-xs). */
+    font-size: 0.65rem;
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+table.cases-index td.rut-cell .rut-input {
+    width: 100%;
+    min-width: 9ch;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+table.cases-index td.text-cell,
+table.cases-index td.rut-cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+table.cases-index .marked-checkbox,
+table.cases-list .marked-checkbox,
+table.cases-list .pendiente-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Pendiente Carpeta uses a different check color than Marcar/nav selection (which use the
+   app's blue accent) so the two states read as distinct at a glance, not just by position. */
+table.cases-list .pendiente-checkbox {
+    accent-color: #c9782f;
+}
+
+table.cases-list th,
+table.cases-index th {
+    color: #000000 !important;
+    font-weight: 800 !important;
+}
+
+table.cases-list td,
+table.cases-index td,
+table.cases-list tbody tr td,
+table.cases-index tbody tr td,
+table.cases-list td input,
+table.cases-list td select,
+table.cases-index td input,
+table.cases-index td select {
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+
+table.cases-list td:has(select.estado-actual-select) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+table.cases-list td:has(select.estado-actual-select) select.estado-actual-select {
+    /* table-layout:auto lets the column grow with it — pill shrinks to its own text
+       instead of stretching to fill a fixed-width column. */
+    width: auto;
+    flex: none;
+}
+
+table.cases-list td:has(select.estado-actual-select) .pendiente-alert {
+    position: static;
+    margin-left: 0;
+}
+
+.pendiente-alert {
+    flex: none;
+    color: var(--color-review);
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-left: 4px;
+    cursor: help;
+    animation: review-alert-blink 1.2s ease-in-out infinite;
+}
+
+table.cases-index tbody tr:has(.marked-checkbox:checked),
+table.cases-list tbody tr:has(.marked-checkbox:checked) {
+    background: #dbeafe !important;
+}
+
+table.cases-index tbody tr:has(.marked-checkbox:checked):hover,
+table.cases-list tbody tr:has(.marked-checkbox:checked):hover {
+    background: #bfdbfe !important;
+}
+
+/* Confirmed (folder already uploaded + comuna already notified) is the most important
+   status to spot at a glance, so it wins over both the zebra stripe and the "marked" tint. */
+table.cases-index tbody tr.row-confirmed,
+table.cases-list tbody tr.row-confirmed {
+    background: #b8d9f0 !important;
+}
+
+table.cases-index tbody tr.row-confirmed:hover,
+table.cases-list tbody tr.row-confirmed:hover {
+    background: #a0c8ea !important;
+}
+
+/* Needs-review (incomplete/unreliable extracted data) also needs to win over the zebra
+   stripe and the "marked" tint — same reasoning as row-confirmed above. It never overlaps
+   row-confirmed in practice: confirming a case already requires NeedsReview to be false. */
+table.cases-index tbody tr.row-needs-review {
+    background: var(--color-review-bg) !important;
+}
+
+table.cases-index tbody tr.row-needs-review:hover {
+    background: #f6d0d8 !important;
+}
+
+/* Groups the alert symbol and the name input on one row — without this, the input's own
+   width:100% makes it wrap onto its own line below the alert instead of sitting beside it. */
+table.cases-index td.name-cell .name-with-alert {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+@keyframes review-alert-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.review-alert {
+    flex: none;
+    color: var(--color-review);
+    font-weight: 700;
+    /* Mismo tamaño que dashboard.css (--font-lg). */
+    font-size: 0.9rem;
+    cursor: help;
+    animation: review-alert-blink 1.2s ease-in-out infinite;
+}
+
+table.cases-index td.review-cell {
+    text-align: left;
+}
+
+table.cases-index td.text-cell {
+    white-space: nowrap;
+    text-align: center;
+}
+
+.fecha-form {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+}
+
+.fecha-form .fecha-input {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 11px;
+    border-radius: 999px;
+    /* Mismo tamaño que dashboard.css (--font-base). */
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.badge-pending { background: var(--color-pending-bg); color: var(--color-pending); }
+.badge-uploaded { background: var(--color-uploaded-bg); color: var(--color-uploaded); }
+.badge-confirmed { background: var(--color-confirmed-bg); color: var(--color-confirmed); }
+.badge-review { background: var(--color-review-bg); color: var(--color-review); }
+.badge-ok { background: var(--color-confirmed-bg); color: var(--color-confirmed); }
+
+.message-error { background: var(--color-review-bg); border-color: var(--color-review); color: var(--color-review); }
+
+.quick-add-card {
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    border-top: 3px solid var(--color-accent);
+}
+
+.quick-add-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.quick-add-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    flex: 1;
+}
+
+.quick-add-row .input-block {
+    margin-bottom: 0;
+}
+
+.quick-add-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+button.btn-outline {
+    background: none;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+button.btn-outline:hover { background: var(--color-bg); }
+
+button.btn-sync {
+    color: #7a3fc9;
+    border-color: #7a3fc9;
+}
+button.btn-sync:hover { background: #f2eaff; }
+
+/* cases-list is the Index page's own column scheme (8 columns) — distinct from cases-index
+   (11 columns, used by a checkbox-driven review grid) so widths never fight each other. */
+table.cases-list {
+    /* auto layout: each column sizes to its widest content (input/select/button), so names,
+       codes, dates etc. are never clipped. The card's overflow-x scrolls when the total
+       exceeds the viewport instead of squeezing columns down to unreadable slivers. */
+    table-layout: auto;
+    font-size: 0.72rem;
+    width: auto;
+    min-width: 100%;
+    border-collapse: collapse;
+}
+
+table.cases-list th,
+table.cases-list td {
+    white-space: nowrap;
+    width: auto;
+    text-align: center;
+    padding: 4px 5px;
+    height: 34px;
+}
+
+/* Name inputs are still variable-width (sized to content), so left-aligning keeps every
+   row's box starting at the same edge instead of a wavy centered look. RUT inputs are now
+   full-width (fill the column), so centering their text reads better. */
+table.cases-list td.name-cell {
+    text-align: left;
+}
+
+table.cases-list td.rut-cell {
+    text-align: center;
+}
+
+/* Make inputs align text formally and fit their dynamic inline width sizes */
+table.cases-list td.name-cell input.input-inline {
+    text-align: left !important;
+    padding-left: 8px;
+}
+
+table.cases-list td.rut-cell input.input-inline {
+    text-align: center !important;
+    font-family: monospace;
+    font-size: 0.75rem;
+}
+
+/* Prevent table columns from compressing/squishing when resizing or minimizing */
+table.cases-list th:nth-child(1), table.cases-list td:nth-child(1) { min-width: 55px; }   /* Marcar */
+table.cases-list th:nth-child(2), table.cases-list td:nth-child(2) { min-width: 65px; }   /* Pend. Carpeta */
+table.cases-list th:nth-child(3), table.cases-list td:nth-child(3) { min-width: 90px; }   /* Fecha Citación */
+table.cases-list th:nth-child(4), table.cases-list td:nth-child(4) { min-width: 320px; }  /* Nombre Contribuyente */
+table.cases-list th:nth-child(5), table.cases-list td:nth-child(5) { min-width: 120px; }  /* RUT */
+table.cases-list th:nth-child(6), table.cases-list td:nth-child(6) { min-width: 110px; }  /* Sector Oficina */
+table.cases-list th:nth-child(7), table.cases-list td:nth-child(7) { min-width: 160px; }  /* Estado */
+table.cases-list th:nth-child(8), table.cases-list td:nth-child(8) { min-width: 140px; }  /* Estado Actual */
+table.cases-list th:nth-child(9), table.cases-list td:nth-child(9) { min-width: 90px; }   /* Código F8 */
+table.cases-list th:nth-child(10), table.cases-list td:nth-child(10) { min-width: 170px; } /* Fecha Penúltima */
+table.cases-list th:nth-child(11), table.cases-list td:nth-child(11) { min-width: 90px; }  /* Sector Carpeta */
+table.cases-list th:nth-child(12), table.cases-list td:nth-child(12) { min-width: 100px; } /* Fecha Subida F8 */
+table.cases-list th:nth-child(13), table.cases-list td:nth-child(13) { min-width: 90px; }  /* Acción */
+
+table.cases-list th.th-wrap {
+    white-space: normal;
+    line-height: 1.3;
+    border-right: 1px solid var(--color-border);
+}
+
+table.cases-list th:last-child,
+table.cases-list td:last-child {
+    border-right: none;
+}
+
+table.cases-list thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 2px solid var(--color-border);
+}
+
+table.cases-list td > * {
+    vertical-align: middle;
+}
+
+table.cases-list td.action-cell {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 8px;
+    white-space: nowrap;
+}
+
+table.cases-list td.action-cell button.btn-primary {
+    padding: 3px 8px;
+    font-size: 0.62rem;
+    white-space: nowrap;
+    border-radius: 4px;
+    min-width: 44px;
+}
+
+table.cases-list td.action-cell button.btn-danger {
+    font-size: 0.7rem;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 4px;
+    background: var(--color-review-bg);
+    color: var(--color-review);
+}
+
+table.cases-list td.action-cell button.btn-danger:hover {
+    background: var(--color-review);
+    color: #fff;
+}
+
+table.cases-list td.action-cell form {
+    margin: 0;
+    display: contents;
+}
+
+.input-inline {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    /* Mismo tamaño que dashboard.css (--font-md). */
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-align: center;
+}
+
+table.cases-list .input-inline {
+    /* Fill the column's own min-width (set per nth-child below) instead of a fixed 9ch —
+       a fixed character width truncated longer values (names, etc.) even though their
+       column had plenty of room. */
+    width: 100%;
+    min-width: 100%;
+    box-sizing: border-box;
+    font-size: 0.72rem;
+    padding: 4px 8px;
+    background: #ffffff;
+    border: 1px solid transparent;
+    box-shadow: none;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+    font-weight: 600;
+}
+
+table.cases-list .input-inline:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+table.cases-list .input-inline:focus {
+    background: #ffffff !important;
+    border-color: var(--color-accent) !important;
+    box-shadow: 0 0 0 2px rgba(26, 115, 176, 0.2) !important;
+    color: var(--color-text) !important;
+}
+
+select.estado-select {
+    background: transparent;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 18px 4px 6px;
+    width: 30ch !important;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23333333' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 8px;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+select.estado-select:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+select.estado-select:focus {
+    background-color: #ffffff;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(26, 115, 176, 0.2);
+    outline: none;
+}
+
+select.estado-select option {
+    font-weight: 600;
+    background-color: #ffffff;
+    color: var(--color-text);
+}
+
+select.estado-actual-select {
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.66rem;
+    padding: 3px 8px;
+    text-align: center;
+    text-align-last: center;
+    border: 1px solid transparent;
+    cursor: pointer;
+    outline: none;
+    transition: box-shadow 0.15s;
+}
+
+select.estado-actual-select:focus {
+    box-shadow: 0 0 0 2px rgba(26, 115, 176, 0.3);
+}
+
+select.estado-actual-select.badge-pending { background: var(--color-pending-bg); color: var(--color-pending); border-color: transparent; }
+select.estado-actual-select.badge-uploaded { background: var(--color-uploaded-bg); color: var(--color-uploaded); border-color: transparent; }
+select.estado-actual-select.badge-confirmed { background: var(--color-confirmed-bg); color: var(--color-confirmed); border-color: transparent; }
+select.estado-actual-select.badge-review { background: var(--color-review-bg); color: var(--color-review); border-color: transparent; }
+
+.review-hint {
+    margin-top: 4px;
+    /* Mismo tamaño que dashboard.css (--font-sm). */
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+}
+
+.form-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 4px;
+}
+
+.input-block {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 10px;
+    margin-bottom: 14px;
+    border: 1px solid #b7c1cb;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: var(--color-text);
+    background: #fff;
+}
+
+.input-block::placeholder {
+    color: #8b98a5;
+}
+
+.input-block:focus,
+.nav-search input[type="text"]:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(26, 115, 176, 0.18);
+}
+
+input[type="date"] {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    /* Mismo tamaño que dashboard.css (--font-md). */
+    font-size: 0.8rem;
+}
+
+/* ==========================================================================
+   Login Page Styles
+   ========================================================================== */
+button.btn-primary {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+button.btn-primary:hover { background: var(--color-primary); }
+
+button.btn-danger {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+}
+button.btn-danger:hover {
+    color: var(--color-review);
+    background: var(--color-review-bg);
+}
+
+button.btn-outline-danger {
+    background: none;
+    color: var(--color-review);
+    border: 1px solid var(--color-review);
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    /* Mismo tamaño que dashboard.css (--font-md). */
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+button.btn-outline-danger:hover { background: var(--color-review-bg); }
+
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    padding: 20px;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    padding: 32px 36px;
+    width: 100%;
+    max-width: 360px;
+}
+
+.login-card .brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.login-card .brand-logo {
+    height: 72px;
+    width: auto;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+}
+
+.login-card .brand h2 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.login-card h1 {
+    font-size: 1.25rem;
+    margin: 0 0 4px;
+    color: #ffffff;
+    font-weight: 600;
+    text-align: center;
+}
+
+.login-card p.subtitle {
+    margin: 0 0 20px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+}
+
+.login-card .field {
+    margin-bottom: 14px;
+}
+
+.login-card label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: #ffffff;
+}
+
+.login-card input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.login-card .password-field {
+    position: relative;
+}
+
+.login-card .password-field input {
+    padding-right: 36px;
+}
+
+.login-card .password-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 12px;
+    width: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.login-card .password-toggle:hover,
+.login-card .password-toggle.active {
+    color: var(--color-primary);
+}
+
+.login-card .btn-submit {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px;
+    background: #ffffff;
+    color: var(--color-primary-dark);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.login-card .btn-submit:hover { background: #eef2f5; }
+
+.login-card .error {
+    color: #ffbaba;
+    background: rgba(220, 53, 69, 0.2);
+    border-left: 4px solid #dc3545;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 0.85rem;
+    border-radius: 4px;
+}
+
+.login-card .login-links {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    margin-top: 16px;
+}
+
+.login-card .login-links a {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: underline;
+}
+
+.login-card .login-links a.register {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Printable F8 sector report (SectorF8.cshtml): hidden on screen (the operator uses the
+   management table below it, which has its own Quitar/Marcar buttons) and shown only when
+   printing/exporting to PDF via the browser's print dialog — the .no-print elements do the
+   opposite, so screen and print never show the same content twice. */
+.print-report {
+    display: none;
+}
+
+/* ImpresionMensual has no separate on-screen management table, so its report
+   is the only view — show it outside of @media print too, unlike SectorF8's
+   .print-report which stays hidden until printing (see comment above). */
+.print-report-visible {
+    display: block;
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.print-title {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.print-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 3px double #1c3f60;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+}
+
+.print-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.print-header-brand img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.print-header-brand .org-name {
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    color: #555;
+    text-transform: uppercase;
+}
+
+.print-header-brand .report-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1c3f60;
+}
+
+.print-header-folio {
+    text-align: right;
+    font-size: 0.75rem;
+    color: #444;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+.print-subtitle-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #eef2f6;
+    border-left: 4px solid #1c3f60;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.print-total {
+    text-align: right;
+    font-size: 0.85rem;
+    color: #333;
+    margin-top: 10px;
+}
+
+.print-signatures {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 48px;
+}
+
+.print-signatures-single {
+    justify-content: center;
+}
+
+.print-signature {
+    width: 40%;
+    text-align: center;
+    border-top: 1px solid #333;
+    padding-top: 6px;
+    font-size: 0.8rem;
+}
+
+.print-table th,
+.print-table td {
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid #dde3e8;
+    text-align: center;
+    font-weight: 400;
+    font-size: 0.82rem;
+    color: #2a2a2a;
+}
+
+.print-table th {
+    background: #eef2f6;
+    color: #5c6b7a;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.4px;
+    font-weight: 700;
+    border-bottom: 1px solid #d7dde3;
+}
+
+.print-table td.text-cell:first-child,
+.print-table th:first-child {
+    text-align: left;
+    color: #1c3f60;
+}
+
+.print-table td.name-cell {
+    text-align: left;
+    color: #222;
+}
+
+.print-table th:nth-child(2) {
+    text-align: left;
+}
+
+.print-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.print-table tbody tr:nth-child(even) {
+    background: #f7f9fb;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .print-report {
+        display: block;
+    }
+
+    .print-report-visible {
+        max-width: none;
+        border: none;
+        padding: 0;
+    }
+}

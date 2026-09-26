@@ -1,0 +1,14 @@
+GESTION DE LICENCIAS - USO LOCAL
+
+REQUISITO (una sola vez): instalar "ASP.NET Core Runtime 10" para Windows x64 desde
+   https://dotnet.microsoft.com/download/dotnet/10.0  (seccion ASP.NET Core Runtime > Windows > Hosting Bundle o x64)
+
+1. Descomprima esta carpeta en su equipo (por ejemplo en Documentos).
+2. Doble clic en Iniciar.bat. Se abre el navegador en http://localhost:5010
+   (si no se abre, escribalo a mano).
+3. Usuarios iniciales: admin / raul. Si no conoce la clave, en esta carpeta:
+     LicenciasCarpetas.exe --reset-password admin
+4. Para cerrar: cierre la ventana negra de Iniciar.bat.
+
+La base de datos queda en la subcarpeta data\ (se crea sola desde seed\ la primera vez).
+Windows puede advertir que el programa no esta firmado: "Mas informacion" > "Ejecutar de todas formas".

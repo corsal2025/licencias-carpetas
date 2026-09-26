@@ -1,0 +1,3096 @@
+﻿:root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', Consolas, monospace;
+
+    --color-primary: #0b3d68;
+    --color-primary-dark: #071e33;
+    --color-primary-light: #0284c7;
+    --color-accent: #0284c7;
+    --color-accent-hover: #0369a1;
+    --color-gold: #b45309;
+    --color-gold-hover: #92400e;
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-border: #e2e8f0;
+    --color-border-subtle: #f1f5f9;
+    --color-text: #0f172a;
+    --color-text-muted: #64748b;
+    --color-sidebar-bg: #071e33;
+    --color-sidebar-border: rgba(255, 255, 255, 0.08);
+    --color-sidebar-text: #f1f5f9;
+    --color-sidebar-text-muted: #8ea8c3;
+    --color-sidebar-active-bg: #0284c7;
+    --color-sidebar-active-text: #ffffff;
+    --color-sidebar-hover-bg: rgba(255, 255, 255, 0.07);
+    --sidebar-width: 254px;
+    --color-pending: #b45309;
+    --color-pending-bg: #fef3c7;
+    --color-pending-border: #fde68a;
+    --color-uploaded: #15803d;
+    --color-uploaded-bg: #dcfce7;
+    --color-uploaded-border: #bbf7d0;
+    --color-confirmed: #0369a1;
+    --color-confirmed-bg: #e0f2fe;
+    --color-review: #b91c1c;
+    --color-review-bg: #fee2e2;
+    --color-review-border: #fecaca;
+    --color-selected-bg: #e0f2fe;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -4px rgba(15, 23, 42, 0.06);
+
+    /* Type scale */
+    --font-xs: 0.68rem;
+    --font-sm: 0.76rem;
+    --font-base: 0.82rem;
+    --font-md: 0.88rem;
+    --font-lg: 0.96rem;
+    --font-xl: 1.15rem;
+    --font-2xl: 1.4rem;
+}
+
+* { box-sizing: border-box; }
+
+html {
+    overflow-x: hidden;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Sidebar (reemplaza al header horizontal) ────────────────────────────────────────────────
+   Misma idea de antes — marca arriba, módulo activo resaltado, links agrupados por lo que hacen
+   (documentos, referencia, sync) con el mismo color por tipo — ahora en una columna fija a la
+   izquierda en vez de una franja arriba, para dejarle más alto a la tabla de Casos. */
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background: var(--color-sidebar-bg);
+}
+
+.app-sidebar {
+    flex: 0 0 var(--sidebar-width);
+    width: var(--sidebar-width);
+    height: 100vh;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: linear-gradient(180deg, var(--color-sidebar-bg) 0%, var(--color-primary-dark) 100%);
+    border-right: 1px solid var(--color-sidebar-border);
+    padding: 16px 14px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    z-index: 100;
+}
+
+.app-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg);
+    min-height: 100vh;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-sidebar-border);
+    font-weight: 600;
+    font-size: var(--font-lg);
+    letter-spacing: 0.2px;
+    color: var(--color-sidebar-text);
+}
+
+.sidebar-brand .brand-logo {
+    height: 52px;
+    width: auto;
+    border-radius: 6px;
+    background: #fff;
+    padding: 3px;
+    border: 1px solid var(--color-sidebar-border);
+}
+
+.sidebar-brand small {
+    display: block;
+    font-weight: 400;
+    font-size: var(--font-xs);
+    color: var(--color-sidebar-text-muted);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* flex:1 para que .sidebar-footer quede siempre pegado abajo, aunque el módulo activo tenga
+       pocos links. */
+    flex: 1;
+}
+
+.sidebar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 6px 0;
+}
+
+.sidebar-section-label {
+    color: var(--color-sidebar-text-muted);
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 0 10px;
+    margin-bottom: 2px;
+}
+
+/* "Módulos" es un <details> propio — clic en el summary abre/cierra los módulos */
+.sidebar-modules-collapsible > summary {
+    cursor: pointer;
+    list-style: none;
+}
+.sidebar-modules-collapsible > summary::-webkit-details-marker {
+    display: none;
+}
+
+.sidebar-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--color-sidebar-text-muted) !important;
+    border-radius: var(--radius);
+    transition: color 0.15s ease, background 0.15s ease;
+}
+.sidebar-summary:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-modules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-left: 6px;
+    margin-top: 2px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e2e8f0 !important;
+    text-decoration: none;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-size: var(--font-md);
+    font-weight: 500;
+    white-space: normal;
+    word-break: break-word;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-link:link,
+.sidebar-link:visited {
+    color: #e2e8f0 !important;
+}
+
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff !important;
+}
+
+.sidebar-link.active,
+.sidebar-link.active:link,
+.sidebar-link.active:visited {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45) !important;
+}
+
+.sidebar-search-btn {
+    width: 100%;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    font: inherit;
+    color: #ffffff !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    margin: 2px 0 4px 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.sidebar-search-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.sidebar-search-btn .search-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    letter-spacing: 0.3px;
+    color: #f8fafc;
+}
+.sidebar-search-btn kbd {
+    font-size: var(--font-xs);
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    font-weight: 600;
+    font-family: inherit;
+}
+
+.sidebar-link-logout {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    font: inherit;
+    color: #fca5a5 !important;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--font-md);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.sidebar-link-logout:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: #ffffff !important;
+}
+
+/* Cada grupo del módulo Cambio de Domicilio (Enviar / Solicitar) */
+.sidebar-section-collapsible {
+    margin: 6px 0;
+}
+.sidebar-section-collapsible > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+}
+.sidebar-section-collapsible > summary::-webkit-details-marker {
+    display: none;
+}
+.sidebar-section-collapsible > summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 6px;
+    color: var(--color-sidebar-text-muted);
+    transition: transform 0.15s ease;
+}
+.sidebar-section-collapsible[open] > summary::before {
+    transform: rotate(90deg);
+}
+.sidebar-section-collapsible > a {
+    display: flex;
+    align-items: center;
+    margin-left: 14px;
+}
+.sidebar-section-collapsible > a::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 6px;
+    color: var(--color-sidebar-text-muted);
+}
+.sidebar-subsection-collapsible {
+    margin: 8px 0 8px 4px;
+}
+.sidebar-subsection-collapsible > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+}
+.sidebar-subsection-collapsible > summary::-webkit-details-marker {
+    display: none;
+}
+.sidebar-subsection-collapsible > summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 6px;
+    color: var(--color-sidebar-text-muted);
+    transition: transform 0.15s ease;
+}
+.sidebar-subsection-collapsible[open] > summary::before {
+    transform: rotate(90deg);
+}
+.sidebar-subsection-collapsible > a {
+    margin-left: 14px;
+    display: flex;
+    align-items: center;
+}
+.sidebar-subsection-collapsible > a::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 6px;
+    color: var(--color-sidebar-text-muted);
+}
+
+.sidebar-modules-collapsible .sidebar-section-collapsible {
+    margin-left: 8px;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-sidebar-border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebar-footer form {
+    margin: 0;
+}
+
+/* .nav-pill/.nav-doc/.nav-sync: usados sueltos (sin .app-nav como ancestro) en Casos
+   (paginación, Exportar), Sector, Comunas, Importar y el botón de sincronizar de F8 — nunca
+   tuvieron una regla propia fuera del header ya retirado, así que quedaban sin estilo alguno.
+   Restaurados acá con la paleta clara del resto del dashboard, no la oscura original del header. */
+.nav-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.nav-pill:hover {
+    background: var(--color-border-subtle);
+    border-color: var(--color-accent);
+}
+
+.nav-doc {
+    background: #eff6ff !important;
+    border: 1px solid #93c5fd !important;
+    color: #1d4ed8 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.08) !important;
+}
+.nav-doc:hover {
+    background: #dbeafe !important;
+    border-color: #3b82f6 !important;
+    color: #1e40af !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.15) !important;
+}
+
+.btn-primary,
+button.btn-primary,
+a.btn-primary,
+.nav-sync,
+.btn-sync,
+.cd-filter-bar button.nav-sync {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #3b6fe0 !important;
+    background-color: #3b6fe0 !important;
+    color: #ffffff !important;
+    border: 1px solid #3b6fe0 !important;
+    border-radius: 999px !important;
+    padding: 7px 16px !important;
+    font-size: var(--font-sm) !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 4px 12px -4px rgba(59, 111, 224, 0.5);
+    transition: background-color 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-primary:hover,
+button.btn-primary:hover,
+a.btn-primary:hover,
+.nav-sync:hover,
+.btn-sync:hover,
+.cd-filter-bar button.nav-sync:hover {
+    background: #2f5bc4 !important;
+    background-color: #2f5bc4 !important;
+    color: #ffffff !important;
+    border-color: #2f5bc4 !important;
+    box-shadow: 0 6px 16px -6px rgba(59, 111, 224, 0.6);
+}
+
+.btn-primary:active,
+.btn-sync:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.2);
+}
+
+.app-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Barra de filtros de Casos (Cambio de Domicilio): vive en una tarjeta clara dentro de la página,
+   no en el sidebar oscuro, así que no puede reusar las reglas .sidebar-link — mismo dibujo,
+   paleta clara propia. */
+.cd-filter-bar a,
+.cd-filter-bar button:not(.btn-sync):not(.btn-primary) {
+    border-radius: 999px;
+    font-weight: 600;
+    border: 1px solid var(--color-border);
+    background: #fff;
+    color: var(--color-text-muted);
+    padding: 4px 12px;
+    font-size: var(--font-sm);
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.cd-filter-bar a:hover,
+.cd-filter-bar button:not(.btn-sync):not(.btn-primary):hover { background: var(--color-pending-bg); }
+.cd-filter-bar a.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+.cd-filter-bar a.nav-doc {
+    background: var(--color-uploaded-bg);
+    border-color: #ffc400;
+    color: #926100;
+}
+.cd-filter-bar a.nav-doc:hover { background: #ffe9a8; }
+.cd-filter-bar input[type="text"] {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: var(--font-sm);
+}
+.cd-filter-bar .nav-search-clear {
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+}
+
+/* Usado por ImpresionMensual.cshtml (barra de acciones no-print) — no está ligado al header ya
+   retirado, así que se mantiene tal cual. */
+.nav-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: wrap;
+    padding: 2px 8px;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-group:first-child {
+    padding-left: 0;
+    border-left: none;
+}
+
+.nav-search {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+/* .nav-search sits inside each module's own light-background filter bar (Casos, F8, Cambio de
+   Domicilio all put it in <main>, never in the dark header), so it's styled for a light
+   background here — the light colors both F8 and Cambio de Domicilio actually need. */
+.nav-search input[type="text"] {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 4px 8px;
+    font-size: var(--font-sm);
+    min-width: 260px;
+}
+
+.nav-search input[type="text"]::placeholder {
+    color: var(--color-text-muted);
+}
+
+.nav-search button {
+    background: var(--color-accent);
+    color: #fff;
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius);
+    padding: 4px 9px;
+    font-size: var(--font-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+}
+.nav-search button:hover { background: var(--color-primary); border-color: var(--color-primary); }
+
+.nav-search-clear {
+    font-size: var(--font-xs);
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
+main {
+    padding: 20px 24px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.message-banner {
+    background: var(--color-confirmed-bg);
+    border: 1px solid var(--color-confirmed);
+    color: var(--color-confirmed);
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: var(--font-lg);
+}
+
+.card {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Estadísticas: tarjetas KPI, dona, línea y barras de desglose — CSS puro, sin librería de
+   gráficos (equipo municipal sin internet garantizado). Compartido entre F8 y Cambio de
+   Domicilio (antes vivía solo en f8-dashboard.css, cargado solo ahí). */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-tile {
+    padding: 16px;
+    text-align: center;
+}
+
+.stat-tile-alert {
+    border-left: 4px solid var(--color-review);
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.stat-tile-alert .stat-value {
+    color: var(--color-review);
+}
+
+/* Panel de Control (/Inicio): tarjeta de acceso por módulo con conteo en vivo, misma base .card
+   que el resto del dashboard. */
+.hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.hub-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px 24px;
+}
+
+.hub-card-count {
+    font-size: var(--font-2xl);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.hub-card-link {
+    margin-top: auto;
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.hub-card-link:hover {
+    text-decoration: underline;
+}
+
+.stat-label {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+
+.donut-card {
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.donut-card h3 {
+    width: 100%;
+    margin: 0 0 4px;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.donut-chart {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.donut-hole {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: var(--color-surface, #fff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.82rem;
+}
+
+.donut-legend i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+}
+
+.line-card,
+.avg-days-card {
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.line-card h3,
+.avg-days-card h3 {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.line-chart {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.chart-gridline {
+    stroke: var(--color-border);
+    stroke-width: 1;
+}
+
+.line-path {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 2;
+}
+
+.line-dot {
+    fill: var(--color-accent);
+    stroke: #fff;
+    stroke-width: 1.5;
+}
+
+.chart-axis-label {
+    font-size: 8px;
+    fill: var(--color-text-muted);
+}
+
+.empty-hint {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    margin: 0;
+}
+
+.avg-days-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.avg-days-hint {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+
+.stats-breakdowns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 14px;
+}
+
+.breakdown-card {
+    padding: 14px 16px;
+}
+
+.breakdown-card h3 {
+    font-size: 0.9rem;
+    margin: 0 0 10px;
+    color: var(--color-text-muted);
+}
+
+.breakdown-row {
+    display: grid;
+    grid-template-columns: minmax(90px, 140px) 1fr 32px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+}
+
+.breakdown-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.breakdown-bar-track {
+    background: var(--color-bg);
+    border-radius: 3px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.breakdown-bar {
+    background: var(--color-accent);
+    height: 100%;
+}
+
+.breakdown-count {
+    text-align: right;
+    font-weight: 700;
+}
+
+/* On the cases table (Index page), pin the table's own area to the viewport height instead of
+   letting the whole page scroll — otherwise the horizontal scrollbar sits at the bottom of a
+   potentially very long table, requiring a long vertical scroll first just to reach it. With
+   this, the horizontal scrollbar (and the vertical one, for tall tables) stays reachable right
+   at the bottom of the visible table area. */
+body.cases-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+body.cases-page main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    width: 100%;
+    padding-left: 14px;
+    padding-right: 14px;
+    min-height: 0;
+    min-width: 0;
+}
+
+/* min-width: 0 overrides the flex-item default of min-width: auto, which otherwise refuses to
+   shrink this element below the table's full content width — without it, the table pushes
+   .table-card (and the whole page) wider than the viewport instead of scrolling internally, so
+   the *window* ends up needing horizontal scroll too. scroll-preserve.js only restores the
+   table's own scrollLeft, not window.scrollX, so that page-level overflow read back as "jumping
+   to the left" on every reload. */
+.card.table-card {
+    width: 100%;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    /* 13 columns of agenda data do not fit on a laptop screen. The table scrolls inside its own
+       card instead of stretching the page, so the header and filters stay put.
+       `scroll`, not `auto`: the bar is always drawn, so the columns to the right announce
+       themselves instead of hiding until someone happens to swipe sideways. */
+    /* Automática por defecto: en Papelera, Comunas o Usuarios la tabla cabe y una barra dibujada
+       siempre sería un adorno inútil. */
+    overflow-x: auto;
+    scrollbar-width: auto;
+    scrollbar-gutter: stable;
+}
+
+/* Forzada solo donde de verdad hay columnas fuera de pantalla (Casos y la tabla diaria de
+   Estadísticas): ahí la barra es la única pista de que a la derecha queda información. */
+.card.table-card:has(table.cases-index),
+.card.table-card:has(table.table-wide) {
+    overflow-x: scroll;
+}
+
+/* A visible, grabbable horizontal bar — the default overlay scrollbar is nearly invisible on a
+   white card and this one is the only clue that Decisión final and Acción exist further right. */
+.card.table-card {
+    scrollbar-width: auto;
+    scrollbar-color: #475569 #e2e8f0;
+}
+
+.card.table-card::-webkit-scrollbar {
+    height: 14px;
+    width: 12px;
+}
+
+.card.table-card::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 6px;
+}
+
+.card.table-card::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 6px;
+    border: 2px solid #e2e8f0;
+}
+
+.card.table-card::-webkit-scrollbar-thumb:hover {
+    background: #1e293b;
+}
+
+table.cases {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-lg);
+}
+
+table.cases th {
+    background: #e2e8f0;
+    color: #0f172a;
+    text-transform: uppercase;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-align: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+table.cases td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: #0f172a;
+}
+
+table.cases tbody tr:nth-child(even) { background: #fafbfc; }
+table.cases tbody tr:hover { background: #f0f6fb; transition: background 0.12s ease; }
+
+/* Auto layout, not fixed percentages: this table has 13 columns whose content widths are known
+   (a RUT is 12 characters, a date 10, a name is long), and hard-coded percentages were cutting
+   names off mid-word. Columns size themselves; the card scrolls sideways when they don't fit. */
+table.cases-index {
+    table-layout: auto;
+    font-size: var(--font-xs);
+    width: max-content;
+    min-width: 100%;
+}
+
+/* Zebra striping */
+table.cases-index tbody tr:nth-child(even) {
+    background: transparent;
+}
+
+table.cases-index tbody tr.row-alt {
+    background: #fafbfc;
+}
+
+table.cases-index th {
+    padding: 6px 8px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: #0f172a;
+    background: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    line-height: 1.2;
+}
+
+table.cases-index td {
+    padding: 4px 6px;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: #0f172a;
+}
+
+table.cases-index td input,
+table.cases-index td select {
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: #0f172a;
+}
+
+table.cases-index th,
+table.cases-index td {
+    text-align: center;
+}
+
+/* Column sizing for this app's 13 columns: Marcar, Citación, Nombre, RUT, Oficina, Subida
+   carpeta, Última carpeta, Sector, Atención, Idoneidad, Estado carpeta, Decisión final, Acción.
+   Only the extremes are pinned — the checkbox stays narrow, the name gets the room a full
+   Chilean name needs — and the rest sizes to its content. */
+table.cases-index th:nth-child(1), table.cases-index td:nth-child(1) { width: 46px; }
+
+table.cases-index td.name-cell { min-width: 230px; }
+
+/* Nothing wraps and nothing is cut: each cell keeps its text on one line and the table grows to
+   the right, scrolling inside its card. A truncated name or state is worse than a scrollbar. */
+table.cases-index th, table.cases-index td { white-space: nowrap; }
+
+/* The text inside the editable cells is centred too — otherwise the column headers read centred
+   while the values under them sit against the left edge of their box. */
+table.cases-index td input[type="text"],
+table.cases-index td input[type="number"],
+table.cases-index td select {
+    text-align: center;
+    width: auto;
+    min-width: 0;
+    field-sizing: content;
+    box-sizing: border-box;
+}
+
+table.cases-index .input-comuna {
+    width: 170px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    margin: 0 auto !important;
+    display: block !important;
+}
+
+/* Each input is as wide as its own content (the size attribute is set per row in the page), and
+   the select never clips the longest state in the catalog. */
+table.cases-index td select {
+    text-align-last: center;
+    min-width: 210px;
+}
+
+/* F8 page table: auto layout instead of cases-index's fixed % columns, so each column shrinks to
+   fit its actual content (short RUT/badges/buttons) instead of leaving fixed-% whitespace. */
+table.cases-f8.cases-index {
+    table-layout: auto;
+    width: auto;
+}
+
+table.cases-f8.cases-index th,
+table.cases-f8.cases-index td {
+    width: auto;
+    white-space: nowrap;
+}
+
+table.cases-f8.cases-index td.name-cell {
+    white-space: normal;
+}
+
+/* Auto layout doesn't grow a column to fit an <input>'s value — inputs have a fixed default
+   intrinsic width unlike plain text. Give the name field enough room for a full "Nombre Apellido
+   Apellido" without a min-width tied to the fixed cases-index percentage columns. */
+table.cases-f8.cases-index .name-input {
+    min-width: 46ch;
+}
+
+
+table.cases-index .badge {
+    padding: 2px 8px;
+    font-size: var(--font-sm);
+    white-space: nowrap;
+}
+
+table.cases-index button.btn-primary {
+    padding: 4px 10px;
+    font-size: var(--font-base);
+    white-space: nowrap;
+}
+
+/* The two F8/Certificado transfer choices stack instead of squeezing side by side into the
+   Acción column next to the delete icon — they're mutually exclusive alternatives, not
+   simultaneous actions, so a column reads better than a cramped row. */
+table.cases-index .transfer-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Both the transfer-choice buttons (.f8-only) and "Marcar subida" (.no-f8-only) are always
+   rendered for a Pending case (see Index.cshtml's Acción column) — this picks which one shows,
+   reacting live to the F8 checkbox via :has() instead of waiting for a page reload, same reasoning
+   as the row-tint rules above. Default state (hidden) matches an unchecked checkbox; the :has()
+   override below flips it the instant F8 is ticked, and back the instant it's unticked, since
+   :has() tracks live checked state, not the original rendered attribute. */
+table.cases-index td .f8-only {
+    display: none;
+}
+
+table.cases-index tbody tr:has(input[name="folderNotFoundValue"]:checked) td .f8-only {
+    display: flex !important;
+}
+
+table.cases-index tbody tr:has(input[name="folderNotFoundValue"]:checked) td .no-f8-only {
+    display: none !important;
+}
+
+table.cases-index .transfer-choice button.btn-primary {
+    padding: 3px 8px;
+    font-size: var(--font-xs);
+    width: 100%;
+    /* Pins its own radius instead of inheriting the shared var(--radius) (10px) — at this
+       button's ~18px height that token rounds it into a full pill, mismatched against the
+       4px-radius .btn-danger/.input-inline controls sharing this same table row. */
+    border-radius: 4px;
+}
+
+table.cases-index td:last-child {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+table.cases-index td:last-child {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+table.cases-index td:last-child form {
+    margin: 0;
+}
+
+table.cases-index .input-inline {
+    padding: 3px 4px;
+    font-size: var(--font-base);
+}
+
+/* Subida carpeta: solo la escribe el sistema (fillUploadDateIfMissing), nunca a mano — el gris
+   avisa que tocarla con el teclado no hace nada. */
+table.cases-index .input-inline[readonly] {
+    background: #f0f2f4 !important;
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}
+
+table.cases-index td.name-cell {
+    text-align: left;
+}
+
+/* width:100% here fills whatever extra room the column has (so short names don't leave a
+   visible gap); the per-row inline `min-width: Nch` (see Index.cshtml) is what actually forces
+   the column itself to grow — table-layout:auto respects an input's min-width when sizing its
+   column even under width:100%, unlike the HTML `size` attribute, which browsers ignore for
+   column sizing once a CSS width is set. */
+table.cases-index td.name-cell .name-input {
+    width: 100%;
+    min-width: 46ch;
+    box-sizing: border-box;
+    font-size: var(--font-xs);
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+table.cases-index td.rut-cell .rut-con-obs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+table.cases-index td.rut-cell .rut-input {
+    width: 100%;
+    min-width: 12ch;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+table.cases-index .codigo-f8-input {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* No overflow/ellipsis clipping here on purpose — every cases table now uses table-layout:auto
+   (see .cases-f8 override, applied to all three case-list pages), which grows each column to fit
+   its widest cell instead of clipping. Long comuna names or RUTs stay fully visible. */
+table.cases-index td.text-cell,
+table.cases-index td.rut-cell {
+    white-space: nowrap;
+}
+
+table.cases-index .marked-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Scoped to the markedValue checkbox specifically (not the shared .marked-checkbox class, which
+   the F8/Pendiente Carpeta checkboxes also use) — :has() reacts live to the checkbox's checked
+   state, so the tint appears instantly on click. This matters now that toggling goes through
+   fetch() (see submitCheckboxToggle) instead of a full-page reload: the old row-*-pending classes
+   are computed server-side and only update on the next render, so relying on them alone left the
+   row showing no color change at all until a manual refresh. */
+table.cases-index tbody tr.row-selected,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked),
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) {
+    background: var(--color-selected-bg) !important;
+}
+
+table.cases-index tbody tr.row-selected:hover,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover {
+    background: #d3e0fa !important;
+}
+
+/* Same live-update reasoning as the markedValue rule above, for the Pendiente Carpeta checkbox. */
+table.cases-index tbody tr:has(input[name="pendienteCarpetaValue"]:checked) {
+    background: #fde8b8 !important;
+}
+
+table.cases-index tbody tr:has(input[name="pendienteCarpetaValue"]:checked):hover {
+    background: #fbdb94 !important;
+}
+
+/* Confirmed (folder already uploaded + comuna already notified) is the most important
+   status to spot at a glance, so it wins over both the zebra stripe and the "marked" tint. */
+table.cases-index tbody tr.row-confirmed {
+    background: #cfe0fb !important;
+}
+
+table.cases-index tbody tr.row-confirmed:hover {
+    background: #b9d2f5 !important;
+}
+
+/* Needs-review (incomplete/unreliable extracted data) also needs to win over the zebra
+   stripe and the "marked" tint — same reasoning as row-confirmed above. It never overlaps
+   row-confirmed in practice: confirming a case already requires NeedsReview to be false. */
+table.cases-index tbody tr.row-needs-review {
+    background: var(--color-review-bg) !important;
+}
+
+table.cases-index tbody tr.row-needs-review:hover {
+    background: #f8d6d5 !important;
+}
+
+/* Pendiente Carpeta and F8 pending backgrounds are driven ONLY by the live :has() rules above/below
+   — no server-rendered class version. A class-based rule (tr.row-pendiente-carpeta / .row-f8-pending)
+   is baked into the HTML at render time and never removed by fetch()-based toggling (see
+   submitCheckboxToggle): pairing it with a live :has() rule as an OR meant unchecking the box
+   cleared the live half but left the stale class still matching, so the color never went away.
+   :has() alone is correct in both directions since it always reflects the checkbox's current
+   state, checked or not. */
+table.cases-index tbody tr:has(input[name="folderNotFoundValue"]:checked) {
+    background: #9aa1ad !important;
+}
+
+table.cases-index tbody tr:has(input[name="folderNotFoundValue"]:checked):hover {
+    background: #838a97 !important;
+}
+
+/* Reserved padding-right applies to EVERY row in this column, checked or not — not just the ones
+   showing the glyph. That keeps the checkbox's centered position identical across all rows; if the
+   padding only applied to checked rows, the checkbox itself would shift between checked/unchecked
+   rows even though the column width (shared across the whole auto-layout column) stays the same
+   either way. The glyph is then absolutely positioned inside that reserved space, so it never
+   touches the checkbox's own layout. */
+table.cases-index tbody tr td.marked-cell:nth-child(2) {
+    position: relative;
+    overflow: visible;
+    padding-right: 20px;
+}
+
+table.cases-index tbody tr:has(input[name="folderNotFoundValue"]:checked) td.marked-cell:nth-child(2)::after {
+    content: "⚠";
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    color: #ffd400;
+    font-size: var(--font-2xl);
+    font-weight: 700;
+    text-shadow: 0 0 3px #000;
+    line-height: 1;
+    animation: f8-alert-blink 1s step-start infinite;
+}
+
+/* transform is set inside the keyframe (not as a static property above) because the animation
+   overrides any transform declared outside it — centering vertically has to happen at each step. */
+@keyframes f8-alert-blink {
+    0%, 49% { opacity: 1; transform: translateY(-50%); }
+    50%, 100% { opacity: 0; transform: translateY(-50%); }
+}
+
+/* Groups the alert symbol and the name input on one row — without this, the input's own
+   width:100% makes it wrap onto its own line below the alert instead of sitting beside it. */
+table.cases-index td.name-cell .name-with-alert {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+@keyframes review-alert-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.review-alert {
+    flex: none;
+    color: var(--color-review);
+    font-weight: 700;
+    font-size: var(--font-lg);
+    cursor: help;
+    animation: review-alert-blink 1.2s ease-in-out infinite;
+}
+
+table.cases-index td.review-cell {
+    text-align: left;
+}
+
+.idoneidad-icon {
+    flex: none;
+    font-size: var(--font-lg);
+    margin-right: 2px;
+    cursor: help;
+}
+
+/* El parpadeo de ALERTADA y el color de REVISAR se resuelven al final de este archivo — el color
+   real, no un @keyframes: !important dentro de una animación CSS lo ignora el navegador, así que
+   una animación jamás le gana al fondo blanco que ya llevan los input/select de la celda. */
+
+table.cases-index td.text-cell {
+    white-space: nowrap;
+    text-align: center;
+}
+
+.fecha-form {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+}
+
+.fecha-form .fecha-input {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: var(--font-base);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.badge-pending { background: var(--color-pending-bg); color: var(--color-pending); }
+.badge-uploaded { background: var(--color-uploaded-bg); color: var(--color-uploaded); }
+.badge-confirmed { background: var(--color-confirmed-bg); color: var(--color-confirmed); }
+.badge-review { background: var(--color-review-bg); color: var(--color-review); }
+.badge-ok { background: var(--color-confirmed-bg); color: var(--color-confirmed); }
+
+.message-error { background: var(--color-review-bg); border-color: var(--color-review); color: var(--color-review); }
+
+.input-inline {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: var(--font-md);
+}
+
+.review-hint {
+    margin-top: 4px;
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+}
+
+.form-label {
+    display: block;
+    font-size: var(--font-md);
+    color: var(--color-text-muted);
+    margin-bottom: 4px;
+}
+
+/* Scoped to the Casos filter bar only, so the rest of the app (Add-case form included) keeps its
+   normal control size — this one just needs to give the table below more vertical room. */
+.filters-bar .form-label {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2px;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+}
+
+.filters-bar select,
+.filters-bar input[type="text"] {
+    padding: 2px 4px;
+    font-size: var(--font-sm);
+    line-height: 1.2;
+}
+
+.filters-bar label[style*="display:flex"] {
+    font-size: var(--font-sm) !important;
+}
+
+.input-block {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 10px;
+    margin-bottom: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: var(--font-lg);
+}
+
+input[type="date"] {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: var(--font-md);
+}
+
+button.btn-primary {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    font-size: var(--font-md);
+    cursor: pointer;
+}
+button.btn-primary:hover { background: var(--color-primary); }
+
+button.btn-danger {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+}
+button.btn-danger:hover {
+    color: var(--color-review);
+    background: var(--color-review-bg);
+}
+
+button.btn-outline-danger {
+    background: none;
+    color: var(--color-review);
+    border: 1px solid var(--color-review);
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    font-size: var(--font-md);
+    cursor: pointer;
+}
+button.btn-outline-danger:hover { background: var(--color-review-bg); }
+
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+}
+
+.login-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 50px -18px rgba(23, 59, 107, 0.35);
+    padding: 32px 36px;
+    width: 320px;
+}
+
+.login-card h1 {
+    font-size: var(--font-xl);
+    margin: 0 0 4px;
+    color: var(--color-primary);
+}
+
+.login-card p.subtitle {
+    margin: 0 0 20px;
+    font-size: var(--font-md);
+    color: var(--color-text-muted);
+}
+
+.login-card input {
+    display: block;
+    width: 100%;
+    padding: 11px 12px;
+    margin-bottom: 12px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-lg);
+    background: var(--color-bg);
+}
+
+.login-card .password-field {
+    position: relative;
+}
+
+.login-card .password-field input {
+    padding-right: 36px;
+}
+
+.login-card .password-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 12px;
+    width: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.login-card .password-toggle:hover,
+.login-card .password-toggle.active {
+    color: var(--color-primary);
+}
+
+.login-card button {
+    width: 100%;
+    padding: 11px;
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-lg);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 16px -6px rgba(59, 111, 224, 0.5);
+}
+.login-card button:hover { background: var(--color-accent-hover); }
+
+.login-card .error {
+    color: var(--color-review);
+    font-size: var(--font-md);
+    margin-top: 10px;
+}
+
+/* Tablet and phone breakpoints. The layout is already flex-wrap based (header, nav groups,
+   .card) and the cases table already scrolls horizontally inside .table-card, so nothing here
+   restructures those — it only shrinks paddings/fonts and lets the brand/logo/subnav shrink so
+   the same composition (header -> subnav -> filters -> table) still fits without overflowing
+   the viewport or clipping controls off-screen. */
+@media (max-width: 900px) {
+    main {
+        padding: 14px 12px 28px;
+    }
+
+    body.cases-page main {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .nav-search input[type="text"] {
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 600px) {
+    .nav-group {
+        justify-content: center;
+        width: 100%;
+        border-left: none;
+        padding-left: 0;
+    }
+
+    .login-card {
+        width: 100%;
+        padding: 24px 20px;
+    }
+}
+
+/* Sortable column headers: the header text itself is the control, so it must not read as a
+   navigation link inside the table chrome. */
+.cases th .sort-link {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.cases th .sort-link:hover {
+    text-decoration: underline;
+}
+
+/* ── Cabecera, nombre y RUT fijos en la tabla de Casos ───────────────────────────────────────
+   Con 100 filas y 13 columnas se pierde de vista qué columna se mira al bajar, y de quién es la
+   fila al correr la tabla a la derecha. La cabecera queda pegada arriba; el nombre y el RUT,
+   pegados a la izquierda. Una celda fija tiene que ser opaca o las filas se ven pasar por debajo,
+   y ese fondo propio tapa el color de la fila: por eso cada estado (alterna, marcada, en revisión,
+   bajo el cursor) se repite abajo para las dos columnas.
+   La posición del RUT depende del ancho real de la columna de nombre, que cambia según los
+   nombres de cada página: la mide el script de la pantalla y la deja en --sticky-rut-left.
+   Selectores por .name-cell/.rut-cell, no por nth-child: Casos y Cambio de Domicilio comparten la
+   clase "cases-index" pero tienen Nombre/RUT en posiciones distintas (columnas propias antes de
+   estas dos difieren entre los dos módulos) — un nth-child fijo solo podía servir a una tabla a la
+   vez, y quedó roto en la otra la última vez que a una de las dos se le agregó o sacó una columna. */
+/* ── Columnas Fijas (Sticky) hasta el RUT en Casos ───────────────────────────
+   Marcar, Citación, Nombre y RUT se quedan fijos al desplazar la tabla en horizontal.
+   La cabecera queda fija arriba (top:0, z-index:20/30). */
+table.cases-index thead th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #eef2f6;
+}
+
+/* Columna 1: Marcar */
+table.cases-index th.col-sticky-marcar,
+table.cases-index td.col-sticky-marcar {
+    position: sticky;
+    left: 0;
+    z-index: 12;
+    background: #ffffff;
+}
+table.cases-index thead th.col-sticky-marcar {
+    z-index: 30;
+    background: #eef2f6;
+}
+
+/* Columna 2: Citación */
+table.cases-index th.col-sticky-citacion,
+table.cases-index td.col-sticky-citacion {
+    position: sticky;
+    left: var(--sticky-citacion-left, 48px);
+    z-index: 12;
+    background: #ffffff;
+}
+table.cases-index thead th.col-sticky-citacion {
+    z-index: 30;
+    background: #eef2f6;
+}
+
+/* Columna 3: Nombre Completo */
+table.cases-index th.col-sticky-nombre,
+table.cases-index td.col-sticky-nombre {
+    position: sticky;
+    left: var(--sticky-nombre-left, 160px);
+    z-index: 12;
+    background: #ffffff;
+}
+table.cases-index thead th.col-sticky-nombre {
+    z-index: 30;
+    background: #eef2f6;
+}
+
+/* Columna 4: RUT */
+table.cases-index th.col-sticky-rut,
+table.cases-index td.col-sticky-rut {
+    position: sticky;
+    left: var(--sticky-rut-left, 380px);
+    z-index: 12;
+    background: #ffffff;
+    box-shadow: 4px 0 8px -3px rgba(0, 0, 0, 0.15);
+}
+table.cases-index thead th.col-sticky-rut {
+    z-index: 30;
+    background: #eef2f6;
+    box-shadow: 4px 0 8px -3px rgba(0, 0, 0, 0.15);
+}
+
+/* Fondos por estado de fila para celdas sticky */
+table.cases-index tbody tr.row-alt td.col-sticky-marcar,
+table.cases-index tbody tr.row-alt td.col-sticky-citacion,
+table.cases-index tbody tr.row-alt td.col-sticky-nombre,
+table.cases-index tbody tr.row-alt td.col-sticky-rut {
+    background: #fafbfc;
+}
+
+table.cases-index tbody tr:hover td.col-sticky-marcar,
+table.cases-index tbody tr:hover td.col-sticky-citacion,
+table.cases-index tbody tr:hover td.col-sticky-nombre,
+table.cases-index tbody tr:hover td.col-sticky-rut {
+    background: #f0f6fb;
+}
+
+table.cases-index tbody tr.row-selected td.col-sticky-marcar,
+table.cases-index tbody tr.row-selected td.col-sticky-citacion,
+table.cases-index tbody tr.row-selected td.col-sticky-nombre,
+table.cases-index tbody tr.row-selected td.col-sticky-rut,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-marcar,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-citacion,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-nombre,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked) td.col-sticky-rut,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-marcar,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-citacion,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-nombre,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td.col-sticky-rut {
+    background: var(--color-selected-bg) !important;
+}
+
+table.cases-index tbody tr.row-selected:hover td.col-sticky-marcar,
+table.cases-index tbody tr.row-selected:hover td.col-sticky-citacion,
+table.cases-index tbody tr.row-selected:hover td.col-sticky-nombre,
+table.cases-index tbody tr.row-selected:hover td.col-sticky-rut,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-marcar,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-citacion,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-nombre,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td.col-sticky-rut,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-marcar,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-citacion,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-nombre,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td.col-sticky-rut {
+    background: #d3e0fa !important;
+}
+
+table.cases-index tbody tr.row-needs-review td.col-sticky-marcar,
+table.cases-index tbody tr.row-needs-review td.col-sticky-citacion,
+table.cases-index tbody tr.row-needs-review td.col-sticky-nombre,
+table.cases-index tbody tr.row-needs-review td.col-sticky-rut {
+    background: var(--color-review-bg) !important;
+}
+
+table.cases-index tbody tr.row-needs-review:hover td.col-sticky-marcar,
+table.cases-index tbody tr.row-needs-review:hover td.col-sticky-citacion,
+table.cases-index tbody tr.row-needs-review:hover td.col-sticky-nombre,
+table.cases-index tbody tr.row-needs-review:hover td.col-sticky-rut {
+    background: #f8d6d5 !important;
+}
+
+table.cases-index tbody tr.row-alertada td.col-sticky-marcar,
+table.cases-index tbody tr.row-alertada td.col-sticky-citacion,
+table.cases-index tbody tr.row-alertada td.col-sticky-nombre,
+table.cases-index tbody tr.row-alertada td.col-sticky-rut {
+    background: var(--color-review-bg) !important;
+}
+
+table.cases-index tbody tr.row-revisar td.col-sticky-marcar,
+table.cases-index tbody tr.row-revisar td.col-sticky-citacion,
+table.cases-index tbody tr.row-revisar td.col-sticky-nombre,
+table.cases-index tbody tr.row-revisar td.col-sticky-rut {
+    background: var(--color-pending-bg) !important;
+}
+
+/* ── Tablas anchas fuera de Casos (Estadísticas) ─────────────────────────────────────────────
+   Trece columnas con títulos como "Agendadas Av. Argentina" no caben repartidas al 100% del
+   ancho: se apretujan y parten las palabras. Igual que en Casos, cada columna toma el ancho de
+   su contenido y la tarjeta se desplaza en horizontal. */
+table.cases.table-wide {
+    width: max-content;
+    min-width: 100%;
+}
+
+table.cases.table-wide th,
+table.cases.table-wide td {
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* Cabecera fija: en un mes de 31 días se pierde de vista a qué oficina pertenece cada número. */
+table.cases.table-wide thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #eef2f6;
+}
+
+/* La fecha se queda a la izquierda al correr la tabla, que es la referencia de cada fila. */
+table.cases.table-wide th:first-child,
+table.cases.table-wide td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #ffffff;
+    box-shadow: 1px 0 0 var(--color-border);
+}
+
+table.cases.table-wide thead th:first-child {
+    z-index: 3;
+    background: #eef2f6;
+}
+
+/* Segunda línea del encabezado (la oficina), más chica y tenue: el título deja de ser lo que
+   define el ancho de la columna, que pasa a mandarlo el número de abajo. */
+table.cases.table-wide th .th-sub {
+    display: block;
+    font-size: var(--font-xs);
+    font-weight: 400;
+    opacity: 0.75;
+    letter-spacing: 0;
+    text-transform: none;
+    margin-top: 2px;
+}
+
+/* Contadores manuales: un campo para escribir "66" no necesita 230 px. */
+table.cases.table-wide td input.input-count {
+    width: 72px;
+    text-align: center;
+}
+
+/* Router CSS alinea .text-cell a la izquierda en algunas tablas; acá todo va centrado,
+   incluida la columna de fecha. */
+table.cases.table-wide td.text-cell,
+table.cases.table-wide td {
+    text-align: center;
+}
+
+/* ── Barra de desplazamiento lateral siempre a la vista ──────────────────────────────────────
+   La barra horizontal vive en el borde inferior de la tarjeta de la tabla. Si la tarjeta crece
+   con sus 100 filas, ese borde queda más abajo que la pantalla y hay que bajar toda la tabla
+   para alcanzarla. Fijando la página al alto de la ventana, la tarjeta termina siempre en el
+   borde inferior visible: la tabla se desplaza por dentro, en vertical y en horizontal, y la
+   barra queda a mano sin bajar nada. */
+/* SOLO en Casos. Fijar el alto de la ventana es lo que mantiene la barra lateral a la vista, pero
+   aplicado a todas las pantallas dejaba fuera de alcance lo que no cupiera: el documento de Sector,
+   la pantalla de importación y la de contraseña quedaban cortados sin forma de desplazarse. Las
+   demás pantallas se desplazan como una página normal. */
+body.viewport-locked {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+}
+
+body.viewport-locked .app-shell {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+}
+
+body.viewport-locked .app-content {
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    min-width: 0;
+}
+
+body.viewport-locked .app-content main {
+    flex: 1 1 0;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 8px 14px 6px;
+    box-sizing: border-box;
+}
+
+body.viewport-locked .app-content main > * {
+    flex: 0 0 auto;
+}
+
+body.viewport-locked .app-content main > .card.table-card {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: scroll;
+    scrollbar-gutter: stable;
+    margin-bottom: 0;
+}
+
+/* ── Colores de fila por estado de la carpeta ────────────────────────────────────────────────
+   Copiados tal cual del formato condicional del libro 2026: el operador lee la agenda por color
+   antes de leer el texto, así que cambiarlos sería cambiarle el idioma.
+   Se pintan las CELDAS, no la fila, porque las columnas fijas (nombre y RUT) llevan fondo propio
+   y opaco; pintando la fila quedarían como un hueco blanco.
+   "CANJE LIC. EXTRANJERA" no tiene regla en el libro y por eso tampoco tiene color acá. */
+table.cases-index tbody tr.estado-primeralicencia td { background: #FF00FF; }
+table.cases-index tbody tr.estado-subidaaconaset td { background: #1155CC; }
+table.cases-index tbody tr.estado-subidaconf8 td { background: #BF9000; }
+table.cases-index tbody tr.estado-subidaconoficio td { background: #FFE599; }
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td { background: #00FFFF; }
+table.cases-index tbody tr.estado-cambiodomiciliosubidoconcorreo td { background: #D0E0E3; }
+table.cases-index tbody tr.estado-cambiodomiciliosolicitado td { background: #9FC5E8; }
+table.cases-index tbody tr.estado-cambiodomicilio td { background: #3D85C6; }
+table.cases-index tbody tr.estado-seencuentraenarchivos td { background: #6AA84F; }
+table.cases-index tbody tr.estado-seencuentraenoficina43 td { background: #8E7CC3; }
+table.cases-index tbody tr.estado-noexistecarpeta td { background: #FF0000; }
+table.cases-index tbody tr.estado-crearoficio td { background: #C27BA0; }
+/* Todas las letras de todas las tablas en color negro (#000000) y negrita (700) */
+table.cases th,
+table.cases-index th,
+table.cases-list th {
+    color: #000000 !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+}
+
+table.cases td,
+table.cases-index td,
+table.cases-list td,
+table.cases-index tbody tr td,
+table.cases tbody tr td,
+table.cases-list tbody tr td,
+table.cases-index tbody tr[class*="estado-"] td,
+table.cases tbody tr[class*="estado-"] td,
+table.cases-index tbody tr.estado-subidaaconaset td,
+table.cases-index tbody tr.estado-cambiodomicilio td,
+table.cases-index tbody tr.estado-noexistecarpeta td,
+table.cases-index tbody tr.estado-seencuentraenoficina43 td,
+table.cases-index tbody tr.estado-seencuentraenarchivos td,
+table.cases-index tbody tr.estado-subidaconf8 td {
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+
+/* Los campos editables se mantienen blancos por dentro con letra negra y en negrita */
+table.cases-index tbody td input,
+table.cases-index tbody td select,
+table.cases tbody td input,
+table.cases tbody td select {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+
+/* Densidad de Solicitar Cambio de Domicilio: letra y celdas más chicas, igual que Enviar Cambio
+   de Domicilio — sin las reglas nth-child de cases-index (esta tabla no comparte estructura de
+   columnas con esa, ver el aviso de siempre contra reusar esa clase). */
+table.cases.solicitar-compact th,
+table.cases.solicitar-compact td {
+    padding: 6px 8px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    /* El header ya viene centrado (table.cases th), pero el contenido de las celdas (texto de
+       Nombre/RUT/Comuna) por defecto queda a la izquierda — centrarlo también alinea cada celda
+       bajo su título en vez de quedar corrida. */
+    text-align: center;
+}
+
+/* RUT repetido: el libro lo pinta violeta con un COUNTIF. Marca a la misma persona citada dos
+   veces dentro de lo que se está mirando. */
+table.cases-index tbody tr.rut-duplicado td.rut-cell input {
+    background: #f3e0ff;
+    border-color: #9900FF;
+    font-weight: 700;
+}
+
+/* Al fijar la página al alto de la ventana, `main` pasó a ser un contenedor flex con altura
+   limitada: sus hijos se encogen por defecto y las tarjetas de filtros y de alta quedaron
+   aplastadas, con los desplegables reducidos a nada. Solo la tabla debe ceder altura; todo lo
+   demás conserva la suya. */
+body.cases-page main > * {
+    flex: 0 0 auto;
+}
+
+/* Estirar la tarjeta para llenar la ventana solo tiene sentido donde la tabla es el contenido
+   principal y se desplaza por dentro. En el resto dejaba un hueco blanco enorme bajo la tabla. */
+body.viewport-locked .app-content main > .card.table-card {
+    flex: 1 1 auto;
+}
+
+/* El formulario de filtros se reparte en varias líneas cuando no cabe, en vez de empujar el
+   botón "Filtrar" fuera de la pantalla. */
+body.cases-page main > .card form {
+    flex-wrap: wrap;
+}
+
+/* Fila con un autoguardado en curso: el cambio (color, texto) ya se ve en la fila, pero el fetch()
+   al servidor (ver autoSaveCaseForm en Index.cshtml) puede tardar un instante — el borde naranja
+   avisa que todavía no está confirmado. Se saca solo al llegar la respuesta OK. */
+table.cases-index tbody tr.fila-sin-guardar td:first-child {
+    box-shadow: inset 3px 0 0 #d97706;
+}
+
+table.cases-index tbody tr.fila-sin-guardar button[type="submit"] {
+    outline: 2px solid #d97706;
+    outline-offset: 1px;
+}
+
+/* El autoguardado falló (sin conexión, error del servidor): a diferencia de "sin-guardar" (que se
+   saca solo al confirmar), este queda hasta que el operador reintente — silenciarlo haría creer
+   que el cambio se guardó cuando en realidad solo vive en el navegador. */
+table.cases-index tbody tr.fila-error-guardado td:first-child {
+    box-shadow: inset 3px 0 0 var(--color-danger, #dc2626);
+}
+
+/* ── Precedencia de colores en la tabla de Casos ─────────────────────────────────────────────
+   El color del estado es el idioma con que se lee la agenda: tiene que ganarle a la franja
+   alterna, al fondo blanco de las columnas fijas y al resaltado del cursor. Antes perdía contra
+   los tres, y la fila aparecía a medio pintar o se despintaba al pasar el mouse. */
+table.cases-index tbody tr.estado-primeralicencia td { background: #FF00FF !important; }
+table.cases-index tbody tr.estado-subidaaconaset td { background: #1155CC !important; }
+table.cases-index tbody tr.estado-subidaconf8 td { background: #BF9000 !important; }
+table.cases-index tbody tr.estado-subidaconoficio td { background: #FFE599 !important; }
+
+/* ── Feedback de Autoguardado Instantáneo ───────────────────────────────────── */
+table.cases-index tbody tr.fila-guardando td {
+    opacity: 0.88;
+    transition: opacity 0.2s ease;
+}
+table.cases-index tbody tr.fila-guardada-ok td {
+    box-shadow: inset 0 -2px 0 0 #16a34a, inset 0 2px 0 0 #16a34a;
+    transition: box-shadow 0.3s ease;
+}
+table.cases-index tbody tr.fila-sin-guardar td {
+    border-bottom: 2px dashed #f59e0b;
+}
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td { 
+    background: #cffafe !important; 
+    color: #0c4a6e !important; 
+}
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td input,
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td .name-cell,
+table.cases-index tbody tr.estado-cambiodomiciliosubidoaconaset td .rut-cell {
+    color: #0c4a6e !important;
+    font-weight: 700 !important;
+}
+table.cases-index tbody tr.estado-cambiodomiciliosubidoconcorreo td { background: #D0E0E3 !important; }
+table.cases-index tbody tr.estado-cambiodomiciliosolicitado td { background: #9FC5E8 !important; }
+table.cases-index tbody tr.estado-cambiodomicilio td { background: #3D85C6 !important; }
+table.cases-index tbody tr.estado-seencuentraenarchivos td { background: #6AA84F !important; }
+table.cases-index tbody tr.estado-seencuentraenoficina43 td { background: #8E7CC3 !important; }
+table.cases-index tbody tr.estado-noexistecarpeta td { background: #FF0000 !important; }
+table.cases-index tbody tr.estado-crearoficio td { background: #C27BA0 !important; }
+table.cases-index tbody tr.estado-crearcertificado td { background: #C27BA0 !important; }
+
+/* El cursor ya no repinta la fila: la oscurece un punto. Así se sigue viendo dónde está el mouse
+   sin perder el color del estado. */
+table.cases-index tbody tr:hover td {
+    filter: brightness(0.94);
+}
+
+/* Marcada / seleccionada manda sobre el color del estado en TODAS las celdas de la fila */
+table.cases-index tbody tr.row-selected td,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked) td,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked) td {
+    background: var(--color-selected-bg) !important;
+}
+
+table.cases-index tbody tr.row-selected:hover td,
+table.cases-index tbody tr:has(input[name="markedValue"]:checked):hover td,
+table.cases-index tbody tr:has(input.bulk-select-checkbox:checked):hover td {
+    background: #d3e0fa !important;
+}
+
+table.cases-index tbody tr.row-needs-review td {
+    background: var(--color-review-bg) !important;
+}
+
+/* Los campos siguen blancos por dentro, para escribir cómodo sobre cualquier color de fila. */
+table.cases-index tbody td input,
+table.cases-index tbody td select {
+    background: #ffffff !important;
+    color: var(--color-text);
+}
+
+/* ── Documento de solicitud de carpetas (Archivo / Oficina 43) ───────────────────────────────
+   Se ve en pantalla como una hoja y se imprime como el oficio que se lleva a Archivo. */
+.documento {
+    padding: 24px 28px;
+    background: #fff;
+}
+
+.documento-encabezado {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+.documento-encabezado h1 {
+    font-size: var(--font-xl);
+    margin: 0 0 4px;
+    color: var(--color-primary);
+}
+
+.documento-organismo {
+    margin: 0;
+    font-size: var(--font-md);
+    line-height: 1.4;
+}
+
+.documento-datos {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 2px 10px;
+    margin: 0;
+    font-size: var(--font-md);
+}
+
+.documento-datos dt { font-weight: 700; }
+.documento-datos dd { margin: 0; }
+
+.documento-tabla { width: 100%; font-size: var(--font-base); }
+.documento-tabla th { background: #eef2f6; }
+.documento-tabla th, .documento-tabla td { border: 1px solid #c8d0d8; padding: 5px 7px; }
+
+/* Casilla que firma a mano quien entrega la carpeta. */
+.documento-casilla { min-width: 80px; }
+
+.documento-firmas {
+    display: flex;
+    gap: 60px;
+    justify-content: space-around;
+    margin-top: 46px;
+    font-size: var(--font-md);
+    text-align: center;
+}
+
+.documento-linea {
+    display: block;
+    width: 210px;
+    border-top: 1px solid #333;
+    margin: 0 auto 6px;
+}
+
+/* Impresión: queda la hoja y nada más. La cabecera de la tabla se repite en cada página y las
+   filas no se parten por la mitad, que es lo que arruina un listado de dos páginas. */
+@media print {
+    .app-sidebar,
+    [data-print-hide] {
+        display: none !important;
+    }
+
+    body, body.cases-page {
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    main, body.cases-page main {
+        padding: 0;
+        display: block;
+        overflow: visible;
+        max-width: none;
+    }
+
+    .card, .documento {
+        box-shadow: none;
+        border: 0;
+        padding: 0;
+    }
+
+    .documento-tabla thead { display: table-header-group; }
+    .documento-tabla tr { page-break-inside: avoid; }
+    .documento-firmas { page-break-inside: avoid; }
+
+    @page {
+        size: A4 portrait;
+        margin: 14mm 12mm;
+    }
+}
+
+/* Escudo municipal en la tarjeta de ingreso y en el documento impreso. */
+.login-logo {
+    display: block;
+    height: 92px;
+    width: auto;
+    margin: 0 auto 12px;
+}
+
+.documento-logo {
+    height: 74px;
+    width: auto;
+    margin-bottom: 6px;
+}
+
+/* En el documento, RUT y fecha van centrados bajo su título; solo el nombre queda a la izquierda,
+   que es como se lee una lista de personas. */
+.documento-tabla th,
+.documento-tabla td {
+    text-align: center;
+}
+
+/* La primera columna es el número de orden (centrado); el nombre, la segunda, va a la izquierda. */
+.documento-tabla th:nth-child(2),
+.documento-tabla td:nth-child(2) {
+    text-align: left;
+}
+
+/* Selección múltiple de clases (LICENCIAS) y nota libre por persona (OBSERVACIONES) */
+.popover-celda {
+    position: relative;
+    display: inline-block;
+}
+
+table.cases-index tbody tr:has(.popover-celda[open]) {
+    position: relative;
+    z-index: 100 !important;
+}
+
+table.cases-index tbody tr:has(.popover-celda[open]) td {
+    overflow: visible !important;
+}
+
+.popover-celda summary {
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    list-style: none;
+    padding: 3px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: #fff;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.licencias-celda summary {
+    position: relative;
+    min-width: 74px;
+    min-height: 18px;
+    padding-right: 20px;
+}
+
+.licencias-celda summary::after {
+    content: "▾";
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+.btn-licencias-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    min-width: 74px;
+    padding: 3px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: #ffffff;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: var(--font-sm);
+    color: #000000 !important;
+    line-height: 1.2;
+    transition: all 0.15s ease;
+}
+.btn-licencias-trigger:hover {
+    border-color: var(--color-accent);
+    background: #f8fafc;
+}
+.lic-btn-text {
+    flex: 1;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.lic-btn-arrow {
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    pointer-events: none;
+}
+
+.licencias-floating-popover {
+    position: fixed;
+    z-index: 10000;
+    width: 210px;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.licencias-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 6px;
+}
+.licencias-popover-header span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.licencias-popover-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 12px;
+}
+.licencia-popover-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-sm);
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    color: #000000;
+}
+.licencia-popover-label:hover {
+    color: #2563eb;
+}
+.licencias-popover-footer {
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border-subtle);
+    padding-top: 8px;
+}
+
+.btn-obs-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+.btn-obs-trigger:hover {
+    background: var(--color-border-subtle);
+    border-color: var(--color-accent);
+}
+.btn-obs-trigger.has-obs {
+    background: var(--color-uploaded-bg);
+    border-color: var(--color-uploaded);
+}
+
+.obs-floating-popover {
+    position: fixed;
+    z-index: 10000;
+    width: 320px;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.observaciones-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 6px;
+}
+
+.observaciones-panel-header span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.observaciones-cerrar {
+    flex: 0 0 auto;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: var(--font-base);
+    line-height: 1;
+    color: var(--color-text-muted);
+    padding: 0 2px;
+}
+
+.observaciones-cerrar:hover {
+    color: var(--color-text);
+}
+
+.obs-floating-popover textarea {
+    width: 100%;
+    height: 90px;
+    font-size: var(--font-sm);
+    font-family: inherit;
+    resize: vertical;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 8px;
+    box-sizing: border-box;
+}
+.obs-floating-popover textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.15);
+}
+
+.observaciones-panel-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.obs-floating-popover .observaciones-guardar {
+    padding: 4px 14px;
+    font-size: var(--font-xs);
+}
+
+/* ── Gráficos de barras ──────────────────────────────────────────────────────────────────────
+   Sin librerías: una barra es un <span> con un ancho en porcentaje. Un equipo municipal no
+   siempre tiene internet, y una librería de gráficos por CDN dejaría la pantalla en blanco. */
+.grafico-fila {
+    display: grid;
+    grid-template-columns: 150px 1fr 150px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: var(--font-md);
+}
+
+.grafico-etiqueta {
+    text-align: right;
+    color: var(--color-text-muted);
+}
+
+.grafico-barra {
+    background: #eef2f6;
+    border-radius: 4px;
+    height: 18px;
+    overflow: hidden;
+}
+
+.grafico-relleno {
+    display: block;
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: 4px;
+    /* Una barra de 0 igual se ve como una línea, para no confundir "cero" con "no hay dato". */
+    min-width: 2px;
+}
+
+.grafico-relleno-profesional {
+    background: var(--color-primary);
+}
+
+.grafico-valor {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+
+/* Los campos de fecha vacios repetian "dd-mm-aaaa" en cada fila: con 100 filas, la pantalla se
+   llena de un texto que nadie necesita leer. La ayuda aparece al pararse en el campo, que es
+   cuando sirve. */
+table.cases-index input::placeholder {
+    color: transparent;
+}
+
+table.cases-index input:focus::placeholder {
+    color: #9aa5b1;
+}
+
+/* ── Idoneidad moral: ALERTADA y REVISAR ──────────────────────────────────────────────────────
+   Van al final del archivo a propósito: mismo truco que "marcada" y "requiere revisión" más
+   arriba, ganar el empate de especificidad por ser la última regla, no por ser más específica.
+   Las dos parpadean con el mismo mecanismo: un script en Index.cshtml alterna esta clase en <body>
+   cada medio segundo — una animación @keyframes no sirve porque !important dentro de un keyframe
+   se ignora, y sin !important pierde contra el fondo blanco fijo de los input/select. */
+body.idoneidad-flash table.cases-index tbody tr.row-alertada td {
+    background: #e85c5c !important;
+}
+
+table.cases-index tbody tr.row-revisar td {
+    background: #fde8b8 !important;
+}
+
+body.idoneidad-flash table.cases-index tbody tr.row-revisar td {
+    background: #f0b429 !important;
+}
+
+/* ── Utility font-size classes ───────────────────────────────────────────────────────────────
+   For .cshtml elements that previously used an inline style="font-size:...rem" and had no
+   existing class already providing the right size — applies a step from the :root type scale
+   instead of a raw value baked into the markup. */
+.text-xs { font-size: var(--font-xs); }
+.text-sm { font-size: var(--font-sm); }
+.text-base { font-size: var(--font-base); }
+.text-md { font-size: var(--font-md); }
+.text-lg { font-size: var(--font-lg); }
+.text-xl { font-size: var(--font-xl); }
+
+/* Nueva Solicitud (Cambio de Domicilio): mismas tarjetas .card de siempre, con un estilo de
+   formulario más visual (ícono + título, grid de 2 columnas, caja de info, documentos con
+   estado) sin tocar el sidebar/topbar compartido del resto de la app. */
+.solicitud-card {
+    padding: 20px 24px;
+    border-left: 4px solid transparent;
+}
+.solicitud-card-accent-primary { border-left-color: var(--color-primary); }
+.solicitud-card-accent-secondary { border-left-color: var(--color-accent); }
+.solicitud-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: var(--font-lg);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border);
+}
+.solicitud-field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+}
+.solicitud-input {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font: inherit;
+    box-sizing: border-box;
+}
+.solicitud-input-wrap {
+    position: relative;
+}
+.solicitud-input-check {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-confirmed);
+    font-weight: 700;
+}
+.solicitud-info-box {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    background: #eef5fb;
+    border: 1px solid #cfe2f3;
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+}
+.solicitud-doc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-uploaded);
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+.solicitud-doc-item.verified {
+    border-left-color: var(--color-confirmed);
+    background: var(--color-confirmed-bg);
+    border-color: var(--color-confirmed);
+}
+.solicitud-doc-status {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    display: block;
+}
+.solicitud-doc-status.verified {
+    color: var(--color-confirmed);
+}
+.solicitud-dropzone {
+    display: block;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius);
+    padding: 18px 12px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-sm);
+    cursor: pointer;
+}
+.solicitud-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.btn-solicitud-primary {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: var(--font-md);
+    letter-spacing: 0.4px;
+    cursor: pointer;
+}
+.btn-solicitud-primary:hover { background: var(--color-primary-dark); }
+.btn-solicitud-secondary {
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: var(--font-md);
+    letter-spacing: 0.4px;
+    color: var(--color-text);
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+.solicitud-actions .btn-solicitud-secondary,
+.solicitud-actions .btn-solicitud-primary,
+.solicitud-actions .btn-solicitud-cancel { display: block; }
+.btn-solicitud-secondary:hover { background: var(--color-bg); }
+.btn-solicitud-cancel {
+    width: 100%;
+    box-sizing: border-box;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    font-size: var(--font-md);
+    letter-spacing: 0.4px;
+}
+.btn-solicitud-cancel:hover { text-decoration: underline; }
+
+/* ── SLA Aging Badges & Audit Trail ────────────────────────────────────────── */
+.badge-sla {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+.badge-sla-overdue {
+    background: var(--color-review-bg);
+    color: var(--color-review);
+    border: 1px solid var(--color-review-border);
+}
+.badge-sla-warning {
+    background: var(--color-pending-bg);
+    color: var(--color-pending);
+    border: 1px solid var(--color-pending-border);
+}
+.badge-sla-normal {
+    background: var(--color-uploaded-bg);
+    color: var(--color-uploaded);
+    border: 1px solid var(--color-uploaded-border);
+}
+.btn-audit-log {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: var(--font-sm);
+    line-height: 1.2;
+    transition: all 0.15s ease;
+}
+.btn-audit-log:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+/* ── Global Search Modal (Ctrl+K) ──────────────────────────────────────────── */
+.global-search-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 10vh;
+    z-index: 9999;
+}
+.global-search-backdrop.open {
+    display: flex;
+}
+.global-search-modal {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 640px;
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.global-search-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    gap: 10px;
+    background: #fafbfc;
+}
+.global-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: var(--font-lg);
+    background: transparent;
+    color: var(--color-text);
+}
+.global-search-results {
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+.global-search-group {
+    padding: 4px 16px;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    letter-spacing: 0.5px;
+}
+.global-search-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    color: var(--color-text);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background 0.12s;
+}
+.global-search-item:hover, .global-search-item.selected {
+    background: #f1f5f9;
+    border-left-color: var(--color-primary);
+}
+.global-search-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: #f8fafc;
+    border-top: 1px solid var(--color-border);
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+/* ── Master-Detail Side Drawer ─────────────────────────────────────────────── */
+.drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.35);
+    z-index: 9400;
+    display: none;
+    backdrop-filter: blur(1px);
+}
+.drawer-backdrop.open {
+    display: block;
+}
+.case-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 520px;
+    max-width: 95vw;
+    height: 100vh;
+    background: var(--color-surface);
+    box-shadow: -6px 0 25px rgba(0, 0, 0, 0.15);
+    z-index: 9500;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+.case-drawer.open {
+    transform: translateX(0);
+}
+.drawer-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: #fafbfc;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.drawer-title-name {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    margin: 0 0 4px;
+}
+.drawer-title-meta {
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.drawer-close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    padding: 4px;
+    border-radius: 4px;
+}
+.drawer-close-btn:hover {
+    background: #e2e8f0;
+    color: var(--color-text);
+}
+.drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.drawer-section {
+    background: #f8fafc;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 16px;
+}
+.drawer-section-title {
+    font-size: var(--font-md);
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.drawer-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.drawer-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.drawer-field label {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+.drawer-field input, .drawer-field select, .drawer-field textarea {
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: var(--font-sm);
+    background: #ffffff;
+    color: var(--color-text);
+}
+.drawer-field input:focus, .drawer-field select:focus, .drawer-field textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(11, 61, 104, 0.15);
+}
+.drawer-licence-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.drawer-licence-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: var(--font-xs);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+}
+.drawer-licence-chip.selected {
+    background: #eaf2fa;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+.row-drawer-active {
+    background-color: #eff6ff !important;
+    border-left: 4px solid var(--color-primary) !important;
+}
+
+
+/* ── Modern Visual Identity Polish ────────────────────────────────────────────── */
+table.cases-index td.rut-cell,
+table.cases-index td.rut-cell .rut-input,
+.rut-cell {
+    font-family: var(--font-mono) !important;
+    font-weight: 600;
+}
+
+.card {
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+}
+
+.kpi-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.badge {
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.btn-primary, .btn-danger, .btn-secondary, .btn-action {
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+select, input[type="text"], input[type="search"], input[type="password"] {
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+}
+
+table.cases th {
+    background: #edf2f7;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+/* ── Screenshot-Matching Sidebar & Hub Card Fixes ───────────────────────── */
+.sidebar-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #8ea8c3;
+    padding: 14px 10px 6px;
+}
+
+.sidebar-emoji {
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+}
+
+.app-sidebar {
+    background: #071e33 !important;
+}
+
+.sidebar-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 9px 12px !important;
+    color: #8ea8c3 !important;
+    text-decoration: none !important;
+    border-radius: 8px !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    margin-bottom: 2px !important;
+    transition: all 0.15s ease !important;
+}
+
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+.sidebar-link.active,
+.sidebar-link.active:link,
+.sidebar-link.active:visited {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45) !important;
+}
+
+/* Fix Hub Cards bottom cutoff and spacing */
+.hub-card {
+    min-height: 160px !important;
+    padding: 20px 22px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+}
+
+.hub-card p {
+    margin-bottom: 12px !important;
+}
+
+.hub-grid {
+    margin-bottom: 40px !important;
+    padding-bottom: 20px !important;
+}
+
+/* Botones de acción unificados en tabla de Cambio de Domicilio / Solicitar */
+.btn-cd-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    height: 27px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    border: none !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    text-decoration: none !important;
+    line-height: 1 !important;
+    transition: opacity 0.15s ease, transform 0.1s ease !important;
+}
+
+.btn-cd-action:hover {
+    opacity: 0.9 !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-cd-action:active {
+    transform: translateY(0) !important;
+}
+
+.btn-cd-action.solicitar {
+    background: #2563eb !important;
+}
+
+.btn-cd-action.solicitar:hover {
+    background: #1d4ed8 !important;
+}
+
+.btn-cd-action.solicitar.solicitada {
+    background: #16a34a !important;
+}
+
+.btn-cd-action.solicitar.solicitada:hover {
+    background: #15803d !important;
+}
+
+.btn-cd-action:disabled,
+.btn-cd-action.disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    filter: grayscale(0.7) !important;
+}
+
+.btn-cd-action.subida {
+    background: #059669 !important;
+}
+
+.btn-cd-action.certificado {
+    background: #d97706 !important;
+}
+
+.btn-cd-action.f8 {
+    background: #6366f1 !important;
+}
+
+.btn-cd-action.delete {
+    background: transparent !important;
+    border: 1px solid #ef4444 !important;
+    color: #ef4444 !important;
+    padding: 0 7px !important;
+}
+
+.btn-cd-action.delete:hover {
+    background: #fef2f2 !important;
+}
+
+/* Pie de autoría */
+.app-footer, .login-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #6b7280;
+  padding: 1rem 0;
+  margin-top: 2rem;
+}
