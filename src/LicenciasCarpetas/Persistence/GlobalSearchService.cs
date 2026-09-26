@@ -115,9 +115,9 @@ public sealed class GlobalSearchService(string connectionString) : IGlobalSearch
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = """
-                SELECT Id, FullName, NormalizedRut, Comuna, Status
+                SELECT Id, FullName, Rut, Comuna, Status
                 FROM PersonRequest
-                WHERE (FullName LIKE $search COLLATE NOCASE OR replace(replace(NormalizedRut, '.', ''), '-', '') LIKE $rutSearch)
+                WHERE (FullName LIKE $search COLLATE NOCASE OR replace(replace(Rut, '.', ''), '-', '') LIKE $rutSearch)
                 ORDER BY Id DESC
                 LIMIT $limit
                 """;
@@ -155,9 +155,9 @@ public sealed class GlobalSearchService(string connectionString) : IGlobalSearch
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = """
-                SELECT Id, CitizenName, CitizenRut, DestinationComuna, Status
+                SELECT Id, FullName, Rut, DestinationComuna, coalesce(WorkflowState, Status)
                 FROM OutboundAddressChangeRequest
-                WHERE (CitizenName LIKE $search COLLATE NOCASE OR replace(replace(CitizenRut, '.', ''), '-', '') LIKE $rutSearch)
+                WHERE (FullName LIKE $search COLLATE NOCASE OR replace(replace(Rut, '.', ''), '-', '') LIKE $rutSearch)
                 ORDER BY Id DESC
                 LIMIT $limit
                 """;
@@ -182,6 +182,45 @@ public sealed class GlobalSearchService(string connectionString) : IGlobalSearch
                     Detail = comuna is not null ? $"Para: {comuna}" : null,
                     Status = status,
                     Url = $"/CambioDomicilio/Solicitar/Index?search={Uri.EscapeDataString(rut ?? name)}"
+                });
+            }
+        }
+        catch
+        {
+            // Table might not exist
+        }
+
+        // 5. Search CertificadoRequest (Carpetas para Certificados)
+        try
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = """
+                SELECT Id, NombreCompleto, Rut, Comuna, EstadoActual
+                FROM CertificadoRequest
+                WHERE (NombreCompleto LIKE $search COLLATE NOCASE OR replace(replace(Rut, '.', ''), '-', '') LIKE $rutSearch)
+                ORDER BY Id DESC
+                LIMIT $limit
+                """;
+            cmd.Parameters.AddWithValue("$search", $"%{trimmed}%");
+            cmd.Parameters.AddWithValue("$rutSearch", $"%{rutClean}%");
+            cmd.Parameters.AddWithValue("$limit", limit);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var name = reader.IsDBNull(1) ? "Sin Nombre" : reader.GetString(1);
+                var rut = reader.IsDBNull(2) ? null : reader.GetString(2);
+                var comuna = reader.IsDBNull(3) ? null : reader.GetString(3);
+                var status = reader.IsDBNull(4) ? null : reader.GetString(4);
+
+                results.Add(new GlobalSearchResult
+                {
+                    Module = "Certificados",
+                    Title = name,
+                    Rut = rut,
+                    Detail = comuna is not null ? $"Comuna: {comuna}" : null,
+                    Status = status,
+                    Url = $"/Certificados/Index?search={Uri.EscapeDataString(rut ?? name)}"
                 });
             }
         }

@@ -1,0 +1,16 @@
+@model (string Title, string DetailHeader, IReadOnlyList<LicenciasCarpetas.Persistence.PersonFileRequest> Items)
+<div class="card table-card" style="margin-bottom:14px;">
+    <h3 style="padding:12px 16px 0; margin:0;">@Model.Title (@Model.Items.Count)</h3>
+    @if (Model.Items.Count > 0)
+    {
+        <table class="cases" style="width:100%;">
+            <thead><tr><th>N°</th><th>Fecha</th><th>@Model.DetailHeader</th><th>Estado</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Items)
+            {
+                <tr><td>@r.Id</td><td>@(r.Date ?? "—")</td><td>@(r.Detail ?? "—")</td><td>@(r.Status ?? "—")</td></tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
