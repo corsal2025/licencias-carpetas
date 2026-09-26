@@ -9,7 +9,7 @@ Hoy el historial de una persona está disperso: `GlobalSearchService` lista coin
 ### In Scope
 - Página `/Persona` (Razor Page, solo lectura): entrada de RUT, validación DV con `Domain/RutValidator.NormalizeAndValidate`.
 - Secciones: FolderCase (fecha citación, sede, estado, decisión, idoneidad), timeline `CaseAuditLog` (quién/cuándo/qué), `UrgentRequest` (F8), `PersonRequest`/`OutboundAddressChangeRequest` (Cambio Domicilio), `CertificadoRequest`. Todas tienen columna `Rut`.
-- Nuevo servicio de consulta `IPersonFileQuery` con parámetro de alcance (`PersonFileScope`, hoy "todas las sedes") como punto de enchufe para `sgl-roles-por-sede`.
+- Nuevo servicio de consulta `IPersonFileQuery` con parámetro de alcance (`OfficeScope`, hoy "todas las sedes") como punto de enchufe para `sgl-roles-por-sede`.
 - Enlaces "Ver ficha" desde resultados de búsqueda global y filas de casos.
 - Actualizar `docs/arquitectura.html` (VERSION + CHANGELOG + DATA).
 
@@ -60,7 +60,7 @@ Revertir commit(s): páginas y servicio nuevos, sin esquema ni datos. Enlaces vu
 
 ## Dependencies
 
-- Ninguna bloqueante; `sgl-roles-por-sede` consumirá `PersonFileScope`.
+- Ninguna bloqueante; `sgl-roles-por-sede` consumirá `OfficeScope`.
 
 ## Success Criteria
 

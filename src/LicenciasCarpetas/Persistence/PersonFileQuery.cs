@@ -5,15 +5,6 @@ using Microsoft.Data.Sqlite;
 
 namespace LicenciasCarpetas.Persistence;
 
-/// <summary>Which offices a person file may show. <see cref="AllowedOffices"/> null = every office.
-/// Plug-in point for per-office roles: the caller passes the user's allowed offices.</summary>
-public sealed record PersonFileScope(IReadOnlyCollection<Office>? AllowedOffices)
-{
-    public static PersonFileScope All { get; } = new((IReadOnlyCollection<Office>?)null);
-
-    public bool Allows(Office office) => AllowedOffices is null || AllowedOffices.Contains(office);
-}
-
 public sealed record PersonFileCase(
     long Id,
     Office Office,
@@ -55,7 +46,7 @@ public sealed class PersonFile
 
 public interface IPersonFileQuery
 {
-    PersonFile Load(string rut, PersonFileScope scope);
+    PersonFile Load(string rut, OfficeScope scope);
 }
 
 /// <summary>
@@ -83,7 +74,7 @@ public sealed class PersonFileQuery(string connectionString) : IPersonFileQuery
         return builder.ToString().TrimStart('0');
     }
 
-    public PersonFile Load(string rut, PersonFileScope scope)
+    public PersonFile Load(string rut, OfficeScope scope)
     {
         var canonical = Canonical(rut);
         using var connection = new SqliteConnection(connectionString);
@@ -117,7 +108,7 @@ public sealed class PersonFileQuery(string connectionString) : IPersonFileQuery
     }
 
     private static (IReadOnlyList<PersonFileCase> Cases, string? FullName) LoadCases(
-        SqliteConnection connection, string canonical, PersonFileScope scope)
+        SqliteConnection connection, string canonical, OfficeScope scope)
     {
         var cases = new List<PersonFileCase>();
         string? fullName = null;

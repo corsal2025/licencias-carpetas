@@ -66,6 +66,20 @@ public sealed class CambioDomicilioWebAppFactory : WebApplicationFactory<Program
         return client;
     }
 
+    /// <summary>An authenticated client with a global role and, optionally, per-office claims
+    /// (as <c>ClaimsFactory</c> writes them at login).</summary>
+    public HttpClient CreateClientWithRole(string role, params string[] offices)
+    {
+        var client = CreateAuthenticatedClient(canAccessCambioDomicilio: true);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, role);
+        if (offices.Length > 0)
+        {
+            client.DefaultRequestHeaders.Add(TestAuthHandler.OfficesHeader, string.Join(",", offices));
+        }
+
+        return client;
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
@@ -106,6 +120,8 @@ public sealed class CambioDomicilioWebAppFactory : WebApplicationFactory<Program
     {
         public const string SchemeName = "Test";
         public const string ClaimHeader = "X-Test-Cambio-Domicilio-Claim";
+        public const string RoleHeader = "X-Test-Role";
+        public const string OfficesHeader = "X-Test-Offices";
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
@@ -116,6 +132,17 @@ public sealed class CambioDomicilioWebAppFactory : WebApplicationFactory<Program
                 new(ClaimTypes.Name, "test-operador"),
                 new("mod:cambio-domicilio", claimValue)
             };
+            if (Request.Headers.TryGetValue(RoleHeader, out var role))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
+            }
+
+            if (Request.Headers.TryGetValue(OfficesHeader, out var offices))
+            {
+                claims.AddRange(offices.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(office => new Claim("office", office)));
+            }
+
             var identity = new ClaimsIdentity(claims, SchemeName);
             var ticket = new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName);
             return Task.FromResult(AuthenticateResult.Success(ticket));

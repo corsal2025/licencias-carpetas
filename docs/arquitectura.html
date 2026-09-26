@@ -47,11 +47,12 @@ footer{color:var(--mut);font-size:13px;border-top:1px solid var(--bd)}
    Regla SDD (openspec/config.yaml → rules.proposal): todo cambio que altere
    arquitectura, módulos, modelo o despliegue MUST actualizar este archivo.
    ===================================================================== */
-const VERSION = "v0.3.0";
+const VERSION = "v0.4.0";
 const CHANGELOG = [
   ["v0.1.0","2026-09-25","Arquitectura inicial (borrador fuera del repo, stack planificado pero no real: Blazor, Clean Architecture, SQL Server, EF Core, 3 sedes)."],
   ["v0.2.0","2026-09-25","Diagrama traído al repo (docs/arquitectura.html) y corregido con el stack real: .NET 10 Razor Pages, SQLite con repositorios de SQL crudo, ClosedXML para Excel, módulos Gestión de Licencias / F8 Urgentes / Cambio de Domicilio (EWS contra Exchange on-prem), roles y auditoría (CaseAuditEntry), estadísticas y respaldos. Enums reales tomados de Domain/. mermaid.min.js vendorizado en docs/vendor/ (sin CDN)."],
-  ["v0.3.0","2026-09-26","sgl-ficha-persona: página /Persona (solo lectura, PRG + TempData, el RUT nunca en la URL) con PersonFileQuery que consolida casos de todas las sedes, historial de auditoría, F8, Cambio de Domicilio y Certificados por RUT canónico. PersonFileScope como punto de enchufe para roles por sede. Búsqueda global corregida (columnas reales de Cambio de Domicilio) y ampliada a Certificados."]
+  ["v0.3.0","2026-09-26","sgl-ficha-persona: página /Persona (solo lectura, PRG + TempData, el RUT nunca en la URL) con PersonFileQuery que consolida casos de todas las sedes, historial de auditoría, F8, Cambio de Domicilio y Certificados por RUT canónico. OfficeScope como punto de enchufe para roles por sede. Búsqueda global corregida (columnas reales de Cambio de Domicilio) y ampliada a Certificados."],
+  ["v0.4.0","2026-09-26","sgl-kpi-dashboard-comparativo: /Estadisticas/Comparativo con SedeKpiService (decisiones, estados, tiempo citación→decisión desde la auditoría con N y % sin fecha, backlog por antigüedad, tendencia mensual) y export Excel de 3 hojas. OfficeScope pasa a Domain y es compartido por ficha, KPI y roles."]
 ];
 const INFO = {
   U:"Funcionarios (roles Administrador, Jefatura, Coordinador y operador) autenticados por cookie. Un solo equipo local por ahora.",
@@ -66,8 +67,9 @@ const INFO = {
   AUD:"Auditoría: CaseAuditEntry registra quién cambió qué campo y cuándo. Trazabilidad exigida por el proceso.",
   IMP:"Importador Excel (ClosedXML): migra el libro histórico normalizando variantes de escritura (ESPERA EXÁMEN/EXAMEN, espacios, tildes).",
   EWS:"Exchange Web Services: buzón institucional cambiodedomicilio@munivalpo.cl, sin polling automático.",
+  KPI:"Comparativo por sede (/Estadisticas/Comparativo): SedeKpiService calcula por sede y periodo; los gráficos son HTML/CSS del servidor (sin CDN). Exporta a Excel.",
   EST:"Estadísticas: agendadas, atendidas y % de atención calculados; escaneadas/subidas siguen siendo contadores manuales.",
-  FICHA:"Ficha de persona (/Persona): consulta de solo lectura por RUT sobre todos los módulos. PersonFileQuery compara el RUT en forma canónica (sin puntos, guion ni ceros a la izquierda). Recibe un PersonFileScope (sedes permitidas).",
+  FICHA:"Ficha de persona (/Persona): consulta de solo lectura por RUT sobre todos los módulos. PersonFileQuery compara el RUT en forma canónica (sin puntos, guion ni ceros a la izquierda). Recibe un OfficeScope (sedes permitidas).",
   BAK:"Respaldos: DatabaseBackup copia carpetas.db a una carpeta backups/ junto al ejecutable en cada arranque."
 };
 const VIEWS = {
@@ -87,6 +89,8 @@ flowchart TB
   DB --> BAK[Respaldos locales]
   IMP[Importador Excel] --> REPO
   WEB --> EST[Estadísticas]
+  EST --> KPI[Comparativo por sede]
+  KPI --> REPO
   WEB --> FICHA[Ficha de persona]
   FICHA --> REPO`},
   "Flujo de carpeta": {d:"Ciclo de vida de una carpeta (FolderState → FinalDecision), desde citación hasta decisión final.", g:`

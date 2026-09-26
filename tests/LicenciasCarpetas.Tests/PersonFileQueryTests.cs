@@ -21,7 +21,7 @@ public class PersonFileQueryTests
         using var db = new SqliteTestDatabase();
         db.Cases.Insert(Case(stored, Office.AvenidaArgentina, new DateOnly(2026, 3, 1)));
 
-        var file = new PersonFileQuery(db.ConnectionString).Load("09.876.543-3", PersonFileScope.All);
+        var file = new PersonFileQuery(db.ConnectionString).Load("09.876.543-3", OfficeScope.All);
 
         Assert.Single(file.Cases);
     }
@@ -32,7 +32,7 @@ public class PersonFileQueryTests
         using var db = new SqliteTestDatabase();
         db.Cases.Insert(Case("10.000.013-k", Office.Placilla, new DateOnly(2026, 3, 1)));
 
-        var file = new PersonFileQuery(db.ConnectionString).Load("10.000.013-K", PersonFileScope.All);
+        var file = new PersonFileQuery(db.ConnectionString).Load("10.000.013-K", OfficeScope.All);
 
         Assert.Single(file.Cases);
     }
@@ -47,7 +47,7 @@ public class PersonFileQueryTests
         db.Cases.Insert(Case("11.111.111-1", Office.Placilla, new DateOnly(2026, 5, 10)));
         db.Cases.Delete(trashed);
 
-        var file = new PersonFileQuery(db.ConnectionString).Load("12.345.678-5", PersonFileScope.All);
+        var file = new PersonFileQuery(db.ConnectionString).Load("12.345.678-5", OfficeScope.All);
 
         Assert.Equal([Office.Placilla, Office.AvenidaArgentina], file.Cases.Select(c => c.Office));
         Assert.Equal("JUAN PEREZ", file.FullName);
@@ -61,7 +61,7 @@ public class PersonFileQueryTests
         db.Cases.Insert(Case("12.345.678-5", Office.Placilla, new DateOnly(2026, 5, 10)));
 
         var file = new PersonFileQuery(db.ConnectionString)
-            .Load("12.345.678-5", new PersonFileScope([Office.Placilla]));
+            .Load("12.345.678-5", new OfficeScope([Office.Placilla]));
 
         Assert.Equal(Office.Placilla, Assert.Single(file.Cases).Office);
     }
@@ -79,7 +79,7 @@ public class PersonFileQueryTests
             ({other}, 'ana', '2026-01-12T10:00:00+00:00', 'Estado', NULL, 'X');
             """);
 
-        var file = new PersonFileQuery(db.ConnectionString).Load("12.345.678-5", PersonFileScope.All);
+        var file = new PersonFileQuery(db.ConnectionString).Load("12.345.678-5", OfficeScope.All);
 
         Assert.Equal(["luis", "ana"], file.Audit.Select(a => a.ChangedBy));
         Assert.Equal(Office.AvenidaArgentina, file.Audit[0].Office);
@@ -104,7 +104,7 @@ public class PersonFileQueryTests
             VALUES ('JUAN PEREZ', '12345678-5', 'LIMACHE', 'Enviada', '2026-02-06T00:00:00+00:00', 1);
             """);
 
-        var file = new PersonFileQuery(db.ConnectionString).Load("12.345.678-5", PersonFileScope.All);
+        var file = new PersonFileQuery(db.ConnectionString).Load("12.345.678-5", OfficeScope.All);
 
         Assert.Equal("EN PROCESO", Assert.Single(file.F8Requests).Status);
         Assert.Equal("VIÑA DEL MAR", Assert.Single(file.Certificates).Detail);
@@ -118,7 +118,7 @@ public class PersonFileQueryTests
     {
         using var db = new SqliteTestDatabase();
 
-        var file = new PersonFileQuery(db.ConnectionString).Load("12.345.678-5", PersonFileScope.All);
+        var file = new PersonFileQuery(db.ConnectionString).Load("12.345.678-5", OfficeScope.All);
 
         Assert.Empty(file.F8Requests);
         Assert.Empty(file.Certificates);

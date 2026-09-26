@@ -2,7 +2,7 @@
 
 ## 1. Consulta (TDD)
 - [x] 1.1 Tests `PersonFileQueryTests`: formatos de RUT, papelera excluida, alcance por sede, auditoría, módulos F8/CD/Certificados, tablas ausentes
-- [x] 1.2 `Persistence/PersonFileQuery.cs` + `PersonFileScope` + modelos de la ficha
+- [x] 1.2 `Persistence/PersonFileQuery.cs` + `OfficeScope` + modelos de la ficha
 - [x] 1.3 Registro DI en `Program.cs`
 
 ## 2. Página

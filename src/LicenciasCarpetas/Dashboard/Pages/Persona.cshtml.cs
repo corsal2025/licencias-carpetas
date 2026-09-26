@@ -29,7 +29,7 @@ public class PersonaModel(IPersonFileQuery query) : PageModel
         Error = TempData["PersonaError"] as string;
         if (TempData.Peek(RutKey) is string rut)
         {
-            File = query.Load(rut, PersonFileScope.All);
+            File = query.Load(rut, OfficeScope.All);
         }
     }
 

@@ -7,7 +7,7 @@
    (dígitos + DV, sin ceros a la izquierda). Cubre el padding "0" de `RutValidator` y la k minúscula.
    Anula índices; aceptable con el volumen actual. Si crece: índice por expresión (aditivo).
 3. **Servicio `PersonFileQuery(connectionString)`** en `Persistence/`, SQL crudo como el resto. Cada bloque en su `try/catch (SqliteException)` para tolerar tablas no creadas.
-4. **`PersonFileScope(IReadOnlyCollection<Office>? AllowedOffices)`**; `PersonFileScope.All`. Punto de enchufe de `sgl-roles-por-sede`.
+4. **`OfficeScope(IReadOnlyCollection<Office>? AllowedOffices)`**; `OfficeScope.All`. Punto de enchufe de `sgl-roles-por-sede`.
 5. **Autorización:** `[Authorize]` (cualquier usuario autenticado; hoy todos ven todas las sedes).
    Las secciones F8/Cambio de Domicilio se muestran solo si el usuario tiene acceso al módulo (mismas reglas que el menú).
 

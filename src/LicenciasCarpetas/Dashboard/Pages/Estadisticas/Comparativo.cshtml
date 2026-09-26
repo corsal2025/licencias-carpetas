@@ -1,0 +1,131 @@
+@page
+@model LicenciasCarpetas.Dashboard.Pages.Estadisticas.ComparativoModel
+@using LicenciasCarpetas.Statistics
+@{
+    ViewData["Title"] = "Comparativo por sede";
+    var report = Model.Report;
+    var months = new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+    var maxTrend = Math.Max(1, report.Trend.Count == 0 ? 1 : report.Trend.Max(t => t.Total));
+    string Pct(int part, int whole) => whole == 0 ? "0%" : $"{100.0 * part / whole:0.#}%";
+    string Width(int part, int whole) => whole == 0 ? "0" : (100.0 * part / whole).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}
+
+<partial name="Shared/_EstadisticasTabs" />
+
+<div class="card" style="padding:14px 20px; margin-bottom:14px;">
+    <h2 style="margin:0 0 4px; font-size:var(--font-lg); font-weight:700;">Comparativo por sede — @report.Period.Label</h2>
+    <span style="font-size:var(--font-xs); color:var(--color-text-muted); font-weight:600;">
+        Casos por fecha de citación entre @report.Period.From.ToString("dd-MM-yyyy") y @report.Period.To.ToString("dd-MM-yyyy"). Los tiempos salen del historial de cambios: los casos importados del Excel no tienen fecha de decisión y se informan aparte.
+    </span>
+    <form method="get" style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:12px;">
+        <label>Año <input type="number" name="year" value="@Model.Year" min="2020" max="2100" style="width:90px;" /></label>
+        <label>Periodo
+            <select name="kind">
+                <option value="Mes" selected="@(Model.Kind == KpiPeriodKind.Mes)">Mes</option>
+                <option value="Semestre" selected="@(Model.Kind == KpiPeriodKind.Semestre)">Semestre</option>
+                <option value="Anio" selected="@(Model.Kind == KpiPeriodKind.Anio)">Año completo</option>
+            </select>
+        </label>
+        <label>Mes / semestre
+            <select name="index">
+                @for (var i = 1; i <= 12; i++)
+                {
+                    <option value="@i" selected="@(Model.Index == i)">@i — @months[i - 1] @(i <= 2 ? $"/ {i}° semestre" : "")</option>
+                }
+            </select>
+        </label>
+        <label>Sede
+            <select name="sede">
+                <option value="">Todas</option>
+                @foreach (var office in Enum.GetValues<Office>())
+                {
+                    <option value="@office" selected="@(Model.Sede == office)">@OfficeCatalog.Display(office)</option>
+                }
+            </select>
+        </label>
+        <button type="submit" class="btn-primary" style="padding:8px 16px;">Aplicar</button>
+        <a class="nav-pill" style="padding:8px 14px;" href="?handler=Export&year=@Model.Year&kind=@Model.Kind&index=@Model.Index&sede=@Model.Sede">⬇ Exportar a Excel</a>
+    </form>
+</div>
+
+<div class="card table-card" style="margin-bottom:14px;">
+    <table class="cases" style="width:100%;">
+        <thead>
+            <tr>
+                <th>Sede</th><th>Casos</th><th>Otorgado</th><th>Denegado</th><th>En curso</th><th>Sin decisión</th>
+                <th>Días citación→decisión (prom. / mediana)</th><th>Backlog 🟢 / 🟡 / 🔴</th><th>Calidad de datos</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var kpi in report.Offices.Append(report.Total))
+        {
+            <tr style="@(kpi.Office is null ? "font-weight:700; background:var(--color-selected-bg);" : "")">
+                <td>@kpi.Label</td>
+                <td>@kpi.Total</td>
+                <td>@kpi.Otorgado <small>(@Pct(kpi.Otorgado, kpi.Total))</small></td>
+                <td>@kpi.Denegado <small>(@Pct(kpi.Denegado, kpi.Total))</small></td>
+                <td>@kpi.EnCurso</td>
+                <td>@kpi.SinDecision</td>
+                <td>
+                    @(kpi.AverageDays?.ToString("0.#") ?? "—") / @(kpi.MedianDays?.ToString("0.#") ?? "—")
+                    <small style="display:block; color:var(--color-text-muted);">N = @kpi.DaysSample</small>
+                </td>
+                <td>@kpi.BacklogNormal / @kpi.BacklogWarning / @kpi.BacklogOverdue</td>
+                <td>
+                    <small>@kpi.PercentWithoutDecision.ToString("0.#")% sin decisión</small><br />
+                    <small>@kpi.PercentDecidedWithoutDate.ToString("0.#")% decididos sin fecha</small>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-bottom:14px;">
+    @foreach (var kpi in report.Offices)
+    {
+        <div class="card" style="padding:14px 18px;">
+            <h3 style="margin:0 0 8px;">@kpi.Label</h3>
+            <div title="Otorgado / Denegado / Pendiente" style="display:flex; height:14px; border-radius:7px; overflow:hidden; background:var(--color-border);">
+                <div style="width:@Width(kpi.Otorgado, kpi.Total)%; background:var(--color-uploaded);"></div>
+                <div style="width:@Width(kpi.Denegado, kpi.Total)%; background:#dc2626;"></div>
+                <div style="width:@Width(kpi.Pendiente, kpi.Total)%; background:#f59e0b;"></div>
+            </div>
+            <small style="color:var(--color-text-muted);">🟩 Otorgado · 🟥 Denegado · 🟧 Pendiente</small>
+            <table style="width:100%; margin-top:10px; font-size:var(--font-sm);">
+                @foreach (var state in kpi.States)
+                {
+                    <tr>
+                        <td style="width:55%;">@state.State</td>
+                        <td><div style="height:8px; border-radius:4px; background:var(--color-primary); width:@Width(state.Count, kpi.Total)%;"></div></td>
+                        <td style="text-align:right; width:40px;">@state.Count</td>
+                    </tr>
+                }
+            </table>
+        </div>
+    }
+</div>
+
+<div class="card table-card">
+    <h3 style="padding:12px 16px 0; margin:0;">Tendencia mensual (casos citados)</h3>
+    <table class="cases" style="width:100%;">
+        <thead><tr><th>Mes</th>@foreach (var kpi in report.Offices) { <th>@kpi.Label</th> }</tr></thead>
+        <tbody>
+        @foreach (var month in report.Trend.GroupBy(t => (t.Year, t.Month)))
+        {
+            <tr>
+                <td>@months[month.Key.Month - 1] @month.Key.Year</td>
+                @foreach (var point in month)
+                {
+                    <td>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <div style="height:8px; border-radius:4px; background:var(--color-primary); width:@Width(point.Total, maxTrend)%; min-width:@(point.Total > 0 ? "2px" : "0");"></div>
+                            <span>@point.Total <small style="color:var(--color-text-muted);">(@point.Otorgado otorg.)</small></span>
+                        </div>
+                    </td>
+                }
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
