@@ -16,7 +16,7 @@ public class PersonaModel(IPersonFileQuery query, OfficeScope scope) : PageModel
 {
     internal const string RutKey = "PersonaRut";
 
-    public PersonFile? File { get; private set; }
+    public PersonFile? Person { get; private set; }
 
     public string? Error { get; private set; }
 
@@ -29,7 +29,7 @@ public class PersonaModel(IPersonFileQuery query, OfficeScope scope) : PageModel
         Error = TempData["PersonaError"] as string;
         if (TempData.Peek(RutKey) is string rut)
         {
-            File = query.Load(rut, scope);
+            Person = query.Load(rut, scope);
         }
     }
 
