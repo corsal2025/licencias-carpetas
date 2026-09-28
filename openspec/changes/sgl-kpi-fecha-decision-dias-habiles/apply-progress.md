@@ -41,9 +41,36 @@ Archivos modificados:
 Detalles y decisiones técnicas: ver `sdd/sgl-kpi-fecha-decision-dias-habiles/apply-progress`
 en engram (proyecto `licencias-carpetas`).
 
-## Slice 2 — `BusinessDayCalculator` + `KpiOptions` + feriados
+## Slice 2 — `BusinessDayCalculator` + `KpiOptions` + feriados (COMPLETO)
 
-Estado: **pendiente**. Ver `tasks.md` sección "Slice 2".
+Estado: **hecho**, sin commit (pendiente de decisión del usuario/orquestador).
+Slice 1 ya está en main (commit `43d63eb`).
+
+- `dotnet build`: 0 warnings, 0 errores.
+- `dotnet test`: 630/630 (621 base tras slice 1 en main + 9 nuevos), 0 fallos.
+- Diff: 77 líneas modificadas (`Program.cs`, ambos `appsettings*.json`) + 183
+  líneas en 3 archivos nuevos (`BusinessDayCalculator.cs`, `KpiOptions.cs`,
+  `BusinessDayCalculatorTests.cs`) = ~260 líneas — dentro del presupuesto de 400.
+- `data/carpetas.db` no se tocó.
+
+Archivos nuevos/modificados:
+- `src/LicenciasCarpetas/Statistics/BusinessDayCalculator.cs` — portado del
+  patch de referencia sin cambios de fondo.
+- `src/LicenciasCarpetas/Statistics/KpiOptions.cs` — portado del patch de
+  referencia; doc-comment agregado sobre el 21-jun pendiente de decreto.
+- `src/LicenciasCarpetas/Program.cs` — DI de `KpiOptions` (leída de la sección
+  `Kpi`) y `IBusinessDayCalculator`.
+- `src/LicenciasCarpetas/appsettings.json` / `appsettings.Example.json` —
+  sección `Kpi.Holidays` 2026-2027 con `"_comment"` explicando el 21-jun
+  pendiente de decreto (Día Nacional de los Pueblos Indígenas).
+- `tests/LicenciasCarpetas.Tests/BusinessDayCalculatorTests.cs` — 9 tests:
+  lunes-viernes sin feriados, feriado configurado descontado, fin de semana no
+  cuenta, mismo día = 0, rango invertido = 0, feriados configurados/no
+  configurados por año, año sin feriados cae a regla lunes-viernes, feriado con
+  formato no parseable se ignora.
+
+Detalles y decisiones técnicas: ver `sdd/sgl-kpi-fecha-decision-dias-habiles/apply-progress`
+en engram (proyecto `licencias-carpetas`).
 
 ## Slice 3 — `SedeKpiService` + página + Excel + docs
 

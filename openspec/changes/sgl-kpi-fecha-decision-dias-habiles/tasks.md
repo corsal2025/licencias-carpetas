@@ -59,19 +59,48 @@ Diff real (tras fixes de revisión): +417/-2 líneas (dentro de presupuesto de
 14 nuevos), 0 fallos. No se tocó `data/carpetas.db`. No se hizo commit
 (pendiente de decisión del usuario).
 
-## Slice 2 — `BusinessDayCalculator` + `KpiOptions` + feriados (pendiente)
+## Slice 2 — `BusinessDayCalculator` + `KpiOptions` + feriados (COMPLETO)
 
-- [ ] 2.1 Test: días hábiles lunes-viernes sin feriados configurados.
-- [ ] 2.2 Test: feriados configurados se descuentan; fin de semana nunca cuenta.
-- [ ] 2.3 Test: `HolidaysConfigured(year)` refleja si hay feriados cargados para
+Nota: slice 1 fue committeado y pusheado a main (`43d63eb`) antes de empezar
+este slice.
+
+- [x] 2.1 Test: días hábiles lunes-viernes sin feriados configurados.
+- [x] 2.2 Test: feriados configurados se descuentan; fin de semana nunca cuenta.
+- [x] 2.3 Test: `HolidaysConfigured(year)` refleja si hay feriados cargados para
       ese año.
-- [ ] 2.4 Portar `Statistics/BusinessDayCalculator.cs` y `Statistics/KpiOptions.cs`
-      del patch de referencia (namespace y estilo ya coinciden con main).
-- [ ] 2.5 Agregar `Kpi:Holidays` (2026-2027) a `appsettings.json` y
-      `appsettings.Example.json`, con comentario sobre 21-jun pendiente de decreto.
-- [ ] 2.6 Registrar `KpiOptions` y `IBusinessDayCalculator` en `Program.cs`.
-- [ ] 2.7 `dotnet build` + `dotnet test`, reportar conteo.
-- [ ] 2.8 Actualizar apply-progress (merge, no sobrescribir slice 1).
+- [x] 2.3b Test adicional: mismo día → 0 días hábiles.
+- [x] 2.3c Test adicional: rango invertido (`from` posterior a `to`) → 0 días
+      hábiles, sin lanzar.
+- [x] 2.3d Test adicional: año sin feriados configurados (pero con feriados
+      cargados para otros años) → cae a regla lunes-viernes y
+      `HolidaysConfigured(year)` es false para ese año.
+- [x] 2.3e Test adicional: feriado con formato no parseable se ignora en vez de
+      lanzar (defensivo, igual que el resto del módulo).
+- [x] 2.4 Portado `Statistics/BusinessDayCalculator.cs` y `Statistics/KpiOptions.cs`
+      del patch de referencia (namespace y estilo ya coincidían con main, sin
+      cambios de fondo).
+- [x] 2.5 Agregado `Kpi:Holidays` (2026-2027) a `appsettings.json` y
+      `appsettings.Example.json`, con `"_comment"` explicando que el 21-jun
+      (Día Nacional de los Pueblos Indígenas) queda pendiente de confirmación
+      por decreto anual para 2026 y 2027.
+- [x] 2.6 Registrado `KpiOptions` (singleton, leído de la sección `Kpi`) y
+      `IBusinessDayCalculator` (`BusinessDayCalculator`) en `Program.cs`.
+- [x] 2.7 `dotnet build`: 0 warnings, 0 errores. `dotnet test`: 630/630 (621
+      base tras slice 1 en main + 9 nuevos), 0 fallos.
+- [x] 2.8 Actualizar apply-progress (merge, no sobrescribir slice 1).
+
+Archivos tocados en slice 2:
+- `src/LicenciasCarpetas/Statistics/BusinessDayCalculator.cs` (nuevo, 57 líneas)
+- `src/LicenciasCarpetas/Statistics/KpiOptions.cs` (nuevo, 20 líneas)
+- `src/LicenciasCarpetas/Program.cs` (+3 líneas, registro DI)
+- `src/LicenciasCarpetas/appsettings.json` (+37 líneas, sección `Kpi`)
+- `src/LicenciasCarpetas/appsettings.Example.json` (+37 líneas, sección `Kpi`)
+- `tests/LicenciasCarpetas.Tests/BusinessDayCalculatorTests.cs` (nuevo, 106
+  líneas, 9 tests)
+
+Diff real: 77 líneas modificadas (Program.cs + ambos appsettings) + 183 líneas
+en 3 archivos nuevos = ~260 líneas — dentro de presupuesto de 400. No se tocó
+`data/carpetas.db`. No se hizo commit (pendiente de decisión del usuario).
 
 ## Slice 3 — `SedeKpiService` + página + Excel + docs (pendiente)
 
