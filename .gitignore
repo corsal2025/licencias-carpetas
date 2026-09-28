@@ -24,8 +24,6 @@ certs/
 # excluding real repository code from every commit without a warning).
 /src/LicenciasCarpetas/data/*
 *.db
-!/src/LicenciasCarpetas/seed/carpetas.db
-!/data/carpetas.db
 
 publish/
 
