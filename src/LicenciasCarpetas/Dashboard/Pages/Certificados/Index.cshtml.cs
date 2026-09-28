@@ -13,8 +13,6 @@ namespace LicenciasCarpetas.Dashboard.Pages.Certificados;
 [Authorize(Policy = "CambioDomicilioAccess")]
 public class IndexModel(
     ICertificadoRequestRepository repository,
-    IFolderCaseRepository? cases = null,
-    ILogger<IndexModel>? logger = null,
     LicenciasCarpetas.CambioDomicilio.Data.IOutboundAddressChangeRequestRepository? outboundRepo = null) : PageModel
 {
     public IReadOnlyList<CertificadoRequest> Requests { get; private set; } = [];
