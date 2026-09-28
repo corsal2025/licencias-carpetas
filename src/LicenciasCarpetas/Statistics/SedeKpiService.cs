@@ -59,7 +59,8 @@ public sealed class SedeKpi
     public double? MedianDays { get; init; }
     public int DaysSample { get; init; }
 
-    /// <summary>Granted/denied cases with no audited decision date (e.g. imported from the workbook).</summary>
+    /// <summary>Granted/denied cases with no reliable <c>FinalDecisionAt</c> (e.g. imported from the
+    /// workbook and never edited here, or a legacy row the backfill could not date).</summary>
     public int DecidedWithoutDate { get; init; }
     public int BacklogNormal { get; init; }
     public int BacklogWarning { get; init; }
@@ -67,6 +68,11 @@ public sealed class SedeKpi
 
     public double PercentWithoutDecision => Percent(SinDecision, Total);
     public double PercentDecidedWithoutDate => Percent(DecidedWithoutDate, Otorgado + Denegado);
+
+    /// <summary>Coverage of the decision-time metric: % of granted/denied cases that do have a
+    /// <c>FinalDecisionAt</c> to compute business days from. The complement of
+    /// <see cref="PercentDecidedWithoutDate"/>.</summary>
+    public double PercentWithDecisionDate => Percent(Otorgado + Denegado - DecidedWithoutDate, Otorgado + Denegado);
 
     private static double Percent(int part, int whole) => whole == 0 ? 0 : Math.Round(100.0 * part / whole, 1);
 }
@@ -80,18 +86,39 @@ public sealed class SedeKpiReport
     public required SedeKpi Total { get; init; }
     public IReadOnlyList<MonthlyTrendPoint> Trend { get; init; } = [];
 
+    /// <summary>False when at least one year spanned by <see cref="Period"/> has no Chilean
+    /// holidays configured (<c>Kpi:Holidays</c>) — the business-day metric still computes (it falls
+    /// back to lunes-viernes for that year), but the page must show a visible warning.</summary>
+    public bool HolidaysConfiguredForPeriod { get; init; } = true;
+
     public SedeKpi For(Office office) => Offices.Single(o => o.Office == office);
 }
 
 /// <summary>
-/// Comparative KPIs per office for the management dashboard. There is no decision-date column: the
-/// decision date is the last audited change of "Decisión final" to Otorgado/Denegado, so cases
-/// imported from the workbook (never edited here) have no date and are reported as such instead of
-/// silently skewing the averages.
+/// Comparative KPIs per office for the management dashboard. The decision date is
+/// <see cref="FolderCase.FinalDecisionAt"/> (set the moment the decision becomes Otorgado/Denegado —
+/// see <c>FolderCaseRepository</c>), converted to a date in the America/Santiago timezone and
+/// counted in business days from the citation date. Cases with no <c>FinalDecisionAt</c> (imported
+/// from the workbook and never edited here, or a legacy row the backfill could not date) are
+/// reported separately instead of silently skewing the averages.
 /// </summary>
-public sealed class SedeKpiService(string connectionString)
+public sealed class SedeKpiService(string connectionString, IBusinessDayCalculator businessDays)
 {
-    private sealed record Row(Office Office, DateOnly Citation, FolderState? State, string? StateRaw, FinalDecision? Decision, DateOnly? DecidedOn);
+    private static readonly TimeZoneInfo ChileTimeZone = ResolveChileTimeZone();
+
+    private sealed record Row(Office Office, DateOnly Citation, FolderState? State, string? StateRaw, FinalDecision? Decision, DateTimeOffset? FinalDecisionAt);
+
+    private static TimeZoneInfo ResolveChileTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("America/Santiago");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Pacific SA Standard Time");
+        }
+    }
 
     public SedeKpiReport Build(KpiPeriod period, OfficeScope scope, DateOnly today)
     {
@@ -108,21 +135,34 @@ public sealed class SedeKpiService(string connectionString)
             }
         }
 
+        // Cada año que aparece en el rango del período debe tener feriados configurados; si falta
+        // alguno, el dashboard debe avisarlo (el cálculo igual sigue, solo con lunes-viernes ese año).
+        var holidaysConfiguredForPeriod = true;
+        for (var year = period.From.Year; year <= period.To.Year; year++)
+        {
+            if (!businessDays.HolidaysConfigured(year))
+            {
+                holidaysConfiguredForPeriod = false;
+                break;
+            }
+        }
+
         return new SedeKpiReport
         {
             Period = period,
             Offices = [.. offices.Select(office => Compute(office, rows.Where(r => r.Office == office).ToList(), today))],
             Total = Compute(null, rows, today),
-            Trend = trend
+            Trend = trend,
+            HolidaysConfiguredForPeriod = holidaysConfiguredForPeriod
         };
     }
 
-    private static SedeKpi Compute(Office? office, IReadOnlyList<Row> rows, DateOnly today)
+    private SedeKpi Compute(Office? office, IReadOnlyList<Row> rows, DateOnly today)
     {
         var decided = rows.Where(r => r.Decision is FinalDecision.Otorgado or FinalDecision.Denegado).ToList();
         var days = decided
-            .Where(r => r.DecidedOn is not null)
-            .Select(r => (double)Math.Max(0, r.DecidedOn!.Value.DayNumber - r.Citation.DayNumber))
+            .Where(r => r.FinalDecisionAt is not null)
+            .Select(r => (double)businessDays.BusinessDaysBetween(r.Citation, ToChileDate(r.FinalDecisionAt!.Value)))
             .Order()
             .ToList();
         var pending = rows.Where(r => r.Decision is not (FinalDecision.Otorgado or FinalDecision.Denegado))
@@ -145,12 +185,15 @@ public sealed class SedeKpiService(string connectionString)
             DaysSample = days.Count,
             AverageDays = days.Count == 0 ? null : Math.Round(days.Average(), 1),
             MedianDays = days.Count == 0 ? null : Median(days),
-            DecidedWithoutDate = decided.Count(r => r.DecidedOn is null),
+            DecidedWithoutDate = decided.Count(r => r.FinalDecisionAt is null),
             BacklogNormal = pending.Count(a => a == CaseAgingAlert.Normal),
             BacklogWarning = pending.Count(a => a == CaseAgingAlert.Warning),
             BacklogOverdue = pending.Count(a => a == CaseAgingAlert.Overdue)
         };
     }
+
+    private static DateOnly ToChileDate(DateTimeOffset at)
+        => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(at, ChileTimeZone).DateTime);
 
     private static double Median(IReadOnlyList<double> sorted) => sorted.Count % 2 == 1
         ? sorted[sorted.Count / 2]
@@ -161,13 +204,8 @@ public sealed class SedeKpiService(string connectionString)
         using var connection = new SqliteConnection(connectionString);
         connection.Open();
         using var command = connection.CreateCommand();
-        // Last audited switch to granted/denied per case. The audit log stores enum names.
         command.CommandText = """
-            SELECT f.Office, f.CitationDate, f.FolderState, f.FolderStateRaw, f.FinalDecision,
-                   (SELECT a.ChangedAt FROM CaseAuditLog a
-                    WHERE a.FolderCaseId = f.Id AND a.FieldName = 'Decisión final'
-                      AND a.NewValue IN ('Otorgado', 'Denegado')
-                    ORDER BY a.ChangedAt DESC, a.Id DESC LIMIT 1)
+            SELECT f.Office, f.CitationDate, f.FolderState, f.FolderStateRaw, f.FinalDecision, f.FinalDecisionAt
             FROM FolderCase f
             WHERE f.DeletedAt IS NULL AND f.CitationDate BETWEEN $from AND $to
             """;
@@ -184,9 +222,7 @@ public sealed class SedeKpiService(string connectionString)
                 ToEnum<FolderState>(reader, 2),
                 reader.IsDBNull(3) ? null : reader.GetString(3),
                 ToEnum<FinalDecision>(reader, 4),
-                reader.IsDBNull(5)
-                    ? null
-                    : DateOnly.FromDateTime(DateTimeOffset.Parse(reader.GetString(5), CultureInfo.InvariantCulture).LocalDateTime)));
+                ReadTimestamp(reader, 5)));
         }
 
         return rows;
@@ -201,5 +237,20 @@ public sealed class SedeKpiService(string connectionString)
 
         var value = reader.GetInt32(ordinal);
         return Enum.IsDefined(typeof(T), value) ? (T)(object)value : null;
+    }
+
+    /// <summary>Defensive parse: a malformed <c>FinalDecisionAt</c> is reported as "no date" instead
+    /// of throwing and breaking the whole dashboard for every office.</summary>
+    private static DateTimeOffset? ReadTimestamp(SqliteDataReader reader, int ordinal)
+    {
+        if (reader.IsDBNull(ordinal))
+        {
+            return null;
+        }
+
+        return DateTimeOffset.TryParse(reader.GetString(ordinal), CultureInfo.InvariantCulture,
+            DateTimeStyles.RoundtripKind | DateTimeStyles.AssumeUniversal, out var parsed)
+            ? parsed
+            : null;
     }
 }

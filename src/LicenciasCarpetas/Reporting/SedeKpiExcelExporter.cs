@@ -14,11 +14,17 @@ public static class SedeKpiExcelExporter
         var summary = workbook.AddWorksheet("Resumen");
         summary.Cell(1, 1).Value = $"KPI por sede — {report.Period.Label} ({report.Period.From:dd-MM-yyyy} a {report.Period.To:dd-MM-yyyy})";
         summary.Cell(1, 1).Style.Font.Bold = true;
+        if (!report.HolidaysConfiguredForPeriod)
+        {
+            summary.Cell(2, 1).Value = "⚠ Feriados no configurados para uno o más años de este período: los días hábiles de esos años se calculan solo lunes a viernes.";
+            summary.Cell(2, 1).Style.Font.Bold = true;
+        }
         string[] headers =
         [
             "Sede", "Casos", "Otorgado", "Denegado", "En curso", "Sin decisión", "Pendiente",
-            "Días promedio", "Días mediana", "N con fecha", "Decididos sin fecha", "% sin decisión",
-            "% decididos sin fecha", "Backlog <7 días", "Backlog 7-14 días", "Backlog ≥15 días"
+            "Días hábiles promedio", "Días hábiles mediana", "N con fecha", "Decididos sin fecha",
+            "% cobertura fecha decisión", "% sin decisión", "% decididos sin fecha",
+            "Backlog <7 días", "Backlog 7-14 días", "Backlog ≥15 días"
         ];
         WriteHeader(summary, 3, headers);
         var row = 4;
@@ -27,7 +33,8 @@ public static class SedeKpiExcelExporter
             object?[] values =
             [
                 kpi.Label, kpi.Total, kpi.Otorgado, kpi.Denegado, kpi.EnCurso, kpi.SinDecision, kpi.Pendiente,
-                kpi.AverageDays, kpi.MedianDays, kpi.DaysSample, kpi.DecidedWithoutDate, kpi.PercentWithoutDecision,
+                kpi.AverageDays, kpi.MedianDays, kpi.DaysSample, kpi.DecidedWithoutDate,
+                kpi.PercentWithDecisionDate, kpi.PercentWithoutDecision,
                 kpi.PercentDecidedWithoutDate, kpi.BacklogNormal, kpi.BacklogWarning, kpi.BacklogOverdue
             ];
             for (var column = 0; column < values.Length; column++)

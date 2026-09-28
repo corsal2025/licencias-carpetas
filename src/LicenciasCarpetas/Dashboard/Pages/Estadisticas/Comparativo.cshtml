@@ -15,8 +15,14 @@
 <div class="card" style="padding:14px 20px; margin-bottom:14px;">
     <h2 style="margin:0 0 4px; font-size:var(--font-lg); font-weight:700;">Comparativo por sede — @report.Period.Label</h2>
     <span style="font-size:var(--font-xs); color:var(--color-text-muted); font-weight:600;">
-        Casos por fecha de citación entre @report.Period.From.ToString("dd-MM-yyyy") y @report.Period.To.ToString("dd-MM-yyyy"). Los tiempos salen del historial de cambios: los casos importados del Excel no tienen fecha de decisión y se informan aparte.
+        Casos por fecha de citación entre @report.Period.From.ToString("dd-MM-yyyy") y @report.Period.To.ToString("dd-MM-yyyy"). Los tiempos son días hábiles (lunes a viernes, menos feriados) entre la citación y la fecha de decisión final: los casos importados del Excel y nunca editados aquí no tienen esa fecha y se informan aparte.
     </span>
+    @if (!report.HolidaysConfiguredForPeriod)
+    {
+        <div class="card" style="margin-top:10px; padding:8px 12px; background:#fef3c7; border:1px solid #f59e0b; font-size:var(--font-xs); font-weight:600;">
+            ⚠️ Feriados no configurados para uno o más años de este período — los días hábiles de esos años se calculan solo lunes a viernes (sin descontar feriados).
+        </div>
+    }
     <form method="get" style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:12px;">
         <label>Año <input type="number" name="year" value="@Model.Year" min="2020" max="2100" style="width:90px;" /></label>
         <label>Periodo
@@ -53,7 +59,7 @@
         <thead>
             <tr>
                 <th>Sede</th><th>Casos</th><th>Otorgado</th><th>Denegado</th><th>En curso</th><th>Sin decisión</th>
-                <th>Días citación→decisión (prom. / mediana)</th><th>Backlog 🟢 / 🟡 / 🔴</th><th>Calidad de datos</th>
+                <th>Días hábiles citación→decisión (prom. / mediana)</th><th>Backlog 🟢 / 🟡 / 🔴</th><th>Cobertura y calidad de datos</th>
             </tr>
         </thead>
         <tbody>
@@ -72,6 +78,7 @@
                 </td>
                 <td>@kpi.BacklogNormal / @kpi.BacklogWarning / @kpi.BacklogOverdue</td>
                 <td>
+                    <small>@kpi.PercentWithDecisionDate.ToString("0.#")% cobertura de fecha de decisión</small><br />
                     <small>@kpi.PercentWithoutDecision.ToString("0.#")% sin decisión</small><br />
                     <small>@kpi.PercentDecidedWithoutDate.ToString("0.#")% decididos sin fecha</small>
                 </td>

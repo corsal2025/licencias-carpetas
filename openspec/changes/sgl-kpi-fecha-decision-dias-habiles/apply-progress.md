@@ -72,6 +72,38 @@ Archivos nuevos/modificados:
 Detalles y decisiones técnicas: ver `sdd/sgl-kpi-fecha-decision-dias-habiles/apply-progress`
 en engram (proyecto `licencias-carpetas`).
 
-## Slice 3 — `SedeKpiService` + página + Excel + docs
+## Slice 3 — `SedeKpiService` + página + Excel + docs (COMPLETO)
 
-Estado: **pendiente**. Ver `tasks.md` sección "Slice 3".
+Estado: **hecho**, sin commit (pendiente de decisión del usuario/orquestador).
+Slice 2 ya está en main (commit `1342c78`).
+
+- `dotnet build`: 0 warnings, 0 errores.
+- `dotnet test`: 633/633 (630 base tras slice 2 en main + 3 nuevos), 0 fallos.
+- Diff: `+167/-46` líneas (213 netas) en 6 archivos, todos modificados (sin
+  archivos nuevos) — dentro del presupuesto de 400.
+- `data/carpetas.db` no se tocó.
+
+Archivos modificados:
+- `src/LicenciasCarpetas/Statistics/SedeKpiService.cs` — `Load` lee
+  `FinalDecisionAt` directo (ya no subquery de `CaseAuditLog`), con parseo
+  defensivo; constructor recibe `IBusinessDayCalculator`; `Compute` usa
+  `ToChileDate` (America/Santiago, fallback Pacific SA Standard Time) +
+  `BusinessDaysBetween`; `SedeKpi.PercentWithDecisionDate` (cobertura);
+  `SedeKpiReport.HolidaysConfiguredForPeriod` (aviso por año faltante).
+- `src/LicenciasCarpetas/Program.cs` — DI de `SedeKpiService` ahora pasa
+  `IBusinessDayCalculator`.
+- `src/LicenciasCarpetas/Dashboard/Pages/Estadisticas/Comparativo.cshtml` —
+  etiquetas "días hábiles", columna de cobertura, aviso de feriados no
+  configurados.
+- `src/LicenciasCarpetas/Reporting/SedeKpiExcelExporter.cs` — columna "%
+  cobertura fecha decisión" y aviso de feriados en la hoja Resumen.
+- `tests/LicenciasCarpetas.Tests/SedeKpiServiceTests.cs` — test de días vía
+  auditoría reescrito para usar `FinalDecisionAt` directo (en días hábiles, no
+  calendario); 3 tests nuevos: conversión a zona horaria de Chile, alcance de
+  oficina vacío, aviso de feriados no configurados por año.
+- `docs/arquitectura.html` — `VERSION` v0.6.0 → v0.7.0, `CHANGELOG`,
+  `INFO.KPI`, modelo de datos (`FinalDecisionAt` en `CARPETA`).
+
+**Las 3 slices están completas.** Detalles y decisiones técnicas: ver
+`sdd/sgl-kpi-fecha-decision-dias-habiles/apply-progress` en engram (proyecto
+`licencias-carpetas`). Próximo paso recomendado: `sdd-verify`.

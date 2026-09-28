@@ -45,25 +45,77 @@ public class SedeKpiServiceTests
     }
 
     [Fact]
-    public void Decision_times_come_from_the_audit_log_and_report_the_sample()
+    public void Decision_times_come_from_FinalDecisionAt_in_business_days_and_report_the_sample()
     {
+        // Citación domingo 2026-03-01 (no cuenta). Días hábiles hasta cada FinalDecisionAt
+        // (convertido a fecha de Chile): martes 03 → 2, jueves 05 → 4, miércoles 11 → 8
+        // (excluye sáb 07 y dom 08). Promedio (2+4+8)/3 = 4,7 (redondeado a 1 decimal); mediana 4.
         using var db = new SqliteTestDatabase();
         var a = Add(db, Office.Placilla, "2026-03-01", decision: FinalDecision.Otorgado);
         var b = Add(db, Office.Placilla, "2026-03-01", decision: FinalDecision.Denegado);
         var c = Add(db, Office.Placilla, "2026-03-01", decision: FinalDecision.Otorgado);
-        Add(db, Office.Placilla, "2026-03-01", decision: FinalDecision.Otorgado); // importado: sin auditoría
-        Audit(db, a, "Otorgado", "2026-03-03T12:00:00+00:00");
-        Audit(db, b, "Denegado", "2026-03-05T12:00:00+00:00");
-        Audit(db, c, "EsperaExamen", "2026-03-02T12:00:00+00:00");
-        Audit(db, c, "Otorgado", "2026-03-11T12:00:00+00:00");
+        var imported = Add(db, Office.Placilla, "2026-03-01", decision: FinalDecision.Otorgado); // importado: sin fecha confiable
+        SetFinalDecisionAt(db, a, "2026-03-03T12:00:00+00:00");
+        SetFinalDecisionAt(db, b, "2026-03-05T12:00:00+00:00");
+        SetFinalDecisionAt(db, c, "2026-03-11T12:00:00+00:00");
+        SetFinalDecisionAt(db, imported, null); // el Insert real ya la habría puesto: se limpia para simular la importación legacy sin fecha
 
         var placilla = Service(db).Build(new KpiPeriod(2026, KpiPeriodKind.Mes, 3), OfficeScope.All, Today).For(Office.Placilla);
 
         Assert.Equal(3, placilla.DaysSample);
-        Assert.Equal(5.3, placilla.AverageDays); // (2 + 4 + 10) / 3, a un decimal
+        Assert.Equal(4.7, placilla.AverageDays);
         Assert.Equal(4, placilla.MedianDays);
         Assert.Equal(1, placilla.DecidedWithoutDate);
         Assert.Equal(25.0, placilla.PercentDecidedWithoutDate);
+        Assert.Equal(75.0, placilla.PercentWithDecisionDate);
+    }
+
+    [Fact]
+    public void FinalDecisionAt_is_converted_to_the_Chile_timezone_before_counting_business_days()
+    {
+        // Chile está detrás de UTC (UTC-3 o UTC-4 según la regla vigente); 2026-03-11 02:30 UTC cae
+        // igual del lado de Chile del martes 10 con cualquiera de los dos offsets — un decisionAt
+        // que ya cruzó la medianoche en UTC debe seguir contando la fecha de Chile, no la de UTC.
+        using var db = new SqliteTestDatabase();
+        var id = Add(db, Office.Placilla, "2026-03-09", decision: FinalDecision.Otorgado); // lunes
+        SetFinalDecisionAt(db, id, "2026-03-11T02:30:00+00:00"); // UTC miércoles madrugada = Chile martes noche
+
+        var placilla = Service(db).Build(new KpiPeriod(2026, KpiPeriodKind.Mes, 3), OfficeScope.All, Today).For(Office.Placilla);
+
+        // Citación lunes 09, decisión (fecha Chile) martes 10 → 1 día hábil, no 2.
+        Assert.Equal(1, placilla.AverageDays);
+    }
+
+    [Fact]
+    public void Empty_office_scope_returns_zero_rows_everywhere()
+    {
+        using var db = new SqliteTestDatabase();
+        Add(db, Office.AvenidaArgentina, "2026-03-02", decision: FinalDecision.Otorgado);
+        Add(db, Office.Placilla, "2026-03-03", decision: FinalDecision.Denegado);
+
+        var report = Service(db).Build(new KpiPeriod(2026, KpiPeriodKind.Mes, 3), new OfficeScope([]), Today);
+
+        Assert.Empty(report.Offices);
+        Assert.Equal(0, report.Total.Total);
+        Assert.Equal(0, report.Total.Otorgado);
+        Assert.Equal(0, report.Total.DaysSample);
+        Assert.Null(report.Total.AverageDays);
+        Assert.Empty(report.Trend);
+    }
+
+    [Fact]
+    public void Report_warns_when_a_year_in_the_period_has_no_holidays_configured()
+    {
+        using var db = new SqliteTestDatabase();
+        var calculator = new BusinessDayCalculator(new KpiOptions { Holidays = ["2026-01-01"] });
+
+        var reportWithConfiguredYear = new SedeKpiService(db.ConnectionString, calculator)
+            .Build(new KpiPeriod(2026, KpiPeriodKind.Mes, 1), OfficeScope.All, Today);
+        var reportWithMissingYear = new SedeKpiService(db.ConnectionString, calculator)
+            .Build(new KpiPeriod(2028, KpiPeriodKind.Mes, 1), OfficeScope.All, Today);
+
+        Assert.True(reportWithConfiguredYear.HolidaysConfiguredForPeriod);
+        Assert.False(reportWithMissingYear.HolidaysConfiguredForPeriod);
     }
 
     [Fact]
@@ -122,7 +174,9 @@ public class SedeKpiServiceTests
         Assert.Contains(placilla.States, s => s.State == "Sin estado" && s.Count == 1);
     }
 
-    private static SedeKpiService Service(SqliteTestDatabase db) => new(db.ConnectionString);
+    private static readonly IBusinessDayCalculator NoHolidays = new BusinessDayCalculator(new KpiOptions());
+
+    private static SedeKpiService Service(SqliteTestDatabase db) => new(db.ConnectionString, NoHolidays);
 
     private static long Add(SqliteTestDatabase db, Office office, string citation, FolderState? state = null, FinalDecision? decision = null)
         => db.Cases.Insert(new FolderCase
@@ -135,18 +189,17 @@ public class SedeKpiServiceTests
             FinalDecision = decision
         });
 
-    private static void Audit(SqliteTestDatabase db, long caseId, string newValue, string at)
+    /// <summary>Escribe <c>FinalDecisionAt</c> directamente, sin pasar por el repositorio — para
+    /// fijar una fecha determinística en el test (el repositorio la fija en "ahora") o para simular
+    /// una fila decidida sin fecha confiable (importación legacy, valor null).</summary>
+    private static void SetFinalDecisionAt(SqliteTestDatabase db, long caseId, string? at)
     {
         using var connection = new SqliteConnection(db.ConnectionString);
         connection.Open();
         using var command = connection.CreateCommand();
-        command.CommandText = """
-            INSERT INTO CaseAuditLog (FolderCaseId, ChangedBy, ChangedAt, FieldName, OldValue, NewValue)
-            VALUES ($id, 'ana', $at, 'Decisión final', NULL, $value)
-            """;
+        command.CommandText = "UPDATE FolderCase SET FinalDecisionAt = $at WHERE Id = $id";
+        command.Parameters.AddWithValue("$at", (object?)at ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", caseId);
-        command.Parameters.AddWithValue("$at", at);
-        command.Parameters.AddWithValue("$value", newValue);
         command.ExecuteNonQuery();
     }
 }
@@ -158,7 +211,8 @@ public class SedeKpiExcelExporterTests
     {
         using var db = new SqliteTestDatabase();
         db.Cases.Insert(new FolderCase { FullName = "X", Office = Office.Placilla, CitationDate = new DateOnly(2026, 3, 1), FinalDecision = FinalDecision.Otorgado });
-        var report = new SedeKpiService(db.ConnectionString).Build(new KpiPeriod(2026, KpiPeriodKind.Mes, 3), OfficeScope.All, new DateOnly(2026, 6, 30));
+        var report = new SedeKpiService(db.ConnectionString, new BusinessDayCalculator(new KpiOptions()))
+            .Build(new KpiPeriod(2026, KpiPeriodKind.Mes, 3), OfficeScope.All, new DateOnly(2026, 6, 30));
 
         var bytes = LicenciasCarpetas.Reporting.SedeKpiExcelExporter.Export(report);
 

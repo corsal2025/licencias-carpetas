@@ -91,10 +91,10 @@ builder.Services.AddSingleton<UserProvisioning>();
 builder.Services.AddSingleton<IExcelWorkbookImporter, ExcelWorkbookImporter>();
 builder.Services.AddSingleton<IExcelCaseExporter, ExcelCaseExporter>();
 builder.Services.AddSingleton<StatisticsService>();
-builder.Services.AddSingleton(_ => new SedeKpiService(connectionString));
 var kpiOptions = builder.Configuration.GetSection(KpiOptions.SectionName).Get<KpiOptions>() ?? new KpiOptions();
 builder.Services.AddSingleton(kpiOptions);
 builder.Services.AddSingleton<IBusinessDayCalculator>(_ => new BusinessDayCalculator(kpiOptions));
+builder.Services.AddSingleton(sp => new SedeKpiService(connectionString, sp.GetRequiredService<IBusinessDayCalculator>()));
 builder.Services.AddSingleton<IGlobalSearchService>(_ => new GlobalSearchService(connectionString));
 builder.Services.AddSingleton<IPersonFileQuery>(_ => new PersonFileQuery(connectionString));
 

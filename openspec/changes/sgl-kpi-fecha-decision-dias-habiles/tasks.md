@@ -102,28 +102,62 @@ Diff real: 77 líneas modificadas (Program.cs + ambos appsettings) + 183 líneas
 en 3 archivos nuevos = ~260 líneas — dentro de presupuesto de 400. No se tocó
 `data/carpetas.db`. No se hizo commit (pendiente de decisión del usuario).
 
-## Slice 3 — `SedeKpiService` + página + Excel + docs (pendiente)
+## Slice 3 — `SedeKpiService` + página + Excel + docs (COMPLETO)
 
-- [ ] 3.1 Test: días citación→decisión usan `FinalDecisionAt` (no ya el subquery de
+Nota: slice 2 fue committeado y pusheado a main (`1342c78`) antes de empezar
+este slice.
+
+- [x] 3.1 Test: días citación→decisión usan `FinalDecisionAt` (no ya el subquery de
       auditoría) convertido a fecha en `America/Santiago` (fallback
       `"Pacific SA Standard Time"`), contados en días hábiles vía
       `BusinessDayCalculator`.
-- [ ] 3.2 Test: `PercentWithDecisionDate` = % de Otorgado+Denegado con
-      `FinalDecisionAt` no nulo.
-- [ ] 3.3 Test explícito: alcance de oficina vacío (`OfficeScope` sin sedes)
-      devuelve reporte con cero filas en todos los bloques.
-- [ ] 3.4 Implementar cambios en `SedeKpiService` (`Load`, `Compute`,
-      `SedeKpi.PercentWithDecisionDate`), inyectando `IBusinessDayCalculator`.
-- [ ] 3.5 Actualizar `Comparativo.cshtml`/`.cshtml.cs`: mostrar % de cobertura y
-      advertencia cuando `HolidaysConfigured(year)` es false para el año del
-      período.
-- [ ] 3.6 Actualizar `SedeKpiExcelExporter` con columna de cobertura consistente
-      con la página.
-- [ ] 3.7 Actualizar `docs/arquitectura.html` (VERSION, DATA, CHANGELOG) con el
-      resumen del cambio completo.
-- [ ] 3.8 `dotnet build` + `dotnet test`, reportar conteo final.
-- [ ] 3.9 Actualizar apply-progress (merge final, marcar change lista para
+- [x] 3.1b Test: `FinalDecisionAt` que cruza la medianoche UTC se sigue contando
+      por la fecha de Chile, no la de UTC.
+- [x] 3.2 Test: `PercentWithDecisionDate` = % de Otorgado+Denegado con
+      `FinalDecisionAt` no nulo (agregado al test de la muestra de días y
+      verificado explícitamente: 75% con 1 de 4 decididos sin fecha).
+- [x] 3.3 Test explícito: alcance de oficina vacío (`OfficeScope` sin sedes)
+      devuelve reporte con cero filas en todos los bloques (`Offices` vacío,
+      `Total` en cero, `AverageDays` null, `Trend` vacío).
+- [x] 3.3b Test: el reporte avisa (`HolidaysConfiguredForPeriod = false`)
+      cuando el período cae en un año sin feriados configurados, y `true`
+      cuando el año sí los tiene.
+- [x] 3.4 Implementado en `SedeKpiService`: `Load` ahora lee `f.FinalDecisionAt`
+      directo (ya no el subquery de `CaseAuditLog`), con parseo defensivo
+      (`TryParse` + `RoundtripKind`/`AssumeUniversal`, nunca lanza);
+      `IBusinessDayCalculator` inyectado por constructor; `Compute` calcula
+      días hábiles vía `ToChileDate` + `businessDays.BusinessDaysBetween`;
+      `SedeKpi.PercentWithDecisionDate` agregado (propiedad derivada, sin
+      almacenamiento extra); `SedeKpiReport.HolidaysConfiguredForPeriod`
+      agregado (calculado en `Build` sobre todos los años del período).
+- [x] 3.5 Actualizado `Comparativo.cshtml`: etiquetas "días hábiles", columna de
+      cobertura de fecha de decisión, aviso visible cuando
+      `HolidaysConfiguredForPeriod` es false.
+- [x] 3.6 Actualizado `SedeKpiExcelExporter`: columna "% cobertura fecha
+      decisión" y aviso de feriados no configurados en la hoja Resumen,
+      consistente con la página.
+- [x] 3.7 Actualizado `docs/arquitectura.html`: `VERSION` v0.6.0 → v0.7.0,
+      entrada en `CHANGELOG`, `INFO.KPI` y el modelo de datos (`FinalDecisionAt`
+      en `CARPETA`).
+- [x] 3.8 `dotnet build`: 0 warnings, 0 errores. `dotnet test`: 633/633 (630
+      base tras slice 2 en main + 3 nuevos), 0 fallos.
+- [x] 3.9 Actualizar apply-progress (merge final, marcar change lista para
       `sdd-verify`).
+
+Archivos tocados en slice 3 (todos modificados, sin archivos nuevos):
+- `src/LicenciasCarpetas/Statistics/SedeKpiService.cs`
+- `src/LicenciasCarpetas/Program.cs`
+- `src/LicenciasCarpetas/Dashboard/Pages/Estadisticas/Comparativo.cshtml`
+- `src/LicenciasCarpetas/Reporting/SedeKpiExcelExporter.cs`
+- `tests/LicenciasCarpetas.Tests/SedeKpiServiceTests.cs`
+- `docs/arquitectura.html`
+
+Diff real: `+167/-46` líneas (213 netas) en 6 archivos — dentro de presupuesto
+de 400. No se tocó `data/carpetas.db`. No se hizo commit (pendiente de decisión
+del usuario).
+
+**Las 3 slices del change `sgl-kpi-fecha-decision-dias-habiles` están
+completas.** Próximo paso recomendado: `sdd-verify`.
 
 ## Estimación de líneas por slice
 
