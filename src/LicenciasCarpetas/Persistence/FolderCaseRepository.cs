@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using LicenciasCarpetas.Domain;
 using Microsoft.Data.Sqlite;
@@ -152,6 +153,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         AddColumnIfMissing(connection, "CellPhone");
         AddColumnIfMissing(connection, "Observations");
         AddColumnIfMissing(connection, "CambioDomicilioComuna");
+        AddColumnIfMissing(connection, "FinalDecisionAt");
         BackfillFullNameSort(connection);
 
         using var auditCommand = connection.CreateCommand();
@@ -169,6 +171,8 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
             CREATE INDEX IF NOT EXISTS IX_CaseAuditLog_FolderCaseId ON CaseAuditLog (FolderCaseId, ChangedAt DESC);
             """;
         auditCommand.ExecuteNonQuery();
+
+        BackfillFinalDecisionAt(connection);
     }
 
     /// <summary>Additive migration for databases created before a column existed — SQLite has no
@@ -237,6 +241,63 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         transaction.Commit();
     }
 
+    /// <summary>
+    /// Fills <c>FinalDecisionAt</c> for cases decided before the column existed, from the last
+    /// "Decisión final" audit entry that switched to Otorgado/Denegado. Cases with no such audit
+    /// entry (imported straight from the workbook, never edited here) are left null — there is no
+    /// exact moment to backfill, and the KPI screen already reports those as "sin fecha".
+    /// </summary>
+    private static void BackfillFinalDecisionAt(SqliteConnection connection)
+    {
+        var pending = new List<(long Id, string ChangedAt)>();
+
+        using (var selectCommand = connection.CreateCommand())
+        {
+            selectCommand.CommandText = """
+                SELECT f.Id,
+                       (SELECT a.ChangedAt FROM CaseAuditLog a
+                        WHERE a.FolderCaseId = f.Id AND a.FieldName = 'Decisión final'
+                          AND a.NewValue IN ('Otorgado', 'Denegado')
+                        ORDER BY a.ChangedAt DESC, a.Id DESC LIMIT 1)
+                FROM FolderCase f
+                WHERE f.FinalDecisionAt IS NULL AND f.FinalDecision IN (0, 1)
+                """;
+            using var reader = selectCommand.ExecuteReader();
+            while (reader.Read())
+            {
+                // ChangedAt is written as DateTimeOffset.UtcNow.ToString("O") (RecordAuditLog), but
+                // the backfill re-parses and re-formats it rather than trusting that verbatim: any
+                // row written by a future/older format, or hand-edited, is skipped instead of
+                // storing a value FinalDecisionAt's own reader could later fail to parse.
+                if (!reader.IsDBNull(1)
+                    && DateTimeOffset.TryParse(reader.GetString(1), CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind | DateTimeStyles.AssumeUniversal, out var changedAt))
+                {
+                    pending.Add((reader.GetInt64(0), changedAt.ToString("O")));
+                }
+            }
+        }
+
+        if (pending.Count == 0)
+        {
+            return;
+        }
+
+        using var transaction = connection.BeginTransaction();
+        using var updateCommand = connection.CreateCommand();
+        updateCommand.CommandText = "UPDATE FolderCase SET FinalDecisionAt = $at WHERE Id = $id";
+        var atParameter = updateCommand.Parameters.Add("$at", SqliteType.Text);
+        var idParameter = updateCommand.Parameters.Add("$id", SqliteType.Integer);
+
+        foreach (var (id, changedAt) in pending)
+        {
+            atParameter.Value = changedAt;
+            idParameter.Value = id;
+            updateCommand.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
+    }
 
     /// <summary>
     /// Re-importing the same workbook must not duplicate anyone. A row is the same case when the
@@ -347,14 +408,14 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
                 MoralIdoneity, FolderState, FolderStateRaw, FinalDecision, FinalDecisionRaw,
                 SourceSheet, SourceRow, NeedsReview, Marked, CreatedAt, UpdatedAt,
                 PenultimateFolderDate, CodigoF8, LicenceClasses, Email, CellPhone, FolioLicencia,
-                CambioDomicilioComuna)
+                CambioDomicilioComuna, FinalDecisionAt)
             VALUES (
                 $citationDate, $uploadedDate, $lastFolderDate, $lastFolderComuna,
                 $firstName, $lastName, $fullName, $fullNameSort, $rut, $office, $attention, $attended,
                 $idoneity, $state, $stateRaw, $decision, $decisionRaw,
                 $sheet, $row, $needsReview, $marked, $createdAt, $updatedAt,
                 $penultimate, $codigoF8, $licences, $email, $cellPhone, $folio,
-                $cambioDomicilioComuna);
+                $cambioDomicilioComuna, $decisionAt);
             SELECT last_insert_rowid();
             """;
         BindWritableFields(command, folderCase);
@@ -374,12 +435,17 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         command.Parameters.AddWithValue("$cellPhone", Nullable(folderCase.CellPhone));
         command.Parameters.AddWithValue("$folio", Nullable(folderCase.FolioLicencia));
         command.Parameters.AddWithValue("$cambioDomicilioComuna", Nullable(folderCase.CambioDomicilioComuna));
+        // A brand-new row has no "previous" decision: null -> decided counts as a change, same rule
+        // as any other transition into Otorgado/Denegado.
+        command.Parameters.AddWithValue("$decisionAt", Nullable(ComputeFinalDecisionAtText(null, null, folderCase.FinalDecision, DateTimeOffset.UtcNow)));
 
         return (long)command.ExecuteScalar()!;
     }
 
     private static void Update(long id, FolderCase folderCase, SqliteConnection connection)
     {
+        var (previousDecision, previousDecisionAt) = SelectCurrentDecision(id, connection);
+
         using var command = connection.CreateCommand();
         // Marked is the operator's own bookkeeping and is deliberately left untouched by an import.
         command.CommandText = """
@@ -401,6 +467,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
                 FolderStateRaw = $stateRaw,
                 FinalDecision = $decision,
                 FinalDecisionRaw = $decisionRaw,
+                FinalDecisionAt = $decisionAt,
                 SourceSheet = $sheet,
                 SourceRow = $row,
                 NeedsReview = $needsReview,
@@ -420,7 +487,43 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         command.Parameters.AddWithValue("$email", Nullable(folderCase.Email));
         command.Parameters.AddWithValue("$cellPhone", Nullable(folderCase.CellPhone));
         command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$decisionAt", Nullable(ComputeFinalDecisionAtText(previousDecision, previousDecisionAt, folderCase.FinalDecision, DateTimeOffset.UtcNow)));
         command.ExecuteNonQuery();
+    }
+
+    /// <summary>Current <c>FinalDecision</c>/<c>FinalDecisionAt</c> for a row, read before an
+    /// import overwrites it — the only way to tell whether the decision actually changed.</summary>
+    private static (FinalDecision? Decision, string? At) SelectCurrentDecision(long id, SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT FinalDecision, FinalDecisionAt FROM FolderCase WHERE Id = $id";
+        command.Parameters.AddWithValue("$id", id);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            return (null, null);
+        }
+
+        var decision = reader.IsDBNull(0) ? (FinalDecision?)null : (FinalDecision)reader.GetInt32(0);
+        var at = reader.IsDBNull(1) ? null : reader.GetString(1);
+        return (decision, at);
+    }
+
+    /// <summary>
+    /// The single rule behind <c>FinalDecisionAt</c>: it moves to "now" the moment the decision
+    /// becomes Otorgado/Denegado, clears when it moves away from either, and is left untouched when
+    /// the decision does not change at all — regardless of which of the three write paths triggered
+    /// it (edit screen, single upsert, batch import).
+    /// </summary>
+    private static string? ComputeFinalDecisionAtText(FinalDecision? previous, string? previousAtText, FinalDecision? next, DateTimeOffset now)
+    {
+        if (previous == next)
+        {
+            return previousAtText;
+        }
+
+        var nextIsDecided = next is FinalDecision.Otorgado or FinalDecision.Denegado;
+        return nextIsDecided ? now.ToString("O") : null;
     }
 
     private static void BindWritableFields(SqliteCommand command, FolderCase folderCase)
@@ -771,6 +874,10 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         using var connection = Open();
         using var transaction = connection.BeginTransaction();
 
+        // Read regardless of editedBy: FinalDecisionAt's "did it change" rule does not depend on
+        // whether the edit is attributed to anyone.
+        var (previousDecision, previousDecisionAt) = SelectCurrentDecision(id, connection);
+
         if (!string.IsNullOrWhiteSpace(editedBy))
         {
             var current = FindByIdInternal(connection, transaction, id);
@@ -805,6 +912,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
                 FolderStateRaw = NULL,
                 FinalDecision = $decision,
                 FinalDecisionRaw = NULL,
+                FinalDecisionAt = $decisionAt,
                 MoralIdoneity = $idoneity,
                 AttentionNote = $attention,
                 NeedsReview = $needsReview,
@@ -825,6 +933,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         command.Parameters.AddWithValue("$lastFolderComuna", Nullable(lastFolderComuna));
         command.Parameters.AddWithValue("$state", folderState is { } state ? (int)state : DBNull.Value);
         command.Parameters.AddWithValue("$decision", finalDecision is { } decision ? (int)decision : DBNull.Value);
+        command.Parameters.AddWithValue("$decisionAt", Nullable(ComputeFinalDecisionAtText(previousDecision, previousDecisionAt, finalDecision, DateTimeOffset.UtcNow)));
         command.Parameters.AddWithValue("$idoneity", moralIdoneity is { } idoneity ? (int)idoneity : DBNull.Value);
         command.Parameters.AddWithValue("$attention", Nullable(attentionNote));
         command.Parameters.AddWithValue("$needsReview", needsReview ? 1 : 0);
@@ -1299,6 +1408,7 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
         FolderStateRaw = ReadText(reader, "FolderStateRaw"),
         FinalDecision = ReadEnum<FinalDecision>(reader, "FinalDecision"),
         FinalDecisionRaw = ReadText(reader, "FinalDecisionRaw"),
+        FinalDecisionAt = ReadTimestamp(reader, "FinalDecisionAt"),
         SourceSheet = ReadText(reader, "SourceSheet"),
         SourceRow = reader.GetInt32(reader.GetOrdinal("SourceRow")),
         NeedsReview = reader.GetInt32(reader.GetOrdinal("NeedsReview")) == 1,
@@ -1334,5 +1444,22 @@ public sealed class FolderCaseRepository(string connectionString) : IFolderCaseR
     {
         var ordinal = reader.GetOrdinal(column);
         return reader.IsDBNull(ordinal) ? null : (TEnum)(object)reader.GetInt32(ordinal);
+    }
+
+    /// <summary>Parses a stored ISO-8601 timestamp defensively: a malformed value (hand-edited row,
+    /// data from before a format change) must never break a list — it is reported as "no date"
+    /// instead of throwing.</summary>
+    private static DateTimeOffset? ReadTimestamp(SqliteDataReader reader, string column)
+    {
+        var text = ReadText(reader, column);
+        if (text is null)
+        {
+            return null;
+        }
+
+        return DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture,
+            DateTimeStyles.RoundtripKind | DateTimeStyles.AssumeUniversal, out var parsed)
+            ? parsed
+            : null;
     }
 }

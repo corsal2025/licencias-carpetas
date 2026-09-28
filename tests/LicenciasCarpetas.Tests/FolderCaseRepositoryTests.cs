@@ -253,4 +253,287 @@ public class FolderCaseRepositoryTests
         Assert.Equal(0, db.Cases.Count(new CaseFilter()));
         Assert.Empty(db.Cases.Query(new CaseFilter(), 0, 100));
     }
+
+    // --- FinalDecisionAt --------------------------------------------------
+
+    [Fact]
+    public void EnsureSchema_adds_FinalDecisionAt_column_idempotently()
+    {
+        using var db = new SqliteTestDatabase();
+
+        // Called once already by the SqliteTestDatabase constructor — calling it again must not throw.
+        db.Cases.EnsureSchema();
+        db.Cases.EnsureSchema();
+
+        var id = db.Cases.Insert(Case());
+        Assert.Null(db.Cases.FindById(id)!.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void EnsureSchema_backfills_FinalDecisionAt_from_the_last_decision_audit_entry()
+    {
+        using var db = new SqliteTestDatabase();
+        var id = db.Cases.Insert(Case(state: null));
+
+        // Simula una fila decidida antes de que existiera la columna: FinalDecision quedó en
+        // Otorgado por una vía que no pasó por el nuevo cálculo (aquí, escritura directa) y su
+        // única huella del momento de la decisión es la bitácora de auditoría.
+        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(db.ConnectionString))
+        {
+            connection.Open();
+            using (var update = connection.CreateCommand())
+            {
+                update.CommandText = "UPDATE FolderCase SET FinalDecision = 0, FinalDecisionAt = NULL WHERE Id = $id";
+                update.Parameters.AddWithValue("$id", id);
+                update.ExecuteNonQuery();
+            }
+
+            using var audit = connection.CreateCommand();
+            audit.CommandText = """
+                INSERT INTO CaseAuditLog (FolderCaseId, ChangedBy, ChangedAt, FieldName, OldValue, NewValue)
+                VALUES ($id, 'tester', '2026-05-04T10:00:00+00:00', 'Decisión final', NULL, 'Otorgado')
+                """;
+            audit.Parameters.AddWithValue("$id", id);
+            audit.ExecuteNonQuery();
+        }
+
+        db.Cases.EnsureSchema();
+
+        var stored = db.Cases.FindById(id)!;
+        Assert.NotNull(stored.FinalDecisionAt);
+        Assert.Equal(DateTimeOffset.Parse("2026-05-04T10:00:00+00:00"), stored.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void EnsureSchema_leaves_FinalDecisionAt_null_when_there_is_no_audit_entry_to_backfill_from()
+    {
+        using var db = new SqliteTestDatabase();
+        var id = db.Cases.Insert(Case(state: null));
+
+        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(db.ConnectionString))
+        {
+            connection.Open();
+            using var update = connection.CreateCommand();
+            update.CommandText = "UPDATE FolderCase SET FinalDecision = 1, FinalDecisionAt = NULL WHERE Id = $id";
+            update.Parameters.AddWithValue("$id", id);
+            update.ExecuteNonQuery();
+        }
+
+        db.Cases.EnsureSchema();
+
+        Assert.Null(db.Cases.FindById(id)!.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void EnsureSchema_backfills_FinalDecisionAt_for_a_Denegado_case_with_audit_entry()
+    {
+        using var db = new SqliteTestDatabase();
+        var id = db.Cases.Insert(Case(state: null));
+
+        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(db.ConnectionString))
+        {
+            connection.Open();
+            using (var update = connection.CreateCommand())
+            {
+                update.CommandText = "UPDATE FolderCase SET FinalDecision = 1, FinalDecisionAt = NULL WHERE Id = $id";
+                update.Parameters.AddWithValue("$id", id);
+                update.ExecuteNonQuery();
+            }
+
+            using var audit = connection.CreateCommand();
+            audit.CommandText = """
+                INSERT INTO CaseAuditLog (FolderCaseId, ChangedBy, ChangedAt, FieldName, OldValue, NewValue)
+                VALUES ($id, 'tester', '2026-06-10T09:30:00+00:00', 'Decisión final', 'ParaDenegar', 'Denegado')
+                """;
+            audit.Parameters.AddWithValue("$id", id);
+            audit.ExecuteNonQuery();
+        }
+
+        db.Cases.EnsureSchema();
+
+        var stored = db.Cases.FindById(id)!;
+        Assert.Equal(FinalDecision.Denegado, stored.FinalDecision);
+        Assert.Equal(DateTimeOffset.Parse("2026-06-10T09:30:00+00:00"), stored.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void EnsureSchema_skips_backfill_when_the_audit_entry_timestamp_is_unparsable()
+    {
+        using var db = new SqliteTestDatabase();
+        var id = db.Cases.Insert(Case(state: null));
+
+        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(db.ConnectionString))
+        {
+            connection.Open();
+            using (var update = connection.CreateCommand())
+            {
+                update.CommandText = "UPDATE FolderCase SET FinalDecision = 0, FinalDecisionAt = NULL WHERE Id = $id";
+                update.Parameters.AddWithValue("$id", id);
+                update.ExecuteNonQuery();
+            }
+
+            using var audit = connection.CreateCommand();
+            audit.CommandText = """
+                INSERT INTO CaseAuditLog (FolderCaseId, ChangedBy, ChangedAt, FieldName, OldValue, NewValue)
+                VALUES ($id, 'tester', 'no-es-una-fecha', 'Decisión final', NULL, 'Otorgado')
+                """;
+            audit.Parameters.AddWithValue("$id", id);
+            audit.ExecuteNonQuery();
+        }
+
+        db.Cases.EnsureSchema();
+
+        // Un ChangedAt ilegible no debe tumbar el backfill ni escribir basura: la fila queda sin
+        // fecha, igual que un caso importado del libro sin auditoría.
+        Assert.Null(db.Cases.FindById(id)!.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void FindById_reports_no_date_instead_of_throwing_when_FinalDecisionAt_is_garbage()
+    {
+        using var db = new SqliteTestDatabase();
+        var id = db.Cases.Insert(Case(state: null));
+
+        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(db.ConnectionString))
+        {
+            connection.Open();
+            using var update = connection.CreateCommand();
+            update.CommandText = "UPDATE FolderCase SET FinalDecision = 0, FinalDecisionAt = 'no-es-una-fecha' WHERE Id = $id";
+            update.Parameters.AddWithValue("$id", id);
+            update.ExecuteNonQuery();
+        }
+
+        // Una fila con un valor corrupto en FinalDecisionAt no debe romper el listado: se lee como
+        // "sin fecha" en vez de lanzar.
+        var stored = db.Cases.FindById(id);
+        Assert.NotNull(stored);
+        Assert.Null(stored!.FinalDecisionAt);
+        Assert.DoesNotContain(db.Cases.Query(new CaseFilter(), 0, 10), c => c.Id == id && c.FinalDecisionAt is not null);
+    }
+
+    [Fact]
+    public void Insert_sets_FinalDecisionAt_when_the_case_arrives_already_decided()
+    {
+        using var db = new SqliteTestDatabase();
+
+        var granted = db.Cases.Insert(new FolderCase { FullName = "A", Office = Office.AvenidaArgentina, FinalDecision = FinalDecision.Otorgado });
+        var pending = db.Cases.Insert(new FolderCase { FullName = "B", Office = Office.AvenidaArgentina, FinalDecision = FinalDecision.EsperaExamen });
+        var undecided = db.Cases.Insert(new FolderCase { FullName = "C", Office = Office.AvenidaArgentina });
+
+        Assert.NotNull(db.Cases.FindById(granted)!.FinalDecisionAt);
+        Assert.Null(db.Cases.FindById(pending)!.FinalDecisionAt);
+        Assert.Null(db.Cases.FindById(undecided)!.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void UpdateEditableFields_sets_FinalDecisionAt_when_decision_becomes_granted_or_denied()
+    {
+        using var db = new SqliteTestDatabase();
+        var id = db.Cases.Insert(Case(state: null));
+        Assert.Null(db.Cases.FindById(id)!.FinalDecisionAt);
+
+        db.Cases.UpdateEditableFields(id, "JUAN PEREZ", "13.025.150-1", new DateOnly(2026, 1, 2),
+            null, null, null, null, FinalDecision.Otorgado, null, null, needsReview: false);
+
+        var stored = db.Cases.FindById(id)!;
+        Assert.NotNull(stored.FinalDecisionAt);
+        Assert.True(stored.FinalDecisionAt > DateTimeOffset.UtcNow.AddMinutes(-1));
+    }
+
+    [Fact]
+    public void UpdateEditableFields_clears_FinalDecisionAt_when_decision_moves_away_from_granted_or_denied()
+    {
+        using var db = new SqliteTestDatabase();
+        var id = db.Cases.Insert(Case(state: null));
+        db.Cases.UpdateEditableFields(id, "JUAN PEREZ", "13.025.150-1", new DateOnly(2026, 1, 2),
+            null, null, null, null, FinalDecision.Denegado, null, null, needsReview: false);
+        Assert.NotNull(db.Cases.FindById(id)!.FinalDecisionAt);
+
+        db.Cases.UpdateEditableFields(id, "JUAN PEREZ", "13.025.150-1", new DateOnly(2026, 1, 2),
+            null, null, null, null, FinalDecision.ClasePendiente, null, null, needsReview: false);
+
+        Assert.Null(db.Cases.FindById(id)!.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void UpdateEditableFields_keeps_FinalDecisionAt_untouched_when_decision_does_not_change()
+    {
+        using var db = new SqliteTestDatabase();
+        var id = db.Cases.Insert(Case(state: null));
+        db.Cases.UpdateEditableFields(id, "JUAN PEREZ", "13.025.150-1", new DateOnly(2026, 1, 2),
+            null, null, null, null, FinalDecision.Otorgado, null, null, needsReview: false);
+        var firstTimestamp = db.Cases.FindById(id)!.FinalDecisionAt;
+        Assert.NotNull(firstTimestamp);
+
+        db.Cases.UpdateEditableFields(id, "JUAN PEREZ SOTO", "13.025.150-1", new DateOnly(2026, 1, 2),
+            null, null, null, null, FinalDecision.Otorgado, null, "nota", needsReview: false);
+
+        Assert.Equal(firstTimestamp, db.Cases.FindById(id)!.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void Upsert_sets_FinalDecisionAt_on_reimport_when_decision_changes_to_granted_or_denied()
+    {
+        using var db = new SqliteTestDatabase();
+        db.Cases.Upsert(Case(rut: "13.025.150-1", row: 3, state: FolderState.PrimeraLicencia));
+        Assert.Null(db.Cases.Query(new CaseFilter(), 0, 10)[0].FinalDecisionAt);
+
+        var reimported = Case(rut: "13.025.150-1", row: 3, state: FolderState.SubidaAConaset);
+        reimported.FinalDecision = FinalDecision.Otorgado;
+        db.Cases.Upsert(reimported);
+
+        var stored = db.Cases.Query(new CaseFilter(), 0, 10)[0];
+        Assert.NotNull(stored.FinalDecisionAt);
+    }
+
+    [Fact]
+    public void Upsert_clears_FinalDecisionAt_on_reimport_when_decision_moves_away_from_granted_or_denied()
+    {
+        using var db = new SqliteTestDatabase();
+        var first = Case(rut: "13.025.150-1", row: 3);
+        first.FinalDecision = FinalDecision.Denegado;
+        db.Cases.Upsert(first);
+        Assert.NotNull(db.Cases.Query(new CaseFilter(), 0, 10)[0].FinalDecisionAt);
+
+        var reimported = Case(rut: "13.025.150-1", row: 3);
+        reimported.FinalDecision = FinalDecision.ParaDenegar;
+        db.Cases.Upsert(reimported);
+
+        Assert.Null(db.Cases.Query(new CaseFilter(), 0, 10)[0].FinalDecisionAt);
+    }
+
+    [Fact]
+    public void Upsert_keeps_FinalDecisionAt_untouched_on_reimport_when_decision_does_not_change()
+    {
+        using var db = new SqliteTestDatabase();
+        var first = Case(rut: "13.025.150-1", row: 3);
+        first.FinalDecision = FinalDecision.Otorgado;
+        db.Cases.Upsert(first);
+        var firstTimestamp = db.Cases.Query(new CaseFilter(), 0, 10)[0].FinalDecisionAt;
+        Assert.NotNull(firstTimestamp);
+
+        var reimported = Case(rut: "13.025.150-1", row: 57, state: FolderState.SubidaConF8);
+        reimported.FinalDecision = FinalDecision.Otorgado;
+        db.Cases.Upsert(reimported);
+
+        Assert.Equal(firstTimestamp, db.Cases.Query(new CaseFilter(), 0, 10)[0].FinalDecisionAt);
+    }
+
+    [Fact]
+    public void ParaDenegar_counts_as_pendiente_en_curso_not_as_a_final_decision()
+    {
+        // Regresión: ParaDenegar debe seguir cayendo en "pendiente/en curso" y nunca en
+        // Otorgado/Denegado — este test blinda esa regla si la enumeración cambia a futuro.
+        FinalDecision value = FinalDecision.ParaDenegar;
+        Assert.False(value is FinalDecision.Otorgado or FinalDecision.Denegado);
+
+        using var db = new SqliteTestDatabase();
+        var pending = Case(rut: "13.025.150-1", row: 3);
+        pending.FinalDecision = FinalDecision.ParaDenegar;
+        db.Cases.Upsert(pending);
+
+        var stored = db.Cases.Query(new CaseFilter(), 0, 10)[0];
+        Assert.Equal(FinalDecision.ParaDenegar, stored.FinalDecision);
+        Assert.Null(stored.FinalDecisionAt);
+    }
 }

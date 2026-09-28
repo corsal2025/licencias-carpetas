@@ -112,6 +112,11 @@ public sealed class FolderCase
     /// <summary>Original DECISIÓN FINAL text when it matched no catalog value.</summary>
     public string? FinalDecisionRaw { get; set; }
 
+    /// <summary>Momento (UTC) en que <see cref="FinalDecision"/> pasó a Otorgado o Denegado. Se
+    /// limpia a null si la decisión cambia a cualquier otro valor; no se toca si la decisión no
+    /// cambia. Es la fuente de la métrica "días citación → decisión" del KPI por sede.</summary>
+    public DateTimeOffset? FinalDecisionAt { get; set; }
+
     /// <summary>Sheet the row came from ("MAYO AV. ARGENTINA"), so any imported row can be traced back.</summary>
     public string? SourceSheet { get; set; }
 
